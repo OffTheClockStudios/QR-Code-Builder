@@ -401,23 +401,22 @@ document.getElementById('generateBtn').onclick = () => {
   const payload = BlockManager.blocks.map(b =>
     b.type === 'tab' ? '\t' : b.type === 'return' ? '\r' : b.label
   ).join('');
+  
   qrPreview.innerHTML = '';
   new QRCode(qrPreview, { text: payload, width: 120, height: 120 });
 
   if (document.getElementById('copyToggle').checked) {
-    const img = qrPreview.querySelector('img');
-    if (img) {
-      fetch(img.src)
-        .then(res => res.blob())
-        .then(blob => {
-          const clipboardItem = new ClipboardItem({ 'image/png': blob });
-          navigator.clipboard.write([clipboardItem]);
-          alert('QR Code copied to clipboard!');
-        })
-        .catch(err => {
+    const canvas = qrPreview.querySelector('canvas'); // <-- Look for canvas
+    if (canvas) {
+      canvas.toBlob(blob => {
+        const clipboardItem = new ClipboardItem({ 'image/png': blob });
+        navigator.clipboard.write([clipboardItem]).then(() => {
+          alert('✅ QR Code copied to clipboard!');
+        }).catch(err => {
           console.error('Copy failed:', err);
-          alert('Failed to copy QR Code.');
+          alert('❌ Failed to copy QR Code.');
         });
+      });
     }
   }
 };
