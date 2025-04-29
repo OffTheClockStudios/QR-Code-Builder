@@ -1,0 +1,28 @@
+# Changelog
+
+All notable changes to this project will be documented in this file.
+
+---
+
+## [v1.0.0] – 2024-04-29
+
+🎉 **Initial Release**
+
+### Features:
+- Drag-and-drop **block canvas** to structure QR data visually
+- Support for:
+  - Text
+  - Tabs (`\t`)
+  - Returns (`\r`)
+- **Live QR preview**
+- **Preset manager**: save/load/delete layouts to/from browser storage
+- Option to **copy QR image** directly to clipboard (as PNG)
+- **Trash dropzone** for deleting blocks
+- Responsive layout optimized for desktop
+
+### Known Limitations:
+- ⚠️ **Touch input (mobile) support is limited** – drag-and-drop and editing require desktop use
+- ⚠️ Clipboard image copy may not work in non-HTTPS environments or unsupported browsers
+- 📱 Mobile usability improvements and long-press support planned in future updates
+
+---
