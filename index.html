@@ -29,8 +29,11 @@ body {
 .page-header {
   height: var(--header-height);
   background: var(--color-panel);
+  border: 1px solid #ccc;
   padding: 10px;
-  text-align: center;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   font-size: 24px;
   font-weight: bold;
   box-shadow: 0 2px 5px rgba(0,0,0,0.1);
@@ -67,11 +70,27 @@ body {
   margin-bottom: 8px;
   padding: 8px;
   border-radius: var(--radius);
+  border: 1px solid #ccc;
   text-align: center;
   cursor: grab;
   user-select: none;
   font-size: 13px;
   box-shadow: 0 1px 4px rgba(0,0,0,0.1);
+}
+
+.qr-preview-wrapper {
+  margin-top: 10px;
+  padding: 8px;
+  background: var(--color-panel);
+  border: 1px solid #ddd;
+  border-radius: var(--radius);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+.qr-preview-wrapper h3 {
+  margin: 0 0 8px;
+  font-size: 16px;
 }
 
 .qr-preview {
@@ -95,6 +114,7 @@ body {
   display: flex;
   flex-direction: column;
   gap: 5px;
+  border: 1px solid #ccc;
 }
 
 .side-controls select, .side-controls button, .checkbox-container {
@@ -208,8 +228,8 @@ body {
 	
   <div class="spacer"></div>
 
-  <h3>Presets</h3>
   <div class="side-controls">
+    <h3>Presets</h3>
     <select id="presetSelect" title="Choose a saved preset"></select>
     <button id="loadPresetBtn" title="Load the selected preset into the canvas">Load</button>
     <button id="savePresetBtn" title="Save the current build as a preset">Save</button>
@@ -218,8 +238,8 @@ body {
 
   <div class="spacer"></div>
 
-  <h3>Controls</h3>
   <div class="side-controls">
+    <h3>Controls</h3>
     <div class="checkbox-container" title="If enabled, the QR code image will be copied to clipboard after generation">
       <input type="checkbox" id="copyToggle">
       <label for="copyToggle">Copy After Build</label>
@@ -229,10 +249,11 @@ body {
     <div class="spacer"></div>
   </div>
 
+<div class="qr-preview-wrapper">
   <h3>QR Preview</h3>
   <div class="qr-preview" id="qrPreview"></div>
+</div>
 </aside>
-
 
 <div class="canvas" id="canvas"></div>
 
