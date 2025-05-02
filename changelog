@@ -16,6 +16,7 @@ All notable changes to this project will be documented in this file.
 - New **color palette** and **shadows** for a cleaner, more polished look
 - Improved **button styling** (consistent `btn` class usage)
 - `presetSelect` now uses a larger font for readability
+- Added version to the header
 
 ### Under-the-Hood:
 - Consolidated and cleaned up repetitive styles in CSS
