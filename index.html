@@ -143,6 +143,9 @@ body {
 .side-controls button.clear { background: var(--color-danger); }
 .side-controls button.clear:hover { background: #e03e3e; }
 
+.side-controls button.danger { background: var(--color-danger); }
+.side-controls button.danger:hover { background: #e03e3e; }
+
 .canvas {
   flex: 1;
   background: var(--color-canvas);
@@ -233,7 +236,7 @@ body {
     <select id="presetSelect" title="Choose a saved preset"></select>
     <button id="loadPresetBtn" title="Load the selected preset into the canvas">Load</button>
     <button id="savePresetBtn" title="Save the current build as a preset">Save</button>
-    <button id="deletePresetBtn" title="Delete the currently selected preset">Delete</button>
+    <button id="deletePresetBtn" class="danger" title="Delete the currently selected preset">Delete Preset</button>
   </div>
 
   <div class="spacer"></div>
@@ -245,7 +248,7 @@ body {
       <label for="copyToggle">Copy After Build</label>
     </div>
     <button id="generateBtn" title="Build and display the QR code">Build</button>
-    <button id="clearBtn" class="clear" title="Clear all blocks from the canvas">Clear</button>
+    <button id="clearBtn" class="clear" title="Clear all blocks from the canvas">Clear Canvas</button>
     <div class="spacer"></div>
   </div>
 
