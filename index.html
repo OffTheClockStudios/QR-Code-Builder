@@ -168,6 +168,26 @@ body {
   font-size: 14px;
 }
 
+.instruction-box {
+  margin-top: 10px;
+  padding: 8px;
+  background: #f9f9f9;
+  border: 1px solid #ccc;
+  font-size: 12px;
+  border-radius: var(--radius);
+  color: #444;
+}
+
+.instruction-box ul {
+  padding-left: 18px;
+  margin: 6px 0 0;
+}
+
+.instruction-box li {
+  margin-bottom: 4px;
+  list-style-type: disc;
+}
+
 .spacer { height: 10px; }
 .spacer-lg { height: 20px; }
 </style>
@@ -218,6 +238,17 @@ body {
 
 <aside class="panel garbage">
   <div id="garbageDrop" class="garbage-drop" title="Drop blocks here to delete them">Drop to Trash</div>
+
+  <div class="instruction-box">
+    <strong>Quick Tips:</strong>
+    <ul>
+      <li>Drag blocks from the toolbox into the canvas. Dropzones are shown as green dashed lines.</li>
+      <li>Double-click any block to edit it. "Text" blocks change content; "Tab" and "Return" blocks can be renamed for clarity.</li>
+      <li>Drag blocks into the red trash area to delete them.</li>
+      <li>Use presets to save and reload custom layouts.</li>
+      <li>For best results, disable any automatic input (like Tab or Return) on your QR scanner to avoid extra characters.</li>
+    </ul>
+  </div>
 </aside>
 
 </div>
