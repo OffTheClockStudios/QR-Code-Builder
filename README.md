@@ -8,7 +8,7 @@
 
 ## 🔧 Features
 
-- 🧩 **Drag & Drop Builder** – Visually arrange content blocks like text, tab characters (`\t`), and line breaks (`\r`).
+- 🧩 **Drag & Drop Builder** – Visually arrange content blocks like text, tab characters (`\t`), and line breaks (`\r`), now with color-coded blocks and editable labels.
 - 💾 **Preset Manager** – Save, load, and delete layouts directly in your browser.
 - ✨ **Export Preset Snippets** – Share a formatted code snippet of your layout for submitting or contributing presets.
 - 📊 **Community Polling Ready** – Shareable snippets can be submitted to help decide whether a preset should become a default template.
@@ -18,6 +18,8 @@
 - 🧼 **Clear All** – Quickly reset your workspace.
 - 🎨 **Redesigned Layout** – Left and right side panels with sleek, modular sections for a more intuitive experience.
 - 💡 **Responsive Design** – Optimized for modern desktop browsers (TBD for mobile support).
+- 🖱️ **Helpful Tooltips** – Every button, block, and input comes with clear hover tooltips to guide new users.
+- 🔤 **Symbol-Labeled Special Blocks** – Tab and Return blocks display `⇥` and `⏎` symbols on both sides of their label for clarity.
 
 ---
 
@@ -60,6 +62,14 @@ You can install the app as a Progressive Web App:
 2. Click the browser’s menu (••• or ⋮).
 3. Select **“Install QR Code Builder”** or **“Install this site as an app.”**
 4. Launch it from your desktop like a native app.
+
+---
+
+## 🔄 What’s New
+
+- 🎨 Tab and Return blocks now show custom labels with symbolic icons (`⇥`, `⏎`)
+- 🌈 Toolbox and Canvas blocks are color-coded by type
+- 🖱️ Improved tooltips across the interface for better usability
 
 ---
 
