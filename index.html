@@ -273,6 +273,8 @@ body {
       <li>Drag blocks into the red trash area to delete them.</li>
       <li>Use presets to save and reload custom layouts.</li>
       <li>For best results, disable any automatic input (like Tab or Return) on your QR scanner to avoid extra characters.</li>
+      <div class="spacer"></div>
+      <button onclick="copySelectedPresetAsDefaultSnippet()" title="Copy the selected preset as a code snippet for default preset updates. Paste it into the feedback form linked at the bottom of this page.">Export Preset Snippet</button>
     </ul>
   </div>
 </aside>
@@ -481,6 +483,34 @@ document.getElementById('generateBtn').onclick = () => {
 document.getElementById('clearBtn').onclick = () => {
   if (confirm('Clear all blocks?')) BlockManager.clear();
 };
+
+function copySelectedPresetAsDefaultSnippet() {
+  const name = presetSelect.value;
+  if (!name) {
+    alert("Please select a preset from the dropdown first.");
+    return;
+  }
+
+  const presets = PresetsManager.getPresets();
+  const blocks = presets[name];
+  if (!blocks) {
+    alert("No blocks found for selected preset.");
+    return;
+  }
+
+  const lines = blocks.map(block => 
+    `    { type: "${block.type}", label: ${JSON.stringify(block.label)} }`
+  );
+
+  const formatted = `  "${name}": [\n${lines.join(',\n')}\n  ]`;
+
+  navigator.clipboard.writeText(formatted).then(() => {
+    alert("Preset snippet copied to clipboard!\nPaste it into preloadDefaults().");
+  }).catch(err => {
+    console.error("Clipboard write failed:", err);
+    alert("Failed to copy. Check console for details.");
+  });
+}
 </script>
 
 </html>
