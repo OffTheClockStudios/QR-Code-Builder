@@ -181,31 +181,31 @@ body {
 
 <aside class="panel toolbox">
   <h3>Toolbox</h3>
-  <div class="toolbox-item" draggable="true" data-type="text">Text</div>
-  <div class="toolbox-item" draggable="true" data-type="tab">Tab (\t)</div>
-  <div class="toolbox-item" draggable="true" data-type="return">Return (\r)</div>
+  <div class="toolbox-item" draggable="true" data-type="text" title="Insert a plain text block. After inserted, double-click to rename">Text</div>
+  <div class="toolbox-item" draggable="true" data-type="tab" title="Insert a Tab character block (\t). After inserted, double-click to rename">Tab (\t)</div>
+  <div class="toolbox-item" draggable="true" data-type="return" title="Insert a Return character block (\r). After inserted, double-click to rename">Return (\r)</div>
   <div class="spacer"></div>
 	
   <div class="spacer"></div>
 
   <h3>Presets</h3>
   <div class="side-controls">
-    <select id="presetSelect"></select>
-    <button id="loadPresetBtn">Load</button>
-    <button id="savePresetBtn">Save</button>
-    <button id="deletePresetBtn">Delete</button>
+    <select id="presetSelect" title="Choose a saved preset"></select>
+    <button id="loadPresetBtn" title="Load the selected preset into the canvas">Load</button>
+    <button id="savePresetBtn" title="Save the current build as a preset">Save</button>
+    <button id="deletePresetBtn" title="Delete the currently selected preset">Delete</button>
   </div>
 
   <div class="spacer"></div>
 
   <h3>Controls</h3>
   <div class="side-controls">
-    <div class="checkbox-container">
+    <div class="checkbox-container" title="If enabled, the QR code image will be copied to clipboard after generation">
       <input type="checkbox" id="copyToggle">
       <label for="copyToggle">Copy After Build</label>
     </div>
-    <button id="generateBtn">Build</button>
-    <button id="clearBtn" class="clear">Clear</button>
+    <button id="generateBtn" title="Build and display the QR code">Build</button>
+    <button id="clearBtn" class="clear" title="Clear all blocks from the canvas">Clear</button>
   </div>
 
   <h3>QR Preview</h3>
@@ -216,7 +216,7 @@ body {
 <div class="canvas" id="canvas"></div>
 
 <aside class="panel garbage">
-  <div id="garbageDrop" class="garbage-drop">Drop to Trash</div>
+  <div id="garbageDrop" class="garbage-drop" title="Drop blocks here to delete them">Drop to Trash</div>
 </aside>
 
 </div>
