@@ -2,7 +2,7 @@
 
 **QR Code Builder** is a visual drag-and-drop tool for creating structured QR code content — ideal for ID systems, badges, business cards, passwords, multiple input fields, and other use cases requiring tabs (`\t`) or newlines (`\r`) in the encoded data.
 
-👉 [**Launch the Builder**](https://offtheclockstudios.github.io/QR-Code-Builder/)
+👉 [**Launch the QR Code Builder**](https://offtheclockstudios.github.io/QR-Code-Builder/)
 
 ---
 
