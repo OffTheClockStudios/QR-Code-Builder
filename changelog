@@ -4,6 +4,30 @@ All notable changes to this project will be documented in this file.
 
 ---
 
+## [v1.0.1] – 2025-05-02
+
+🎨 **UI & UX Improvements**
+
+### Enhancements:
+- Refactored sidebar panels into **modular sections**: Toolbox, Presets, Controls, and QR Preview
+- Right-side panel now includes dedicated **Trash** and **Quick Tips** sections
+- Introduced **Export Preset Snippet** button for sharing preset configurations
+- Added buttons to open **GitHub** and **Feedback Form** directly from the interface instead of links
+- New **color palette** and **shadows** for a cleaner, more polished look
+- Improved **button styling** (consistent `btn` class usage)
+- `presetSelect` now uses a larger font for readability
+
+### Under-the-Hood:
+- Consolidated and cleaned up repetitive styles in CSS
+- Defined new color variables: `--color-scarlet`, `--color-blue`, `--color-purple`, `--color-black`, `--color-grey`
+- Layout made more readable and sectioned in HTML for clarity and maintainability
+
+### UX Notes:
+- Exported preset snippets can now be submitted via the [feedback form](https://forms.office.com/r/BQ31NpaecJ)
+  for possible inclusion as **default templates** in future updates
+
+---
+
 ## [v1.0.0] – 2024-04-29
 
 🎉 **Initial Release**
