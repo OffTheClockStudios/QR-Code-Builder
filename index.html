@@ -533,5 +533,20 @@ function copySelectedPresetAsDefaultSnippet() {
   });
 }
 
+function resetAllQRCodeBuilderData() {
+  if (!confirm("This will delete all saved presets and reset the app. Continue?")) return;
+
+  // Clear presets
+  localStorage.removeItem('qrbuilder_presets');
+
+  // Clear canvas
+  BlockManager.clear();
+
+  // Reset dropdown
+  PresetsManager.refreshDropdown();
+  presetSelect.value = '';
+
+  alert("All QR Builder data has been reset.");
+}
 </script>
 </html>
