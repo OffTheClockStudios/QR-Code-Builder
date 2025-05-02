@@ -104,6 +104,16 @@ body {
   box-shadow: 0 1px 3px rgba(0,0,0,0.08);
 }
 
+/* Toolbox-specific coloring */
+.toolbox-item.text { color: #333; }
+.toolbox-item.tab { color: var(--color-blue); }
+.toolbox-item.return { color: var(--color-purple); }
+
+/* Canvas-specific coloring */
+.block.text { color: #333; }
+.block.tab { color: var(--color-blue); }
+.block.return { color: var(--color-purple); }
+
 .btn {
   padding: 10px;
   font-size: 13px;
@@ -152,8 +162,8 @@ select, .btn, .checkbox-container {
   border: 0.5px solid var(--color-black);
   border-radius: var(--radius);
   text-align: center;
-  font-size: 13px;
-  #font-weight: bold;
+  font-size: 20px;
+  font-weight: bold;
   box-shadow: 0 2px 2px rgba(10,10,10,10.08);
   cursor: grab;
   user-select: none;
@@ -225,27 +235,27 @@ select, .btn, .checkbox-container {
   <aside class="panel toolbox">
     <div class="section">
       <h3>Toolbox</h3>
-      <div class="toolbox-item" draggable="true" data-type="text">Text</div>
-      <div class="toolbox-item" draggable="true" data-type="tab">Tab (\t)</div>
-      <div class="toolbox-item" draggable="true" data-type="return">Return (\r)</div>
+      <div class="toolbox-item text" draggable="true" data-type="text" title="Drag & drop to insert a &quot;Text&quot; block. Double-click to edit the text.">Text</div>
+      <div class="toolbox-item tab" draggable="true" data-type="tab" title="Drag & drop to insert a &quot;Tab&quot; block. Double-click to rename it.">⇥</div>
+      <div class="toolbox-item return" draggable="true" data-type="return" title="Drag & drop to insert a &quot;Return&quot; block. Double-click to rename it.">⏎</div>
     </div>
 
     <div class="section">
       <h3>Presets</h3>
-      <select id="presetSelect" style="font-size: 14px;"></select>
-      <button class="btn btn-primary" id="loadPresetBtn">Load</button>
-      <button class="btn btn-primary" id="savePresetBtn">Save</button>
-      <button class="btn btn-danger" id="deletePresetBtn">Delete Preset</button>
+      <select id="presetSelect" style="font-size: 14px;" title="Choose a saved preset."></select>
+      <button class="btn btn-primary" id="loadPresetBtn" title="Load the selected preset into the canvas.">Load</button>
+      <button class="btn btn-primary" id="savePresetBtn" title="Save the current build as a preset.">Save</button>
+      <button class="btn btn-danger" id="deletePresetBtn" title="Delete the selected preset.">Delete Preset</button>
     </div>
 
     <div class="section">
       <h3>Controls</h3>
-      <div class="checkbox-container">
+      <div class="checkbox-container" title="If enabled, the QR code image will be copied to clipboard after generation.">
         <input type="checkbox" id="copyToggle">
         <label for="copyToggle">Copy After Build</label>
       </div>
-      <button class="btn btn-primary" id="generateBtn">Build</button>
-      <button class="btn btn-danger" id="clearBtn">Clear Canvas</button>
+      <button class="btn btn-primary" id="generateBtn" title="Build and display the QR code.">Build</button>
+      <button class="btn btn-danger" id="clearBtn" title="Clear all blocks from the canvas.">Clear Canvas</button>
     </div>
 
     <div class="section">
@@ -261,7 +271,7 @@ select, .btn, .checkbox-container {
   <aside class="panel garbage">
     <div class="section">
       <h3>Trash</h3>
-      <div class="garbage-drop" id="garbageDrop">Drop to Trash</div>
+      <div class="garbage-drop" id="garbageDrop" title="Drop blocks here to delete them.">Drop to Trash</div>
     </div>
 
     <div class="section">
@@ -281,11 +291,13 @@ select, .btn, .checkbox-container {
           <li>Disable auto-tab/return on your scanner for cleaner input.</li>
         </ul>
         <div class="spacer"></div>
-        <button class="btn btn-scarlet" onclick="copySelectedPresetAsDefaultSnippet()">Export Preset Snippet</button>
+        <button class="btn btn-scarlet" onclick="copySelectedPresetAsDefaultSnippet()" title="Copy the code for the selected preset. Paste it into the feedback form to suggest a new default template.">Export Preset Snippet</button>
         <div class="spacer"></div>
-        <button class="btn btn-blue" onclick="window.open('https://github.com/OffTheClockStudios/QR-Code-Builder/tree/main', '_blank')">Visit GitHub Page</button>
+        <button class="btn btn-danger" onclick="resetAllQRCodeBuilderData()" title="This is a full reset of your data. This is mainly for testing on my end.">Full Reset</button>
         <div class="spacer"></div>
-        <button class="btn btn-purple" onclick="window.open('https://forms.office.com/r/BQ31NpaecJ', '_blank')">Submit Feedback</button>
+        <button class="btn btn-blue" onclick="window.open('https://github.com/OffTheClockStudios/QR-Code-Builder/tree/main', '_blank')" title="Visit the GitHub repository for QR Code Builder.">Visit GitHub Page</button>
+        <div class="spacer"></div>
+        <button class="btn btn-purple" onclick="window.open('https://forms.office.com/r/BQ31NpaecJ', '_blank')" title="Opens the form where users can provide feedback and submit default preset requests.">Submit Feedback</button>
       </div>
     </div>
   </aside>
@@ -333,21 +345,42 @@ const BlockManager = {
 const Drag = {
   createBlock(data, idx) {
     const el = document.createElement('div');
-    el.className = 'block';
-    el.textContent = data.type === 'text' ? data.label : `${data.label} (${data.type})`;
+    el.className = `block ${data.type}`;
+
+    const typeSymbols = {
+      tab: '⇥',
+      return: '⏎'
+    };
+
+    const symbol = typeSymbols[data.type];
+
+    if (symbol) {
+      const label = data.label?.trim() || '';
+      el.textContent = `${symbol} ${label}`;
+    } else {
+      el.textContent = data.label;
+    }
+
     el.draggable = true;
-    el.ondragstart = e => e.dataTransfer.setData('index', idx);
+
+    el.ondragstart = e => {
+      e.dataTransfer.setData('index', idx);
+    };
+
     el.ondblclick = () => {
       const newLabel = prompt('Edit:', data.label);
       if (newLabel != null) BlockManager.update(idx, newLabel);
     };
+
     return el;
   },
 
   createDropzone(pos) {
     const dz = document.createElement('div');
     dz.className = 'dropzone';
+
     dz.ondragover = e => e.preventDefault();
+
     dz.ondrop = e => {
       e.preventDefault();
       const from = e.dataTransfer.getData('index');
@@ -357,11 +390,18 @@ const Drag = {
         const blk = BlockManager.blocks.splice(from, 1)[0];
         BlockManager.blocks.splice(pos, 0, blk);
       } else if (type) {
-        const label = type === 'text' ? prompt('Text:', '') || 'Text' : (type === 'tab' ? '\t' : '\r');
+        const label =
+          type === 'text'
+            ? prompt('Text:', '') || 'Text'
+            : type === 'tab'
+            ? '\t'
+            : '\r';
         BlockManager.add(type, label, pos);
       }
+
       BlockManager.rebuild();
     };
+
     return dz;
   }
 };
@@ -512,8 +552,8 @@ function copySelectedPresetAsDefaultSnippet() {
     return;
   }
 
-  const allPresets = PresetsManager.getAllPresets(); // ✅ fixed here
-  const blocks = allPresets[name];                   // ✅ fixed here
+  const allPresets = PresetsManager.getAllPresets();
+  const blocks = allPresets[name];
   if (!blocks) {
     alert("No blocks found for selected preset.");
     return;
