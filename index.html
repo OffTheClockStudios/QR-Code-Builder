@@ -485,6 +485,7 @@ document.getElementById('generateBtn').onclick = () => {
     }
   }
 };
+
 document.getElementById('clearBtn').onclick = () => {
   if (confirm('Clear all blocks?')) BlockManager.clear();
 };
@@ -496,25 +497,26 @@ function copySelectedPresetAsDefaultSnippet() {
     return;
   }
 
-  const presets = PresetsManager.getPresets();
-  const blocks = presets[name];
+  const allPresets = PresetsManager.getAllPresets(); // ✅ fixed here
+  const blocks = allPresets[name];                   // ✅ fixed here
   if (!blocks) {
     alert("No blocks found for selected preset.");
     return;
   }
 
-  const lines = blocks.map(block => 
+  const lines = blocks.map(block =>
     `    { type: "${block.type}", label: ${JSON.stringify(block.label)} }`
   );
 
   const formatted = `  "${name}": [\n${lines.join(',\n')}\n  ]`;
 
   navigator.clipboard.writeText(formatted).then(() => {
-    alert("Preset snippet copied to clipboard!\nPaste it into preloadDefaults().");
+    alert("Preset snippet copied to clipboard!\nPaste it into the feedback survey for review.");
   }).catch(err => {
     console.error("Clipboard write failed:", err);
     alert("Failed to copy. Check console for details.");
   });
 }
+
 </script>
 </html>
