@@ -6,12 +6,17 @@
 <style>
 :root {
   --color-bg: #f7f9fc;
-  --color-canvas: #f0f4f8;
+  --color-canvas: #dedede;
   --color-panel: #ffffff;
   --color-primary: #4caf50;
   --color-danger: #ff4c4c;
+  --color-scarlet: #e63946 ;
+  --color-blue: #4a90e2;
+  --color-purple: #a569bd;
+  --color-black: #000000;
+  --color-grey: #5d5d5d;
   --radius: 6px;
-  --side-w: 220px;
+  --side-w: 275px;
   --font: 'Roboto', sans-serif;
   --header-height: 60px;
 }
@@ -29,14 +34,14 @@ body {
 .page-header {
   height: var(--header-height);
   background: var(--color-panel);
-  border: 1px solid #ccc;
+  border-bottom: 1px solid #ccc;
   padding: 10px;
   display: flex;
   align-items: center;
   justify-content: center;
   font-size: 24px;
   font-weight: bold;
-  box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+  box-shadow: 0 2px 5px rgba(0,0,0,0.05);
   flex-shrink: 0;
 }
 
@@ -49,25 +54,36 @@ body {
 .panel {
   width: var(--side-w);
   background: var(--color-panel);
-  border: 1px solid #ddd;
-  padding: 8px;
+  padding: 10px;
   box-sizing: border-box;
   display: flex;
   flex-direction: column;
+  gap: 12px;
+  overflow-y: auto;
+}
+.toolbox { border-right: 1px solid #ddd; }
+.garbage { border-left: 1px solid #ddd; }
+
+.section {
+  background: #f6f9fc;
+  padding: 10px;
+  border-radius: var(--radius);
+  box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
 }
 
-.toolbox { border-right: none; }
-.garbage { border-left: none; }
-
-.panel h3 {
+.section h3 {
+  font-size: 15px;
+  margin: 0 0 8px;
+  padding-bottom: 4px;
+  border-bottom: 1px solid #ddd;
   text-align: center;
-  margin: 10px 0;
-  font-size: 16px;
 }
 
 .toolbox-item {
   background: #eef2f7;
-  margin-bottom: 8px;
   padding: 8px;
   border-radius: var(--radius);
   border: 1px solid #ccc;
@@ -75,33 +91,80 @@ body {
   cursor: grab;
   user-select: none;
   font-size: 13px;
-  box-shadow: 0 1px 4px rgba(0,0,0,0.1);
+  box-shadow: 0 1px 3px rgba(0,0,0,0.08);
 }
 
-.qr-preview-wrapper {
-  margin-top: 10px;
-  padding: 8px;
-  background: var(--color-panel);
-  border: 1px solid #ddd;
+.btn {
+  padding: 10px;
+  font-size: 13px;
+  border: none;
   border-radius: var(--radius);
+  cursor: pointer;
+  transition: background 0.2s;
+  color: #fff;
+}
+.btn-primary { background: var(--color-primary); }
+.btn-primary:hover { background: #45a049; }
+.btn-danger { background: var(--color-danger); }
+.btn-danger:hover { background: #e03e3e; }
+.btn-scarlet { background: var(--color-scarlet); }
+.btn-blue { background: var(--color-blue); }
+.btn-purple { background: var(--color-purple); }
+
+select, .btn, .checkbox-container {
+  width: 100%;
+}
+
+.checkbox-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 8px;
+}
+
+.canvas {
+  flex: 1;
+  background: var(--color-canvas);
+  overflow-y: auto;
+  padding: 10px;
   display: flex;
   flex-direction: column;
   align-items: center;
+  gap: 8px;
+  border-left: 1px solid #ddd;
+  border-right: 1px solid #ddd;
 }
-.qr-preview-wrapper h3 {
-  margin: 0 0 8px;
-  font-size: 16px;
+
+.block {
+  width: 90%;
+  background: var(--color-panel);
+  padding: 10px;
+  border: 0.5px solid var(--color-black);
+  border-radius: var(--radius);
+  text-align: center;
+  font-size: 13px;
+  #font-weight: bold;
+  box-shadow: 0 2px 2px rgba(10,10,10,10.08);
+  cursor: grab;
+  user-select: none;
+}
+
+.dropzone {
+  width: 90%;
+  height: 8px;
+  min-height: 8px;
+  border: 1px dashed var(--color-black);
+  border-radius: 50px;
 }
 
 .qr-preview {
   background: var(--color-panel);
   border: 1px solid #ddd;
   border-radius: var(--radius);
-  padding: 5px;
-  margin-top: 3px;
+  padding: 8px;
   display: flex;
-  align-items: center;
   justify-content: center;
+  align-items: center;
 }
 
 .qr-preview canvas {
@@ -109,79 +172,8 @@ body {
   height: 80px;
 }
 
-.side-controls {
-  margin: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 5px;
-  border: 1px solid #ccc;
-}
-
-.side-controls select, .side-controls button, .checkbox-container {
-  width: 100%;
-}
-
-.checkbox-container {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 10px;
-}
-
-.side-controls button {
-  padding: 12px;
-  border: none;
-  border-radius: var(--radius);
-  cursor: pointer;
-  font-size: 13px;
-  background: var(--color-primary);
-  color: white;
-  transition: background 0.2s;
-}
-
-.side-controls button:hover { background: #45a049; }
-.side-controls button.clear { background: var(--color-danger); }
-.side-controls button.clear:hover { background: #e03e3e; }
-
-.side-controls button.danger { background: var(--color-danger); }
-.side-controls button.danger:hover { background: #e03e3e; }
-
-.canvas {
-  flex: 1;
-  background: var(--color-canvas);
-  overflow-y: auto;
-  padding: 5px;
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  align-items: center;
-  border: 1px solid #ddd;
-}
-
-.block {
-  width: 90%;
-  background: var(--color-panel);
-  padding: 10px;
-  border: 2px solid #ddd;
-  border-radius: var(--radius);
-  text-align: center;
-  box-shadow: 0 2px 6px rgba(0,0,0,0.1);
-  cursor: grab;
-  user-select: none;
-  font-size: 13px;
-}
-
-.dropzone {
-  width: 90%;
-  height: 16px;
-  border: 2px dashed var(--color-primary);
-  border-radius: 4px;
-  background: #e8f5e9;
-}
-
 .garbage-drop {
   height: 100px;
-  margin-top: 10px;
   border: 2px dashed var(--color-danger);
   border-radius: var(--radius);
   background: #ffecec;
@@ -194,103 +186,95 @@ body {
 }
 
 .instruction-box {
-  margin-top: 10px;
-  padding: 8px;
-  background: #f9f9f9;
-  border: 1px solid #ccc;
   font-size: 12px;
-  border-radius: var(--radius);
   color: #444;
+  line-height: 1.4;
 }
-
 .instruction-box ul {
   padding-left: 18px;
   margin: 6px 0 0;
 }
-
 .instruction-box li {
   margin-bottom: 4px;
-  list-style-type: disc;
+  list-style: disc;
 }
 
 .spacer { height: 10px; }
-.spacer-lg { height: 20px; }
+
 </style>
 </head>
 <body>
-<header class="page-header">
-  QR Code Builder
-</header>
-
+<header class="page-header">QR Code Builder</header>
 <div class="layout">
-
-<aside class="panel toolbox">
-  <h3>Toolbox</h3>
-  <div class="toolbox-item" draggable="true" data-type="text" title="Insert a plain text block. After inserted, double-click to rename">Text</div>
-  <div class="toolbox-item" draggable="true" data-type="tab" title="Insert a Tab character block (\t). After inserted, double-click to rename">Tab (\t)</div>
-  <div class="toolbox-item" draggable="true" data-type="return" title="Insert a Return character block (\r). After inserted, double-click to rename">Return (\r)</div>
-  <div class="spacer"></div>
-	
-  <div class="spacer"></div>
-
-  <div class="side-controls">
-    <h3>Presets</h3>
-    <select id="presetSelect" title="Choose a saved preset"></select>
-    <button id="loadPresetBtn" title="Load the selected preset into the canvas">Load</button>
-    <button id="savePresetBtn" title="Save the current build as a preset">Save</button>
-    <button id="deletePresetBtn" class="danger" title="Delete the currently selected preset">Delete Preset</button>
-  </div>
-
-  <div class="spacer"></div>
-
-  <div class="side-controls">
-    <h3>Controls</h3>
-    <div class="checkbox-container" title="If enabled, the QR code image will be copied to clipboard after generation">
-      <input type="checkbox" id="copyToggle">
-      <label for="copyToggle">Copy After Build</label>
+  <!-- Left Sidebar -->
+  <aside class="panel toolbox">
+    <div class="section">
+      <h3>Toolbox</h3>
+      <div class="toolbox-item" draggable="true" data-type="text">Text</div>
+      <div class="toolbox-item" draggable="true" data-type="tab">Tab (\t)</div>
+      <div class="toolbox-item" draggable="true" data-type="return">Return (\r)</div>
     </div>
-    <button id="generateBtn" title="Build and display the QR code">Build</button>
-    <button id="clearBtn" class="clear" title="Clear all blocks from the canvas">Clear Canvas</button>
-    <div class="spacer"></div>
-  </div>
 
-<div class="qr-preview-wrapper">
-  <h3>QR Preview</h3>
-  <div class="qr-preview" id="qrPreview"></div>
+    <div class="section">
+      <h3>Presets</h3>
+      <select id="presetSelect" style="font-size: 14px;"></select>
+      <button class="btn btn-primary" id="loadPresetBtn">Load</button>
+      <button class="btn btn-primary" id="savePresetBtn">Save</button>
+      <button class="btn btn-danger" id="deletePresetBtn">Delete Preset</button>
+    </div>
+
+    <div class="section">
+      <h3>Controls</h3>
+      <div class="checkbox-container">
+        <input type="checkbox" id="copyToggle">
+        <label for="copyToggle">Copy After Build</label>
+      </div>
+      <button class="btn btn-primary" id="generateBtn">Build</button>
+      <button class="btn btn-danger" id="clearBtn">Clear Canvas</button>
+    </div>
+
+    <div class="section">
+      <h3>QR Preview</h3>
+      <div class="qr-preview" id="qrPreview"></div>
+    </div>
+  </aside>
+
+  <!-- Canvas Area -->
+  <div class="canvas" id="canvas"></div>
+
+  <!-- Right Sidebar -->
+  <aside class="panel garbage">
+    <div class="section">
+      <h3>Trash</h3>
+      <div class="garbage-drop" id="garbageDrop">Drop to Trash</div>
+    </div>
+
+    <div class="section">
+      <h3>Quick Tips</h3>
+      <div class="instruction-box">
+        <ul>
+          <li>Drag blocks into the canvas. Dropzones show up as green dashed lines.</li>
+          <div class="spacer"></div>
+          <li>Double-click a block to rename.</li>
+          <div class="spacer"></div>
+          <li>Drag blocks to the trash to delete.</li>
+          <div class="spacer"></div>
+          <li>Use presets to reuse common layouts.</li>
+          <div class="spacer"></div>
+          <li>⭐ indicates a default preset. Save a copy if you plan to modify it.</li>
+          <div class="spacer"></div>
+          <li>Disable auto-tab/return on your scanner for cleaner input.</li>
+        </ul>
+        <div class="spacer"></div>
+        <button class="btn btn-scarlet" onclick="copySelectedPresetAsDefaultSnippet()">Export Preset Snippet</button>
+        <div class="spacer"></div>
+        <button class="btn btn-blue" onclick="window.open('https://github.com/OffTheClockStudios/QR-Code-Builder/tree/main', '_blank')">Visit GitHub Page</button>
+        <div class="spacer"></div>
+        <button class="btn btn-purple" onclick="window.open('https://forms.office.com/r/BQ31NpaecJ', '_blank')">Submit Feedback</button>
+      </div>
+    </div>
+  </aside>
 </div>
-</aside>
-
-<div class="canvas" id="canvas"></div>
-
-<aside class="panel garbage">
-  <div id="garbageDrop" class="garbage-drop" title="Drop blocks here to delete them">Drop to Trash</div>
-
-  <div class="instruction-box">
-    <strong>Quick Tips:</strong>
-    <ul>
-      <li>Drag blocks from the toolbox into the canvas. Dropzones are shown as green dashed lines.</li>
-      <li>Double-click any block to edit it. "Text" blocks change content; "Tab" and "Return" blocks can be renamed for clarity.</li>
-      <li>Drag blocks into the red trash area to delete them.</li>
-      <li>Use presets to save and reload custom layouts.</li>
-      <li>For best results, disable any automatic input (like Tab or Return) on your QR scanner to avoid extra characters.</li>
-      <div class="spacer"></div>
-      <button onclick="copySelectedPresetAsDefaultSnippet()" title="Copy the selected preset as a code snippet for default preset updates. Paste it into the feedback form linked at the bottom of this page.">Export Preset Snippet</button>
-    </ul>
-  </div>
-</aside>
-
-</div>
-
-<footer style="margin-top:5px; text-align:center; font-size:7px; color:#888;">
-  <a href="https://forms.office.com/r/BQ31NpaecJ" 
-	 target="_blank" 
-	 style="display: inline-block; background-color: #4CAF50; color: white; padding: 10px 22px; border-radius: 6px; text-decoration: none; font-size: 14px; font-weight: bold; margin-top: 8px;">
-	Submit Feedback
-  </a>
-  <br><br>
-  <p>For code and updates, visit: <a href="https://github.com/OffTheClockStudios/QR-Code-Builder/tree/main" target="_blank" style="color:#4CAF50;">GitHub Page</a></p>
-</footer>
-
 </body>
 <script src="qrcode.min.js"></script>
 <script>
@@ -384,21 +368,47 @@ garbageDrop.ondrop = e => {
 const PresetsManager = {
   key: 'qrbuilder_presets',
 
-  getPresets() {
+  defaultPresets: {
+    "Example 01": [
+      { type: "text", label: "Hello" },
+      { type: "tab", label: "\t" },
+      { type: "text", label: "World" },
+      { type: "return", label: "\r" },
+      { type: "text", label: "Goodbye" }
+    ],
+    "Scrap Template": [
+      { type: "text", label: "Part Number" },
+      { type: "return", label: "\r" },
+      { type: "return", label: "\r" },
+      { type: "text", label: "1" },
+      { type: "return", label: "\r" },
+      { type: "tab", label: "\t" },
+      { type: "return", label: "\r" },
+      { type: "return", label: "\r" },
+      { type: "text", label: "Defect Type" },
+      { type: "tab", label: "\t" }
+    ]
+  },
+
+  getUserPresets() {
     return JSON.parse(localStorage.getItem(this.key) || '{}');
   },
 
-  savePresets(presets) {
+  saveUserPresets(presets) {
     localStorage.setItem(this.key, JSON.stringify(presets));
   },
 
+  getAllPresets() {
+    return { ...this.defaultPresets, ...this.getUserPresets() };
+  },
+
   refreshDropdown() {
-    const presets = this.getPresets();
+    const allPresets = this.getAllPresets();
     presetSelect.innerHTML = '<option value="">Select a Preset</option>';
-    for (const name in presets) {
+    for (const name in allPresets) {
       const opt = document.createElement('option');
       opt.value = name;
-      opt.textContent = name;
+      opt.textContent = this.defaultPresets[name] ? `⭐ ${name}` : name;
       presetSelect.append(opt);
     }
   },
@@ -406,19 +416,19 @@ const PresetsManager = {
   saveCurrent() {
     const name = prompt('Name this preset:');
     if (!name) return;
-    const presets = this.getPresets();
+    const presets = this.getUserPresets();
     presets[name] = JSON.parse(JSON.stringify(BlockManager.blocks));
-    this.savePresets(presets);
+    this.saveUserPresets(presets);
     this.refreshDropdown();
-    presetSelect.value = name; // Automatically select the new preset
+    presetSelect.value = name;
   },
 
   loadSelected() {
     const name = presetSelect.value;
     if (!name) return;
-    const presets = this.getPresets();
-    if (presets[name]) {
-      BlockManager.blocks = JSON.parse(JSON.stringify(presets[name]));
+    const allPresets = this.getAllPresets();
+    if (allPresets[name]) {
+      BlockManager.blocks = JSON.parse(JSON.stringify(allPresets[name]));
       BlockManager.rebuild();
     }
   },
@@ -426,29 +436,24 @@ const PresetsManager = {
   deleteSelected() {
     const name = presetSelect.value;
     if (!name) return alert('Select a preset to delete.');
+    if (this.defaultPresets[name]) {
+      return alert('Cannot delete default preset.');
+    }
     if (!confirm(`Delete preset "${name}"?`)) return;
-    const presets = this.getPresets();
+    const presets = this.getUserPresets();
     delete presets[name];
-    this.savePresets(presets);
+    this.saveUserPresets(presets);
     this.refreshDropdown();
     presetSelect.value = '';
   },
 
   preloadDefaults() {
-    if (!localStorage.getItem(this.key)) {
-      this.savePresets({
-        "Example 01": [
-          { type: "text", label: "Hello" },
-          { type: "tab", label: "\t" },
-          { type: "text", label: "World" },
-          { type: "return", label: "\r" },
-          { type: "text", label: "Goodbye" }
-        ]
-      });
-    }
+    // Only refresh the dropdown; defaults are already defined
     this.refreshDropdown();
   }
 };
+
+
 
 // Initialization
 PresetsManager.preloadDefaults();
@@ -512,5 +517,4 @@ function copySelectedPresetAsDefaultSnippet() {
   });
 }
 </script>
-
 </html>
