@@ -4,6 +4,31 @@ All notable changes to this project will be documented in this file.
 
 ---
 
+## [v1.0.3] – 2025-05-03
+
+### Enhancements:
+- Added support for **Advanced Mode**, allowing each block to repeat a specified number of times
+- Implemented **Load Preset Snippet** modal for pasting and importing JSON-formatted presets
+- Exported preset snippets are now generated as valid, formatted JSON blocks for easier reuse
+- Improved text scaling for the optional QR code label to prevent overflow on smaller canvas sizes
+- Added visual formatting improvements to label rendering under the QR image
+- Automatically loads a newly pasted preset after importing via snippet modal
+- Enhanced styling and spacing consistency in the right sidebar instruction box
+
+### UI & UX Adjustments:
+- Refined alignment and padding in input fields and controls
+- Improved font sizing and spacing in toolbox and canvas blocks
+- Label input field now uses centralized styling and consistent font sizing
+- Increased default canvas width slightly for better layout balance
+
+### Under-the-Hood:
+- Cleaned up logic for preset parsing and backward compatibility with legacy formats
+- Updated canvas rendering logic to dynamically scale text if label is wider than the QR area
+- Internal data structure for saved presets now ensures `iterations` values are preserved
+- Consolidated rendering logic for blocks to reduce duplication and support dynamic features
+
+---
+
 ## \[v1.0.2] – 2025-05-03
 
 ### New Features
