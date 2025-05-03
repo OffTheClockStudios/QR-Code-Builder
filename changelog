@@ -4,52 +4,91 @@ All notable changes to this project will be documented in this file.
 
 ---
 
-## [v1.0.1] – 2025-05-02
+## \[v1.0.2] – 2025-05-03
 
-🎨 **UI & UX Improvements**
+### New Features
 
-### Enhancements:
-- Refactored sidebar panels into **modular sections**: Toolbox, Presets, Controls, and QR Preview
-- Right-side panel now includes dedicated **Trash** and **Quick Tips** sections
-- Introduced **Export Preset Snippet** button for sharing preset configurations
-- Added buttons to open **GitHub** and **Feedback Form** directly from the interface instead of links
-- New **color palette** and **shadows** for a cleaner, more polished look
-- Improved **button styling** (consistent `btn` class usage)
-- Improved **button styling** (color coded tab/return buttons in toolbox and canvas)
-- Added tooltips (these were lost during testing)
-- `presetSelect` now uses a larger font for readability
-- Added version to the header
+* Advanced Mode toggle: Enables block-level `iterations` (e.g., repeat a Tab 5× for 5 tab inputs)
+* QR Label Input: Users can now add a custom label beneath the QR code
+* Preset labels: Presets now store and restore the associated QR label
+* Visual iteration tags: Blocks display `×N` when repeated in Advanced Mode
 
-### Under-the-Hood:
-- Consolidated and cleaned up repetitive styles in CSS
-- Defined new color variables: `--color-scarlet`, `--color-blue`, `--color-purple`, `--color-black`, `--color-grey`
-- Layout made more readable and sectioned in HTML for clarity and maintainability
+### Preset Format Update
 
-### UX Notes:
-- Exported preset snippets can now be submitted via the [feedback form](https://forms.office.com/r/BQ31NpaecJ)
-  for possible inclusion as **default templates** in future updates
+* Presets are now stored as an object with a `label` and `blocks`, enabling richer metadata
+
+  ```js
+  {
+    label: "My Label",
+    blocks: [{ type: "text", label: "Example", iterations: 1 }]
+  }
+  ```
+* Backward compatibility: Legacy array-based presets are automatically wrapped and converted
+
+### UI Improvements
+
+* QR preview now uses a custom canvas to render both the code and its label in one image
+* Copy-to-clipboard now includes this labeled composite image
+* Minor UI polish: smaller spacing tweaks, consistent hover effects, and enhanced block visuals
+* Color palette adjusted for visual harmony and accessibility (color blindness awareness)
+
+### Improvements and Fixes
+
+* `copySelectedPresetAsDefaultSnippet()` now reflects new preset structure (with label and iterations)
+* Tooltip and layout alignment adjustments
+* Code cleanup and improved consistency in `BlockManager`, `Drag`, and `PresetsManager`
 
 ---
 
-## [v1.0.0] – 2024-04-29
+## \[v1.0.1] – 2025-05-02
 
-🎉 **Initial Release**
+### UI and UX Improvements
 
-### Features:
-- Drag-and-drop **block canvas** to structure QR data visually
-- Support for:
-  - Text
-  - Tabs (`\t`)
-  - Returns (`\r`)
-- **Live QR preview**
-- **Preset manager**: save/load/delete layouts to/from browser storage
-- Option to **copy QR image** directly to clipboard (as PNG)
-- **Trash dropzone** for deleting blocks
-- Responsive layout optimized for desktop
+* Refactored sidebar panels into modular sections: Toolbox, Presets, Controls, and QR Preview
+* Right-side panel now includes dedicated Trash and Quick Tips sections
+* Introduced Export Preset Snippet button for sharing preset configurations
+* Added buttons to open GitHub and Feedback Form directly from the interface
+* New color palette and shadows for a cleaner, more polished look
+* Improved button styling (consistent `btn` class usage)
+* Color-coded tab and return blocks in both toolbox and canvas
+* Reintroduced tooltips that were lost during testing
+* Enlarged `presetSelect` font for better readability
+* Added version number display in header
 
-### Known Limitations:
-- ⚠️ **Touch input (mobile) support is limited** – drag-and-drop and editing require desktop use
-- ⚠️ Clipboard image copy may not work in non-HTTPS environments or unsupported browsers
-- 📱 Mobile usability improvements and long-press support planned in future updates
+### Code Improvements
+
+* Consolidated and cleaned up repetitive CSS styles
+* Defined new CSS variables: `--color-scarlet`, `--color-blue`, `--color-purple`, `--color-black`, `--color-grey`
+* Reorganized HTML layout for improved readability and maintainability
+
+### User Experience Notes
+
+* Exported preset snippets can be submitted via the [feedback form](https://forms.office.com/r/BQ31NpaecJ) for potential inclusion as default templates in future updates
+
+---
+
+## \[v1.0.0] – 2024-04-29
+
+### Initial Release
+
+#### Features
+
+* Drag-and-drop block canvas for visually structuring QR data
+* Block types supported:
+
+  * Text
+  * Tabs (`\t`)
+  * Returns (`\r`)
+* Live QR code preview
+* Preset manager: save, load, and delete layouts using browser storage
+* Option to copy QR code as PNG to clipboard
+* Trash dropzone for deleting blocks
+* Desktop-optimized responsive layout
+
+#### Known Limitations
+
+* Touch input (mobile) support is limited; desktop interaction is required for full functionality
+* Clipboard image copy may not function on non-HTTPS sites or unsupported browsers
+* Mobile usability enhancements and long-press interaction support are planned for future versions
 
 ---
