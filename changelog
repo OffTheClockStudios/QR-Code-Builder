@@ -20,6 +20,7 @@ All notable changes to this project will be documented in this file.
 - Improved font sizing and spacing in toolbox and canvas blocks
 - Label input field now uses centralized styling and consistent font sizing
 - Increased default canvas width slightly for better layout balance
+- Moved snippet UI into a check for advanced mode, using advanced mode as debug/experimental
 
 ### Under-the-Hood:
 - Cleaned up logic for preset parsing and backward compatibility with legacy formats
