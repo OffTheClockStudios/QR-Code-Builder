@@ -25,7 +25,7 @@ All notable changes to this project will be documented in this file.
   ```
 * Backward compatibility: Legacy array-based presets are automatically wrapped and converted
 
-### UI Improvements
+### UI and UX Improvements
 
 * QR preview now uses a custom canvas to render both the code and its label in one image
 * Copy-to-clipboard now includes this labeled composite image
@@ -75,7 +75,6 @@ All notable changes to this project will be documented in this file.
 
 * Drag-and-drop block canvas for visually structuring QR data
 * Block types supported:
-
   * Text
   * Tabs (`\t`)
   * Returns (`\r`)
