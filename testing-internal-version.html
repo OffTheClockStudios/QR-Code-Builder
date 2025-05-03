@@ -6,17 +6,16 @@
 <style>
 :root {
   --color-bg: #f7f9fc;
-  --color-canvas: #dedede;
+  --color-canvas: #e9ecef;
   --color-panel: #ffffff;
-  --color-sections: #f6f9fc;
-  --color-quicktips: #f6f9fc;
-  --color-primary: #4caf50;
-  --color-danger: #ff4c4c;
-  --color-scarlet: #e63946 ;
-  --color-blue: #4a90e2;
-  --color-purple: #a569bd;
-  --color-black: #000000;
-  --color-grey: #5d5d5d;
+  --color-sections: #f0f2f5;
+  --color-primary: #2e7d32;
+  --color-danger: #c62828;
+  --color-scarlet: #eb5959;
+  --color-blue: #1976d2;
+  --color-purple: #6a1b9a;
+  --color-black: #212121;
+  --color-grey: #616161;
   --radius: 6px;
   --side-w: 275px;
   --font: 'Roboto', sans-serif;
@@ -103,6 +102,7 @@ body {
   cursor: grab;
   user-select: none;
   font-size: 13px;
+  font-weight: bold;
   box-shadow: 0 1px 3px rgba(0,0,0,0.08);
 }
 
@@ -119,6 +119,7 @@ body {
 .btn {
   padding: 10px;
   font-size: 13px;
+  font-weight: bold;
   border: none;
   border-radius: var(--radius);
   cursor: pointer;
@@ -141,6 +142,7 @@ select, .btn, .checkbox-container {
   display: flex;
   justify-content: center;
   align-items: center;
+  font-weight: bold;
   gap: 8px;
 }
 
@@ -215,6 +217,7 @@ select, .btn, .checkbox-container {
 
 .instruction-box {
   font-size: 12px;
+  font-weight: bold;
   color: #444;
   line-height: 1.4;
 }
@@ -315,31 +318,21 @@ select, .btn, .checkbox-container {
           <li>⭐ indicates a default preset. Save a copy if you plan to modify it.</li>
           <div class="spacer"></div>
           <li>Disable auto-tab/return on your scanner for cleaner input.</li>
+          <div class="spacer"></div>
+          <li><strong>Advanced Mode</strong> enables iterations. Example: Insert a Tab block and set it to repeat <code>20</code> times for 20 tab inputs.</li>
         </ul>
         <div class="spacer"></div>
-        <button class="btn btn-scarlet" onclick="copySelectedPresetAsDefaultSnippet()" title="Copy the code for the selected preset. Paste it into the feedback form to suggest a new default template.">Export Preset Snippet</button>
+		<div class="spacer"></div>
+		<div class="spacer"></div>
+        <button class="btn btn-scarlet" onclick="copySelectedPresetAsDefaultSnippet()" title="Copy the code for the selected preset. Paste it into the feedback form to suggest a new default template.">Copy Preset Snippet</button>
         <div class="spacer"></div>
-        <button class="btn btn-danger" onclick="resetAllQRCodeBuilderData()" title="This is a full reset of your data. This is mainly for testing on my end.">Full Reset</button>
+        <button class="btn btn-danger" onclick="resetAllQRCodeBuilderData()" title="This is a full reset of stored data. This is mainly for testing on my end.">Full Reset</button>
         <div class="spacer"></div>
         <button class="btn btn-blue" onclick="window.open('https://github.com/OffTheClockStudios/QR-Code-Builder/tree/main', '_blank')" title="Visit the GitHub repository for QR Code Builder.">Visit GitHub Page</button>
         <div class="spacer"></div>
         <button class="btn btn-purple" onclick="window.open('https://forms.office.com/r/BQ31NpaecJ', '_blank')" title="Opens the form where users can provide feedback and submit default preset requests.">Submit Feedback</button>
 		
 		<div class="spacer"></div>
-		
-		<button class="btn btn-blue" onclick="toggleColorPanel()">🎨 Customize Theme</button>
-
-		<div id="colorPanel" class="section" style="display: none; margin-top: 10px;">
-		  <h3>Theme Colors</h3>
-		  <label>Background <input type="color" id="colorBackground" value="#ffffff"></label>
-		  <label>Canvas <input type="color" id="colorCanvas" value="#dedede"></label>
-		  <label>Main Sections <input type="color" id="colorMainSections" value="#ffffff"></label>
-		  <label>Tips Section <input type="color" id="colorQuicktipsSection" value="#ffffff"></label>
-		  <label>Basic Buttons <input type="color" id="colorPrimaryBtn" value="#4caf50"></label>
-		  <label>Danger Buttons <input type="color" id="colorDangerBtn" value="#ff4c4c"></label>
-		  <div class="spacer"></div>
-		  <button class="btn btn-primary" onclick="applyCustomColors()">Apply</button>
-		</div>
       </div>
     </div>
   </aside>
@@ -680,7 +673,6 @@ document.getElementById('generateBtn').onclick = () => {
   }, 100);
 };
 
-
 document.getElementById('clearBtn').onclick = () => {
   if (confirm('Clear all blocks?')) BlockManager.clear();
 };
@@ -693,17 +685,20 @@ function copySelectedPresetAsDefaultSnippet() {
   }
 
   const allPresets = PresetsManager.getAllPresets();
-  const blocks = allPresets[name];
-  if (!blocks) {
-    alert("No blocks found for selected preset.");
+  const preset = allPresets[name];
+  if (!preset || !Array.isArray(preset.blocks)) {
+    alert("No valid blocks found for selected preset.");
     return;
   }
 
-  const lines = blocks.map(block =>
-    `    { type: "${block.type}", label: ${JSON.stringify(block.label)} }`
+  const lines = preset.blocks.map(block =>
+    `      { type: "${block.type}", label: ${JSON.stringify(block.label)}, iterations: ${block.iterations || 1} }`
   );
 
-  const formatted = `  "${name}": [\n${lines.join(',\n')}\n  ]`;
+  const formatted = `  "${name}": {\n` +
+                    `    label: ${JSON.stringify(preset.label || '')},\n` +
+                    `    blocks: [\n${lines.join(',\n')}\n    ]\n` +
+                    `  }`;
 
   navigator.clipboard.writeText(formatted).then(() => {
     alert("Preset snippet copied to clipboard!\nPaste it into the feedback survey for review.");
@@ -727,20 +722,6 @@ function resetAllQRCodeBuilderData() {
   presetSelect.value = '';
 
   alert("All QR Builder data has been reset.");
-}
-
-function toggleColorPanel() {
-  const panel = document.getElementById('colorPanel');
-  panel.style.display = panel.style.display === 'none' ? 'block' : 'none';
-}
-
-function applyCustomColors() {
-  const root = document.documentElement.style;
-  root.setProperty('--color-canvas', document.getElementById('colorCanvas').value);
-  root.setProperty('--color-panel', document.getElementById('colorPanelColor').value);
-  root.setProperty('--color-sections', document.getElementById('colorSectionsColor').value);
-  root.setProperty('--color-primary', document.getElementById('colorPrimary').value);
-  root.setProperty('--color-danger', document.getElementById('colorDanger').value);
 }
 
 </script>
