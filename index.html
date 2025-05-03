@@ -11,13 +11,26 @@
   --color-sections: #f0f2f5;
   --color-primary: #2e7d32;
   --color-danger: #c62828;
-  --color-scarlet: #eb5959;
-  --color-blue: #1976d2;
-  --color-purple: #6a1b9a;
+  --color-primary-hover: #2e7d00;
+  --color-danger-hover: #c62800;
+  --color-debug-btn: #fcb270;
+  --color-debug-text: #212121;
+  --color-copy-snippet-btn: #eb5959;
+  --color-tab-symbol: #1976d2;
+  --color-return-symbol: #6a1b9a;
+  --color-version-text: #616161;
+  --color-toolbox-item: #eef2f7;
+  --color-border-black: #736b6b;
+  --color-internal-text-btn: #fff;
+  --color-border-light: #ccc;
   --color-black: #212121;
   --color-grey: #616161;
+  --color-block-text: #212121;
+  --color-instruction-text: #212121;
+  --color-garbage-background: #ffecec;
+  --shadow-soft: 0 1px 3px rgba(0, 0, 0, 0.58);
   --radius: 6px;
-  --side-w: 275px;
+  --side-w: 300px;
   --font: 'Roboto', sans-serif;
   --header-height: 60px;
 }
@@ -35,8 +48,8 @@ body {
 .page-header {
   height: auto;
   background: var(--color-panel);
-  border-bottom: 1px solid #ccc;
-  padding: 10px;
+  border-bottom: 1px solid var(--color-border-light);
+  padding: 5px;
   display: flex;
   flex-direction: column; /* stack title + version vertically */
   align-items: center;
@@ -52,7 +65,7 @@ body {
 
 .page-header .version {
   font-size: 12px;
-  color: #666;
+  color: var(--color-version-text);
   margin-top: 4px;
 }
 
@@ -66,20 +79,22 @@ body {
   width: var(--side-w);
   background: var(--color-panel);
   padding: 10px;
+  box-shadow: var(--shadow-soft);
   box-sizing: border-box;
   display: flex;
   flex-direction: column;
   gap: 12px;
   overflow-y: auto;
 }
-.toolbox { border-right: 1px solid #ddd; }
-.garbage { border-left: 1px solid #ddd; }
+
+.toolbox { border-right: 1px solid var(--color-border-black); }
+.garbage { border-left: 1px solid var(--color-border-black); }
 
 .section {
   background: var(--color-sections);
   padding: 10px;
   border-radius: var(--radius);
-  box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+  box-shadow: var(--shadow-soft);
   display: flex;
   flex-direction: column;
   gap: 4px;
@@ -94,27 +109,27 @@ body {
 }
 
 .toolbox-item {
-  background: #eef2f7;
+  background: var(--color-toolbox-item);
   padding: 8px;
   border-radius: var(--radius);
-  border: 1px solid #ccc;
+  border: 1px solid var(--color-border-black);
   text-align: center;
   cursor: grab;
   user-select: none;
-  font-size: 13px;
+  font-size: 18px;
   font-weight: bold;
-  box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+  box-shadow: 0 1px 3px rgba(0,0,0,0.58);
 }
 
 /* Toolbox-specific coloring */
-.toolbox-item.text { color: #333; }
-.toolbox-item.tab { color: var(--color-blue); }
-.toolbox-item.return { color: var(--color-purple); }
+.toolbox-item.text { color: var(--color-block-text); }
+.toolbox-item.tab { color: var(--color-tab-symbol); }
+.toolbox-item.return { color: var(--color-return-symbol); }
 
 /* Canvas-specific coloring */
-.block.text { color: #333; }
-.block.tab { color: var(--color-blue); }
-.block.return { color: var(--color-purple); }
+.block.text { color: var(--color-block-text); }
+.block.tab { color: var(--color-tab-symbol); }
+.block.return { color: var(--color-return-symbol); }
 
 .btn {
   padding: 10px;
@@ -124,15 +139,17 @@ body {
   border-radius: var(--radius);
   cursor: pointer;
   transition: background 0.2s;
-  color: #fff;
+  color: var(--color-internal-text-btn);
+  box-shadow: var(--shadow-soft);
 }
-.btn-primary { background: var(--color-primary); }
-.btn-primary:hover { background: #45a049; }
-.btn-danger { background: var(--color-danger); }
-.btn-danger:hover { background: #e03e3e; }
-.btn-scarlet { background: var(--color-scarlet); }
-.btn-blue { background: var(--color-blue); }
-.btn-purple { background: var(--color-purple); }
+
+.btn-primary { background: var(--color-primary); box-shadow: var(--shadow-soft); }
+.btn-primary:hover { background: var(--color-primary-hover); box-shadow: var(--shadow-soft); }
+.btn-danger { background: var(--color-danger); box-shadow: var(--shadow-soft); }
+.btn-danger:hover { background: var(--color-danger-hover); box-shadow: var(--shadow-soft); }
+.btn-debug { background: var(--color-debug-btn); box-shadow: var(--shadow-soft); color: var(--color-debug-text); }
+.btn-blue { background: var(--color-tab-symbol); box-shadow: var(--shadow-soft); }
+.btn-purple { background: var(--color-return-symbol); box-shadow: var(--shadow-soft); }
 
 select, .btn, .checkbox-container {
   width: 100%;
@@ -143,7 +160,7 @@ select, .btn, .checkbox-container {
   justify-content: center;
   align-items: center;
   font-weight: bold;
-  gap: 8px;
+  gap: 4px;
 }
 
 .canvas {
@@ -155,8 +172,8 @@ select, .btn, .checkbox-container {
   flex-direction: column;
   align-items: center;
   gap: 8px;
-  border-left: 1px solid #ddd;
-  border-right: 1px solid #ddd;
+  border-left: 1px solid var(--color-border-black);
+  border-right: 1px solid var(--color-border-black);
 }
 
 .block {
@@ -165,10 +182,14 @@ select, .btn, .checkbox-container {
   padding: 10px;
   border: 0.5px solid var(--color-black);
   border-radius: var(--radius);
+  box-shadow: var(--shadow-soft);
   text-align: center;
-  font-size: 20px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 22px;
   font-weight: bold;
-  box-shadow: 0 2px 2px rgba(10,10,10,10.08);
+  box-shadow: var(--shadow-soft);
   cursor: grab;
   user-select: none;
 }
@@ -185,12 +206,14 @@ select, .btn, .checkbox-container {
   min-height: 8px;
   border: 1px dashed var(--color-black);
   border-radius: 50px;
+  #box-shadow: var(--shadow-soft);
 }
 
 .qr-preview {
   background: var(--color-panel);
-  border: 1px solid #ddd;
+  border: 1px solid var(--color-black);
   border-radius: var(--radius);
+  box-shadow: var(--shadow-soft);
   padding: 8px;
   display: flex;
   justify-content: center;
@@ -198,27 +221,29 @@ select, .btn, .checkbox-container {
 }
 
 .qr-preview canvas {
-  width: 80px;
-  height: 80px;
+  width: 75px;
+  height: 75px;
+  box-shadow: var(--shadow-soft);
 }
 
 .garbage-drop {
   height: 100px;
   border: 2px dashed var(--color-danger);
   border-radius: var(--radius);
-  background: #ffecec;
+  box-shadow: var(--shadow-soft);
+  background: var(--color-garbage-background);
   display: flex;
   align-items: center;
   justify-content: center;
   color: var(--color-danger);
   font-weight: bold;
-  font-size: 14px;
+  font-size: 20px;
 }
 
 .instruction-box {
   font-size: 12px;
   font-weight: bold;
-  color: #444;
+  color: var(--color-instruction-text);
   line-height: 1.4;
 }
 .instruction-box ul {
@@ -230,17 +255,6 @@ select, .btn, .checkbox-container {
   list-style: disc;
 }
 
-#colorPanel label {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  font-size: 13px;
-}
-#colorPanel input[type="color"] {
-  margin-left: 8px;
-  flex-shrink: 0;
-}
-
 .spacer { height: 10px; }
 
 </style>
@@ -249,7 +263,7 @@ select, .btn, .checkbox-container {
 
 <header class="page-header">
   <div class="title">QR Code Builder</div>
-  <div class="version">v1.0.2</div>
+  <div class="version">v1.0.3</div>
 </header>
 
 <div class="layout">
@@ -288,7 +302,7 @@ select, .btn, .checkbox-container {
 
     <div class="section">
       <h3>QR Preview</h3>
-	  <input id="qrLabelInput" type="text" placeholder="Optional QR label..." style="width: 100%; font-size: 14px; margin-top: 8px;" />
+	  <input id="qrLabelInput" type="text" placeholder="Optional QR label..." style="width: 85%; font-size: 14px; margin: 8px auto 0; display: block;"/>
       <div class="qr-preview" id="qrPreview"></div>
     </div>
   </aside>
@@ -324,9 +338,18 @@ select, .btn, .checkbox-container {
         <div class="spacer"></div>
 		<div class="spacer"></div>
 		<div class="spacer"></div>
-        <button class="btn btn-scarlet" onclick="copySelectedPresetAsDefaultSnippet()" title="Copy the code for the selected preset. Paste it into the feedback form to suggest a new default template.">Copy Preset Snippet</button>
-        <div class="spacer"></div>
-        <button class="btn btn-danger" onclick="resetAllQRCodeBuilderData()" title="This is a full reset of stored data. This is mainly for testing on my end.">Full Reset</button>
+		
+		<div id="advancedControls" style="display: none;">
+		  <h3>Debug/Experimental</h3>
+		  <button class="btn btn-debug" onclick="copySelectedPresetAsDefaultSnippet()" title="Copy the code for the selected preset. Paste it into the feedback form to suggest a new default template.">Copy Preset Snippet</button>
+		  <div class="spacer"></div>
+		  <button class="btn btn-debug" onclick="openSnippetModal()" title="Paste and load a preset snippet.">Load Preset Snippet</button>
+		  <div class="spacer"></div>
+		  <button class="btn btn-debug" onclick="resetAllQRCodeBuilderData()" title="This is a full reset of stored data. This is mainly for testing on my end.">Full Data Reset</button>
+		  <div class="spacer"></div>
+		  <div class="spacer"></div>
+		</div>
+
         <div class="spacer"></div>
         <button class="btn btn-blue" onclick="window.open('https://github.com/OffTheClockStudios/QR-Code-Builder/tree/main', '_blank')" title="Visit the GitHub repository for QR Code Builder.">Visit GitHub Page</button>
         <div class="spacer"></div>
@@ -338,9 +361,18 @@ select, .btn, .checkbox-container {
   </aside>
 </div>
 
+<div id="snippetModal" style="display:none; position:fixed; top:20%; left:50%; transform:translateX(-50%);
+  background:#fff; padding:20px; border:1px solid #ccc; box-shadow:0 2px 6px rgba(0,0,0,0.2); z-index:9999;">
+  <h3>Paste Preset Snippet</h3>
+  <textarea id="snippetInput" rows="10" cols="50" style="width:100%;"></textarea>
+  <div style="margin-top:10px; text-align:right;">
+    <button onclick="submitSnippet()">Load</button>
+    <button onclick="closeSnippetModal()">Cancel</button>
+  </div>
+</div>
 
 </body>
-<script src="qrcode.min.js"></script>
+<<script src="qrcode.min.js"></script>
 <!-- <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script> -->
 <script>
 const canvasEl = document.getElementById('canvas');
@@ -610,6 +642,10 @@ BlockManager.rebuild();
 document.getElementById('savePresetBtn').onclick = () => PresetsManager.saveCurrent();
 document.getElementById('loadPresetBtn').onclick = () => PresetsManager.loadSelected();
 document.getElementById('deletePresetBtn').onclick = () => PresetsManager.deleteSelected();
+document.getElementById('advancedToggle').addEventListener('change', e => {
+  document.getElementById('advancedControls').style.display = e.target.checked ? 'block' : 'none';
+});
+
 document.getElementById('generateBtn').onclick = () => {
   const payload = BlockManager.blocks.map(b => {
     const unit = b.type === 'tab' ? '\t'
@@ -619,7 +655,7 @@ document.getElementById('generateBtn').onclick = () => {
   }).join('');
 
   const labelText = document.getElementById('qrLabelInput')?.value.trim() || '';
-  const qrSize = 120;
+  const qrSize = 100;
   const paddingAboveLabel = 10;
   const labelFontSize = 14;
   const labelAreaHeight = labelText ? labelFontSize + paddingAboveLabel : 0;
@@ -650,10 +686,23 @@ document.getElementById('generateBtn').onclick = () => {
 
     // Draw label below QR
     if (labelText) {
-      ctx.font = `${labelFontSize}px sans-serif`;
+      ctx.font = `bold ${labelFontSize}px sans-serif`;
       ctx.fillStyle = '#000';
       ctx.textAlign = 'center';
-      ctx.fillText(labelText, canvas.width / 2, qrSize + paddingAboveLabel + labelFontSize / 1.2);
+	  // Measure text width
+	  let fontSize = labelFontSize;
+	  ctx.font = `bold ${fontSize}px sans-serif`;
+	  let textWidth = ctx.measureText(labelText).width;
+
+	  // Scale font down if text is too wide
+	  while (textWidth > canvas.width && fontSize > 8) {
+	    fontSize--;
+	    ctx.font = `bold ${fontSize}px sans-serif`;
+	    textWidth = ctx.measureText(labelText).width;
+	}
+
+	// Draw centered
+	ctx.fillText(labelText, canvas.width / 2, qrSize + paddingAboveLabel + fontSize / 1.2);
     }
 
     // Show final image
@@ -686,26 +735,71 @@ function copySelectedPresetAsDefaultSnippet() {
 
   const allPresets = PresetsManager.getAllPresets();
   const preset = allPresets[name];
+
   if (!preset || !Array.isArray(preset.blocks)) {
     alert("No valid blocks found for selected preset.");
     return;
   }
 
-  const lines = preset.blocks.map(block =>
-    `      { type: "${block.type}", label: ${JSON.stringify(block.label)}, iterations: ${block.iterations || 1} }`
-  );
+  const snippetObject = {
+    [name]: {
+      label: preset.label || "",
+      blocks: preset.blocks.map(block => ({
+        type: block.type,
+        label: block.label,
+        iterations: block.iterations || 1
+      }))
+    }
+  };
 
-  const formatted = `  "${name}": {\n` +
-                    `    label: ${JSON.stringify(preset.label || '')},\n` +
-                    `    blocks: [\n${lines.join(',\n')}\n    ]\n` +
-                    `  }`;
+  const formatted = JSON.stringify(snippetObject, null, 2); // pretty print with 2-space indent
 
   navigator.clipboard.writeText(formatted).then(() => {
-    alert("Preset snippet copied to clipboard!\nPaste it into the feedback survey for review.");
+    alert("✅ Preset snippet copied to clipboard as valid JSON!");
   }).catch(err => {
     console.error("Clipboard write failed:", err);
-    alert("Failed to copy. Check console for details.");
+    alert("❌ Failed to copy. Check console for details.");
   });
+}
+
+function openSnippetModal() {
+  document.getElementById('snippetInput').value = '';
+  document.getElementById('snippetModal').style.display = 'block';
+}
+
+function closeSnippetModal() {
+  document.getElementById('snippetModal').style.display = 'none';
+}
+
+function submitSnippet() {
+  const input = document.getElementById('snippetInput').value;
+  closeSnippetModal();
+  if (input) loadPresetFromSnippet(input);
+}
+
+function loadPresetFromSnippet(snippetString) {
+  try {
+    const parsed = JSON.parse(snippetString);
+    const name = Object.keys(parsed)[0];
+    const preset = parsed[name];
+
+    if (!preset || !Array.isArray(preset.blocks)) {
+      alert("❌ Invalid preset format: no 'blocks' array found.");
+      return;
+    }
+
+    const userPresets = PresetsManager.getUserPresets();
+    userPresets[name] = preset;
+    PresetsManager.saveUserPresets(userPresets);
+    PresetsManager.refreshDropdown();
+    presetSelect.value = name;
+    PresetsManager.loadSelected();
+
+    alert(`✅ Preset "${name}" loaded successfully.`);
+  } catch (err) {
+    console.error("Failed to parse preset JSON:", err);
+    alert("❌ Failed to load preset: not valid JSON.");
+  }
 }
 
 function resetAllQRCodeBuilderData() {
