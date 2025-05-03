@@ -6,15 +6,16 @@
 <style>
 :root {
   --color-bg: #f7f9fc;
-  --color-canvas: #dedede;
+  --color-canvas: #e9ecef;
   --color-panel: #ffffff;
-  --color-primary: #4caf50;
-  --color-danger: #ff4c4c;
-  --color-scarlet: #e63946 ;
-  --color-blue: #4a90e2;
-  --color-purple: #a569bd;
-  --color-black: #000000;
-  --color-grey: #5d5d5d;
+  --color-sections: #f0f2f5;
+  --color-primary: #2e7d32;
+  --color-danger: #c62828;
+  --color-scarlet: #eb5959;
+  --color-blue: #1976d2;
+  --color-purple: #6a1b9a;
+  --color-black: #212121;
+  --color-grey: #616161;
   --radius: 6px;
   --side-w: 275px;
   --font: 'Roboto', sans-serif;
@@ -75,13 +76,13 @@ body {
 .garbage { border-left: 1px solid #ddd; }
 
 .section {
-  background: #f6f9fc;
+  background: var(--color-sections);
   padding: 10px;
   border-radius: var(--radius);
   box-shadow: 0 1px 3px rgba(0,0,0,0.05);
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 4px;
 }
 
 .section h3 {
@@ -101,6 +102,7 @@ body {
   cursor: grab;
   user-select: none;
   font-size: 13px;
+  font-weight: bold;
   box-shadow: 0 1px 3px rgba(0,0,0,0.08);
 }
 
@@ -117,6 +119,7 @@ body {
 .btn {
   padding: 10px;
   font-size: 13px;
+  font-weight: bold;
   border: none;
   border-radius: var(--radius);
   cursor: pointer;
@@ -139,6 +142,7 @@ select, .btn, .checkbox-container {
   display: flex;
   justify-content: center;
   align-items: center;
+  font-weight: bold;
   gap: 8px;
 }
 
@@ -167,6 +171,12 @@ select, .btn, .checkbox-container {
   box-shadow: 0 2px 2px rgba(10,10,10,10.08);
   cursor: grab;
   user-select: none;
+}
+
+.iterations {
+  font-size: 0.7em;
+  vertical-align: super;
+  margin-left: 4px;
 }
 
 .dropzone {
@@ -207,6 +217,7 @@ select, .btn, .checkbox-container {
 
 .instruction-box {
   font-size: 12px;
+  font-weight: bold;
   color: #444;
   line-height: 1.4;
 }
@@ -219,6 +230,17 @@ select, .btn, .checkbox-container {
   list-style: disc;
 }
 
+#colorPanel label {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 13px;
+}
+#colorPanel input[type="color"] {
+  margin-left: 8px;
+  flex-shrink: 0;
+}
+
 .spacer { height: 10px; }
 
 </style>
@@ -227,7 +249,7 @@ select, .btn, .checkbox-container {
 
 <header class="page-header">
   <div class="title">QR Code Builder</div>
-  <div class="version">v1.0.1</div>
+  <div class="version">v1.0.2</div>
 </header>
 
 <div class="layout">
@@ -254,12 +276,19 @@ select, .btn, .checkbox-container {
         <input type="checkbox" id="copyToggle">
         <label for="copyToggle">Copy After Build</label>
       </div>
+
+	  <div class="checkbox-container" title="Enable advanced editing features like iterations.">
+	    <input type="checkbox" id="advancedToggle">
+	    <label for="advancedToggle">Advanced Mode</label>
+	  </div>
+
       <button class="btn btn-primary" id="generateBtn" title="Build and display the QR code.">Build</button>
       <button class="btn btn-danger" id="clearBtn" title="Clear all blocks from the canvas.">Clear Canvas</button>
     </div>
 
     <div class="section">
       <h3>QR Preview</h3>
+	  <input id="qrLabelInput" type="text" placeholder="Optional QR label..." style="width: 100%; font-size: 14px; margin-top: 8px;" />
       <div class="qr-preview" id="qrPreview"></div>
     </div>
   </aside>
@@ -289,21 +318,30 @@ select, .btn, .checkbox-container {
           <li>⭐ indicates a default preset. Save a copy if you plan to modify it.</li>
           <div class="spacer"></div>
           <li>Disable auto-tab/return on your scanner for cleaner input.</li>
+          <div class="spacer"></div>
+          <li><strong>Advanced Mode</strong> enables iterations. Example: Insert a Tab block and set it to repeat <code>20</code> times for 20 tab inputs.</li>
         </ul>
         <div class="spacer"></div>
-        <button class="btn btn-scarlet" onclick="copySelectedPresetAsDefaultSnippet()" title="Copy the code for the selected preset. Paste it into the feedback form to suggest a new default template.">Export Preset Snippet</button>
+		<div class="spacer"></div>
+		<div class="spacer"></div>
+        <button class="btn btn-scarlet" onclick="copySelectedPresetAsDefaultSnippet()" title="Copy the code for the selected preset. Paste it into the feedback form to suggest a new default template.">Copy Preset Snippet</button>
         <div class="spacer"></div>
-        <button class="btn btn-danger" onclick="resetAllQRCodeBuilderData()" title="This is a full reset of your data. This is mainly for testing on my end.">Full Reset</button>
+        <button class="btn btn-danger" onclick="resetAllQRCodeBuilderData()" title="This is a full reset of stored data. This is mainly for testing on my end.">Full Reset</button>
         <div class="spacer"></div>
         <button class="btn btn-blue" onclick="window.open('https://github.com/OffTheClockStudios/QR-Code-Builder/tree/main', '_blank')" title="Visit the GitHub repository for QR Code Builder.">Visit GitHub Page</button>
         <div class="spacer"></div>
         <button class="btn btn-purple" onclick="window.open('https://forms.office.com/r/BQ31NpaecJ', '_blank')" title="Opens the form where users can provide feedback and submit default preset requests.">Submit Feedback</button>
+		
+		<div class="spacer"></div>
       </div>
     </div>
   </aside>
 </div>
+
+
 </body>
 <script src="qrcode.min.js"></script>
+<!-- <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script> -->
 <script>
 const canvasEl = document.getElementById('canvas');
 const qrPreview = document.getElementById('qrPreview');
@@ -314,12 +352,13 @@ const BlockManager = {
   blocks: [],
 
   add(type, label, pos = null) {
-    this.blocks.splice(pos == null ? this.blocks.length : pos, 0, { type, label });
+    this.blocks.splice(pos == null ? this.blocks.length : pos, 0, { type, label, iterations: 1 });
     this.rebuild();
   },
 
-  update(idx, label) {
+  update(idx, label, iterations) {
     this.blocks[idx].label = label;
+    this.blocks[idx].iterations = iterations;
     this.rebuild();
   },
 
@@ -332,7 +371,7 @@ const BlockManager = {
   rebuild() {
     canvasEl.innerHTML = '';
     if (this.blocks.length === 0) {
-      canvasEl.append(Drag.createDropzone(0)); // Important: allow dropping even when empty
+      canvasEl.append(Drag.createDropzone(0));
     } else {
       this.blocks.forEach((b, i) => {
         canvasEl.append(Drag.createDropzone(i), Drag.createBlock(b, i));
@@ -352,14 +391,18 @@ const Drag = {
       return: '⏎'
     };
 
-    const symbol = typeSymbols[data.type];
+    const symbol = typeSymbols[data.type] || '';
+    const label = data.label?.trim() || '';
+    const isAdvanced = document.getElementById('advancedToggle')?.checked;
 
-    if (symbol) {
-      const label = data.label?.trim() || '';
-      el.textContent = `${symbol} ${label}`;
-    } else {
-      el.textContent = data.label;
-    }
+    const showIteration = isAdvanced || data.iterations > 1;
+    const iter = showIteration
+      ? `<span class="iterations">×${data.iterations}</span>`
+      : '';
+
+    el.innerHTML = symbol
+      ? `${symbol} ${label} ${iter}`
+      : `${label} ${iter}`;
 
     el.draggable = true;
 
@@ -367,13 +410,30 @@ const Drag = {
       e.dataTransfer.setData('index', idx);
     };
 
-    el.ondblclick = () => {
-      const newLabel = prompt('Edit:', data.label);
-      if (newLabel != null) BlockManager.update(idx, newLabel);
-    };
+	el.ondblclick = () => {
+	  const isAdvanced = document.getElementById('advancedToggle')?.checked;
+	  let label = data.label;
+	  let iterations = data.iterations || 1;
+
+	  if (isAdvanced) {
+		const combined = prompt('Edit (label | iterations):', `${label} | ${iterations}`);
+		if (combined != null) {
+		  const [newLabelRaw, iterRaw] = combined.split('|').map(s => s.trim());
+		  const newLabel = newLabelRaw || label;
+		  const newIterations = Math.max(1, parseInt(iterRaw)) || 1;
+		  BlockManager.update(idx, newLabel, newIterations);
+		}
+	  } else {
+		const newLabel = prompt('Edit label:', label);
+		if (newLabel != null) {
+		  BlockManager.update(idx, newLabel, iterations);
+		}
+	  }
+	};
 
     return el;
   },
+
 
   createDropzone(pos) {
     const dz = document.createElement('div');
@@ -424,25 +484,31 @@ const PresetsManager = {
   key: 'qrbuilder_presets',
 
   defaultPresets: {
-    "Example 01": [
-      { type: "text", label: "Hello" },
-      { type: "tab", label: "\t" },
-      { type: "text", label: "World" },
-      { type: "return", label: "\r" },
-      { type: "text", label: "Goodbye" }
-    ],
-    "Scrap Template": [
-      { type: "text", label: "Part Number" },
-      { type: "return", label: "\r" },
-      { type: "return", label: "\r" },
-      { type: "text", label: "1" },
-      { type: "return", label: "\r" },
-      { type: "tab", label: "\t" },
-      { type: "return", label: "\r" },
-      { type: "return", label: "\r" },
-      { type: "text", label: "Defect Type" },
-      { type: "tab", label: "\t" }
-    ]
+    "Example 01": {
+      label: "Greeting QR",
+      blocks: [
+        { type: "text", label: "Hello", iterations: 1 },
+        { type: "tab", label: "\t", iterations: 1 },
+        { type: "text", label: "World", iterations: 1 },
+        { type: "return", label: "\r", iterations: 1 },
+        { type: "text", label: "Goodbye", iterations: 1 }
+      ]
+    },
+    "Scrap Template": {
+      label: "Scrap Form",
+      blocks: [
+        { type: "text", label: "Part Number", iterations: 1 },
+        { type: "return", label: "\r", iterations: 1 },
+        { type: "return", label: "\r", iterations: 1 },
+        { type: "text", label: "1", iterations: 1 },
+        { type: "return", label: "\r", iterations: 1 },
+        { type: "tab", label: "\t", iterations: 1 },
+        { type: "return", label: "\r", iterations: 1 },
+        { type: "return", label: "\r", iterations: 1 },
+        { type: "text", label: "Defect Type", iterations: 1 },
+        { type: "tab", label: "\t", iterations: 1 }
+      ]
+    }
   },
 
   getUserPresets() {
@@ -468,25 +534,52 @@ const PresetsManager = {
     }
   },
 
-  saveCurrent() {
-    const name = prompt('Name this preset:');
-    if (!name) return;
-    const presets = this.getUserPresets();
-    presets[name] = JSON.parse(JSON.stringify(BlockManager.blocks));
-    this.saveUserPresets(presets);
-    this.refreshDropdown();
-    presetSelect.value = name;
-  },
+	saveCurrent() {
+	  const name = prompt('Name this preset:');
+	  if (!name) return;
 
-  loadSelected() {
-    const name = presetSelect.value;
-    if (!name) return;
-    const allPresets = this.getAllPresets();
-    if (allPresets[name]) {
-      BlockManager.blocks = JSON.parse(JSON.stringify(allPresets[name]));
-      BlockManager.rebuild();
-    }
-  },
+	  const labelField = document.getElementById('qrLabelInput');
+	  const label = labelField?.value?.trim() || '';
+
+	  const presets = this.getUserPresets();
+	  presets[name] = {
+		label,
+		blocks: JSON.parse(JSON.stringify(BlockManager.blocks))
+	  };
+
+	  this.saveUserPresets(presets);
+	  this.refreshDropdown();
+	  presetSelect.value = name;
+	},
+
+	loadSelected() {
+	  const name = presetSelect.value;
+	  if (!name) return;
+
+	  const allPresets = this.getAllPresets();
+	  let preset = allPresets[name];
+
+	  // 🔍 Handle legacy format (just an array of blocks)
+	  if (Array.isArray(preset)) {
+		preset = { label: name, blocks: preset };
+	  }
+
+	  if (preset && Array.isArray(preset.blocks)) {
+		BlockManager.blocks = preset.blocks.map(block => ({
+		  ...block,
+		  iterations: block.iterations || 1
+		}));
+		BlockManager.rebuild();
+
+		// Set label field if available
+		const labelInput = document.getElementById('qrLabelInput');
+		if (labelInput && preset.label) {
+		  labelInput.value = preset.label;
+		}
+	  } else {
+		alert('❌ Failed to load preset: Invalid format.');
+	  }
+	},
 
   deleteSelected() {
     const name = presetSelect.value;
@@ -494,7 +587,9 @@ const PresetsManager = {
     if (this.defaultPresets[name]) {
       return alert('Cannot delete default preset.');
     }
+
     if (!confirm(`Delete preset "${name}"?`)) return;
+
     const presets = this.getUserPresets();
     delete presets[name];
     this.saveUserPresets(presets);
@@ -503,11 +598,9 @@ const PresetsManager = {
   },
 
   preloadDefaults() {
-    // Only refresh the dropdown; defaults are already defined
     this.refreshDropdown();
   }
 };
-
 
 
 // Initialization
@@ -518,27 +611,66 @@ document.getElementById('savePresetBtn').onclick = () => PresetsManager.saveCurr
 document.getElementById('loadPresetBtn').onclick = () => PresetsManager.loadSelected();
 document.getElementById('deletePresetBtn').onclick = () => PresetsManager.deleteSelected();
 document.getElementById('generateBtn').onclick = () => {
-  const payload = BlockManager.blocks.map(b =>
-    b.type === 'tab' ? '\t' : b.type === 'return' ? '\r' : b.label
-  ).join('');
-  
-  qrPreview.innerHTML = '';
-  new QRCode(qrPreview, { text: payload, width: 120, height: 120 });
+  const payload = BlockManager.blocks.map(b => {
+    const unit = b.type === 'tab' ? '\t'
+               : b.type === 'return' ? '\r'
+               : b.label;
+    return unit.repeat(b.iterations || 1);
+  }).join('');
 
-  if (document.getElementById('copyToggle').checked) {
-    const canvas = qrPreview.querySelector('canvas'); // <-- Look for canvas
-    if (canvas) {
+  const labelText = document.getElementById('qrLabelInput')?.value.trim() || '';
+  const qrSize = 120;
+  const paddingAboveLabel = 10;
+  const labelFontSize = 14;
+  const labelAreaHeight = labelText ? labelFontSize + paddingAboveLabel : 0;
+
+  // Clear preview
+  qrPreview.innerHTML = '';
+
+  // Create canvas large enough to include label area
+  const canvas = document.createElement('canvas');
+  canvas.width = qrSize;
+  canvas.height = qrSize + labelAreaHeight;
+  const ctx = canvas.getContext('2d');
+
+  // Create temporary QR
+  const tmpDiv = document.createElement('div');
+  new QRCode(tmpDiv, {
+    text: payload,
+    width: qrSize,
+    height: qrSize
+  });
+
+  setTimeout(() => {
+    const qrCanvas = tmpDiv.querySelector('canvas');
+    if (!qrCanvas) return;
+
+    // Draw QR code at top of canvas
+    ctx.drawImage(qrCanvas, 0, 0);
+
+    // Draw label below QR
+    if (labelText) {
+      ctx.font = `${labelFontSize}px sans-serif`;
+      ctx.fillStyle = '#000';
+      ctx.textAlign = 'center';
+      ctx.fillText(labelText, canvas.width / 2, qrSize + paddingAboveLabel + labelFontSize / 1.2);
+    }
+
+    // Show final image
+    const img = new Image();
+    img.src = canvas.toDataURL();
+    qrPreview.appendChild(img);
+
+    // Optional: copy to clipboard
+    if (document.getElementById('copyToggle').checked) {
       canvas.toBlob(blob => {
-        const clipboardItem = new ClipboardItem({ 'image/png': blob });
-        navigator.clipboard.write([clipboardItem]).then(() => {
-          alert('✅ QR Code copied to clipboard!');
-        }).catch(err => {
-          console.error('Copy failed:', err);
-          alert('❌ Failed to copy QR Code.');
-        });
+        const item = new ClipboardItem({ 'image/png': blob });
+        navigator.clipboard.write([item])
+          .then(() => alert('✅ QR Code copied to clipboard!'))
+          .catch(err => alert('❌ Failed to copy QR Code.'));
       });
     }
-  }
+  }, 100);
 };
 
 document.getElementById('clearBtn').onclick = () => {
@@ -553,17 +685,20 @@ function copySelectedPresetAsDefaultSnippet() {
   }
 
   const allPresets = PresetsManager.getAllPresets();
-  const blocks = allPresets[name];
-  if (!blocks) {
-    alert("No blocks found for selected preset.");
+  const preset = allPresets[name];
+  if (!preset || !Array.isArray(preset.blocks)) {
+    alert("No valid blocks found for selected preset.");
     return;
   }
 
-  const lines = blocks.map(block =>
-    `    { type: "${block.type}", label: ${JSON.stringify(block.label)} }`
+  const lines = preset.blocks.map(block =>
+    `      { type: "${block.type}", label: ${JSON.stringify(block.label)}, iterations: ${block.iterations || 1} }`
   );
 
-  const formatted = `  "${name}": [\n${lines.join(',\n')}\n  ]`;
+  const formatted = `  "${name}": {\n` +
+                    `    label: ${JSON.stringify(preset.label || '')},\n` +
+                    `    blocks: [\n${lines.join(',\n')}\n    ]\n` +
+                    `  }`;
 
   navigator.clipboard.writeText(formatted).then(() => {
     alert("Preset snippet copied to clipboard!\nPaste it into the feedback survey for review.");
@@ -588,5 +723,6 @@ function resetAllQRCodeBuilderData() {
 
   alert("All QR Builder data has been reset.");
 }
+
 </script>
 </html>
