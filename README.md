@@ -14,7 +14,7 @@
 * **QR Label Support** – Add a custom label beneath your generated QR code
 * **QR Preview** – See your final QR output rendered in real-time
 * **Copy to Clipboard** – Copy the final QR image (with label) directly to the clipboard
-* **Export Preset Snippets** – Generate shareable JSON snippets of your preset configuration
+* **Preset Snippet Tools** – Export or import JSON snippets of your layout (Advanced Mode only)
 * **Quick Trash Deletion** – Drag blocks to the trash area to remove them
 * **Tooltips & Visual Guidance** – Built-in tips for new users with symbolic cues and color-coded blocks
 * **Responsive Layout** – Optimized for modern desktop browsers (mobile support pending)
@@ -39,17 +39,24 @@ Steps to begin:
 
 ---
 
-## Exporting Presets
+## Advanced Mode
 
-To submit a preset suggestion or share your layout:
+Enabling **Advanced Mode** unlocks extra configuration and developer features:
 
-1. Build your QR layout visually.
-2. Click **Copy Preset Snippet** in the Quick Tips section.
-3. Paste the snippet into the feedback form.
+* Set **repeat counts** (iterations) for blocks like tabs (`⇥`) or returns (`⏎`)
+* Double-click a block to edit both its label and how many times it repeats
+* Reveal additional controls for:
+  - Copying preset configurations as JSON snippets
+  - Pasting and loading shared snippets
+  - Performing a full reset of stored data (for testing/debugging)
+* Paste JSON into the **Load Preset Snippet** modal to import new templates
 
-> Submitted presets may be reviewed and included as default templates in future releases.
+> These features are especially helpful during development or when contributing preset templates.
 
-[Submit Your Preset Snippet](https://forms.office.com/r/BQ31NpaecJ)
+To enable:
+
+1. In the **Controls** section, check the **Advanced Mode** box
+2. Use the new options that appear under the **Quick Tips** panel on the right and by double-clicking blocks
 
 ---
 
@@ -68,13 +75,16 @@ You can install QR Code Builder as a Progressive Web App (PWA) for offline acces
 
 See the full [Changelog](./CHANGELOG.md) for details.
 
-### Highlights in v1.0.2:
+### Highlights in v1.0.3:
 
 * Added **Advanced Mode** for block iterations
 * Introduced **QR label input** below the canvas
 * Updated preset structure to include `label` and `iterations`
 * QR preview now renders label and QR in a single combined image
 * Improved UI consistency, accessibility, and code maintainability
+* Conditional debug tools now appear when **Advanced Mode** is enabled
+* Added **Load Preset Snippet** modal for importing shared layouts
+* Minor layout and styling tweaks for cleaner UI
 
 ---
 
