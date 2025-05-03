@@ -1,88 +1,94 @@
-# QR Code Builder
+QR Code Builder
+QR Code Builder is a visual, drag-and-drop tool for creating structured QR code content. It is especially useful for workflows that require special formatting such as tabs (\t) and returns (\r), including badge printing, form automation, ID systems, macros, and more.
 
-**QR Code Builder** is a visual drag-and-drop tool for creating structured QR code content — ideal for ID systems, badges, business cards, passwords, multiple input fields, and other use cases requiring tabs (`\t`) or newlines (`\r`) in the encoded data.
+👉 Launch the App
 
-👉 [**Launch the QR Code Builder**](https://offtheclockstudios.github.io/QR-Code-Builder/)
+Features
+Drag-and-Drop Canvas – Visually arrange blocks for text, tab (⇥), and return (⏎) characters
 
----
+Preset Manager – Save, load, and delete reusable QR layouts using local browser storage
 
-## 🔧 Features
+Advanced Mode – Configure repeat counts (iterations) for blocks such as tabs and returns
 
-- 🧩 **Drag & Drop Builder** – Visually arrange content blocks like text, tab characters (`\t`), and line breaks (`\r`), now with color-coded blocks and editable labels.
-- 💾 **Preset Manager** – Save, load, and delete layouts directly in your browser.
-- ✨ **Export Preset Snippets** – Share a formatted code snippet of your layout for submitting or contributing presets.
-- 📊 **Community Polling Ready** – Shareable snippets can be submitted to help decide whether a preset should become a default template.
-- ⚙️ **Live QR Code Preview** – Instantly generate a QR code based on your current structure.
-- 📋 **Clipboard Support** – Optionally copy the QR code image to your clipboard after generation.
-- 🗑️ **Trash Area** – Drag blocks here to delete them.
-- 🧼 **Clear All** – Quickly reset your workspace.
-- 🎨 **Redesigned Layout** – Left and right side panels with sleek, modular sections for a more intuitive experience.
-- 💡 **Responsive Design** – Optimized for modern desktop browsers (TBD for mobile support).
-- 🖱️ **Helpful Tooltips** – Every button, block, and input comes with clear hover tooltips to guide new users.
-- 🔤 **Symbol-Labeled Special Blocks** – Tab and Return blocks display `⇥` and `⏎` symbols on both sides of their label for clarity.
+QR Label Support – Add a custom label beneath your generated QR code
 
----
+QR Preview – See your final QR output rendered in real-time
 
-## 🚀 Getting Started
+Copy to Clipboard – Copy the final QR image (with label) directly to the clipboard
 
-### 🔗 Use the Web App
+Export Preset Snippets – Generate shareable JSON snippets of your preset configuration
 
-No installation required. Simply open the app in your browser:
+Quick Trash Deletion – Drag blocks to the trash area to remove them
 
-👉 [https://offtheclockstudios.github.io/QR-Code-Builder/](https://offtheclockstudios.github.io/QR-Code-Builder/)
+Tooltips & Visual Guidance – Built-in tips for new users with symbolic cues and color-coded blocks
 
-Steps:
+Responsive Layout – Optimized for modern desktop browsers (mobile support pending)
 
-1. Drag items from the **Toolbox** onto the canvas.
-2. Rearrange blocks to form your QR code layout.
-3. Click **Build** to preview the QR code.
-4. Use **Presets** to save and reuse common layouts.
+Getting Started
+Use in Browser
+No installation required. Open the app in your browser:
 
----
+🔗 https://offtheclockstudios.github.io/QR-Code-Builder/
 
-## 📤 Exporting Presets
+Steps to begin:
 
-To share or suggest a new default template:
+Drag items from the Toolbox to the center canvas.
 
-1. Build your layout using the drag-and-drop builder.
-2. Click the **Export Preset Snippet** button in the **Quick Tips** section (right panel).
-3. Paste the snippet into the official feedback form.
+Double-click any block to rename or modify it.
 
-> Presets submitted this way may be shared in a future community poll to help decide if they should be included as default templates for all users.
+Use Build to generate your QR code.
 
-📬 **[Submit a Preset Snippet →](https://forms.office.com/r/BQ31NpaecJ)**
+Optionally, check Copy After Build to copy the image to your clipboard.
 
----
+Use Save Preset to retain frequently used layouts.
 
-## 📲 Optional: Install as a PWA
+Exporting Presets
+To submit a preset suggestion or share your layout:
 
-You can install the app as a Progressive Web App:
+Build your QR layout visually.
 
-1. Open the builder in Microsoft Edge or Chrome.
-2. Click the browser’s menu (••• or ⋮).
-3. Select **“Install QR Code Builder”** or **“Install this site as an app.”**
-4. Launch it from your desktop like a native app.
+Click Copy Preset Snippet in the Quick Tips section.
 
----
+Paste the snippet into the feedback form.
 
-## 🔄 What’s New
+Submitted presets may be reviewed and included as default templates in future releases.
 
-- 🎨 Tab and Return blocks now show custom labels with symbolic icons (`⇥`, `⏎`)
-- 🌈 Toolbox and Canvas blocks are color-coded by type
-- 🖱️ Improved tooltips across the interface for better usability
+📤 Submit Your Preset Snippet
 
----
+Optional: Install as a PWA
+You can install QR Code Builder as a Progressive Web App (PWA) for offline access:
 
-## 🤝 Contributing
+Open the site in Chrome or Edge.
 
-Contributions are welcome! Whether you're fixing bugs, improving the UI, or submitting presets — we’d love to see your work.
+Open the browser menu.
 
-- Submit issues or pull requests
-- Share your feedback using the survey link above
-- Help improve the preset template list
+Select Install QR Code Builder (or similar).
 
----
+Launch it from your desktop or apps list like a native app.
 
-## 📄 License
+Recent Updates
+See the full Changelog for details.
 
-Licensed under the [MIT License](LICENSE).
+Highlights in v1.0.2:
+Added Advanced Mode for block iterations
+
+Introduced QR label input below the canvas
+
+Updated preset structure to include label and iterations
+
+QR preview now renders label and QR in a single combined image
+
+Improved UI consistency, accessibility, and code maintainability
+
+Contributing
+We welcome feedback and contributions. You can:
+
+Submit issues or feature requests on GitHub
+
+Suggest preset templates using the form
+
+Fork and submit pull requests for improvements
+
+License
+Licensed under the MIT License.
+
