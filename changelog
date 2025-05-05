@@ -4,7 +4,31 @@ All notable changes to this project will be documented in this file.
 
 ---
 
-## [v1.0.3] – 2025-05-03
+## \[v1.0.4] – 2025-05-05
+
+### UI and UX Improvements
+
+* Refined spacing and layout across the interface using new spacer classes (`.spacer-small`, `.spacer-extra-small`)
+* Moved **Advanced Mode** toggle to the bottom of the right panel for better separation from core controls
+* Moved **Github and Survey** buttons to the bottom of the right panel as links for better separation from core controls
+* Adjusted padding and alignment for more consistent vertical rhythm in sidebars
+* Improved clarity and grouping in the Trash and Debug sections
+* Enhanced visual hierarchy of toolbox and preset sections with tighter spacing and balanced headers
+* Added tooltips to all major controls to improve discoverability and reduce user confusion
+* Applied additional spacing control to checkbox containers and section headers
+* Ensured consistent block styling and coloring across both toolbox and canvas
+* Improved QR label input styling for visual balance with other controls
+
+### Under-the-Hood Changes
+
+* Cleaned up unused spacing elements and minor inline styling redundancies
+* Fine-tuned `BlockManager.rebuild()` to ensure consistent dropzone rendering in edge cases
+* Improved internal consistency for block color assignment and iteration display logic
+* Improved preset handling with JSON reliance instead of my previous custom methods
+
+---
+
+## \[v1.0.3] – 2025-05-03
 
 ### Enhancements
 - Added **Advanced Mode**: allows blocks to repeat a set number of times (iterations)
