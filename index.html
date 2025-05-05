@@ -819,5 +819,18 @@ function resetAllQRCodeBuilderData() {
   alert("All QR Builder data has been reset.");
 }
 
+window.addEventListener('load', () => {
+  const message = `🔔 Heads Up: v1.0.4 Coming Soon!
+
+This update will introduce major changes to the interface, preset structure, and tool behavior.
+
+⚠️ Presets created in or before v1.0.3 will *not* be compatible with v1.0.4+. Please avoid relying too heavily on them for now.
+
+I'm transitioning to a more stable, JSON-based system to support the app long-term.
+
+Thanks for your patience — and sorry for the temporary disruption!`;
+
+  alert(message);
+});
 </script>
 </html>
