@@ -4,6 +4,23 @@ All notable changes to this project will be documented in this file.
 
 ---
 
+## \[v1.0.5] – 2025-05-07
+
+### Enhancements
+- Added the previously removed tips/instructions panel
+- Added a Puzzle for testing/learning input from the QR code
+
+### UI & UX Improvements
+- Slight cleanup for fonts and padding
+- Some insignificant adjustments to the margins
+- Unified styling of the label input field with the rest of the UI
+- Enhanced spacing and legibility in the right sidebar "Quick Tips" section
+
+### Under-the-Hood Changes
+- Fixed order issue where blocks 1, 2, 3, 4 could have 1 dropped between 2 & 3, making the order 2, 3, 1, 4 (splice offset)
+
+---
+
 ## \[v1.0.4] – 2025-05-05
 
 ### UI and UX Improvements
