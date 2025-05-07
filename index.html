@@ -1164,7 +1164,7 @@ const instructionsData = [
           <input id="field3" type="text" placeholder="Text..."/>
           
           <label for="confirmBtn">This should be confirmed via scan:</label>
-          <button class="btn btn-purple" id="confirmReturnBtn" title="Test the return function.">Return Button</button>
+          <button type="button" class="btn btn-purple" id="confirmReturnBtn" title="Test the return function."> Return Button </button>
         </form>
 
         <button class="btn btn-debug" id="resetTestBtn" title="Resets puzzle field.">Reset Test</button>
@@ -1178,6 +1178,18 @@ function renderInstructions() {
   const { title, content } = instructionsData[instrIndex];
   document.getElementById('instrTitle').textContent = title;
   document.getElementById('instrContent').innerHTML = content;
+  // now that the new slide is in the DOM, bind any slide-specific handlers:
+  const confirmBtn = document.getElementById('confirmReturnBtn');
+  if (confirmBtn) {
+    // ensure it won't submit
+    confirmBtn.setAttribute('type', 'button');
+    confirmBtn.onclick = e => {
+      e.preventDefault();           // just in case
+      if (confirm('This prompt should be confirmed by the QR code scan.')) {
+        alert('Congratulations!');
+      }
+    };
+  }
 }
 
 // 3) Wire up the arrow buttons
