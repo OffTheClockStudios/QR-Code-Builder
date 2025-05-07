@@ -18,6 +18,7 @@
 * **Quick Trash Deletion** – Drag blocks to the trash area to remove them
 * **Tooltips & Visual Guidance** – Built-in tips for new users with symbolic cues and color-coded blocks
 * **Responsive Layout** – Optimized for modern desktop browsers (mobile support pending)
+* **Instructions** – Included topics for learning and testing the app
 
 ---
 
@@ -75,15 +76,11 @@ You can install QR Code Builder as a Progressive Web App (PWA) for offline acces
 
 See the full [Changelog](./CHANGELOG.md) for details.
 
-### Highlights in v1.0.4:
+### Highlights in v1.0.5:
 
 * Polished layout and spacing across sidebars and control panels using new spacer classes
-* Moved Advanced Mode toggle to the bottom of the right panel for improved UX
-* Moved Github and Survey links to the bottom of the right panel for improved UX
-* Improved alignment and grouping in the Trash and Debug sections
-* Improved UI consistency, accessibility, and code maintainability
-* Added tooltips to all key controls for better guidance and discoverability
-* Ensured consistent styling and coloring of blocks between toolbox and canvas
+* Added instructions to help with using this tool
+* Added a "puzzle" for learning the building proccess and testing the QR code
 * Minor code cleanup and layout refinements for better maintainability
 
 ---
