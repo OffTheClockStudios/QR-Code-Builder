@@ -2,6 +2,17 @@
 
 All notable changes to this project will be documented in this file.
 
+## \[v1.0.6] – 2025-05-07
+
+### UI & UX Improvements
+- Reworded several instructions to better emphasize the concept of "Building" a QR code
+- Changed references from "Canvas" to "Build Area"
+- Added a "Build Area" label
+- Added short callout above the Build Area to help guide new users
+- Added a tagline to the header
+- Dropzones now show a "Drop Here" label and highlight on hover
+- Added dedicated panel to track recent updates without requiring users to check GitHub
+
 ---
 
 ## \[v1.0.5] – 2025-05-07
