@@ -18,6 +18,7 @@ All notable changes to this project will be documented in this file.
 
 ### Under-the-Hood Changes
 - Fixed order issue where blocks 1, 2, 3, 4 could have 1 dropped between 2 & 3, making the order 2, 3, 1, 4 (splice offset)
+- Fixed inner html issue with reset/return buttons
 
 ---
 
