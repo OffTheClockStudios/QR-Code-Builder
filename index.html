@@ -1178,16 +1178,28 @@ function renderInstructions() {
   const { title, content } = instructionsData[instrIndex];
   document.getElementById('instrTitle').textContent = title;
   document.getElementById('instrContent').innerHTML = content;
-  // now that the new slide is in the DOM, bind any slide-specific handlers:
+  // --- Confirm-Return button setup ---
   const confirmBtn = document.getElementById('confirmReturnBtn');
   if (confirmBtn) {
-    // ensure it won't submit
-    confirmBtn.setAttribute('type', 'button');
+    confirmBtn.setAttribute('type','button');
     confirmBtn.onclick = e => {
-      e.preventDefault();           // just in case
+      e.preventDefault();
       if (confirm('This prompt should be confirmed by the QR code scan.')) {
         alert('Congratulations!');
       }
+    };
+  }
+
+  // --- Reset-Test button setup ---
+  const resetBtn = document.getElementById('resetTestBtn');
+  if (resetBtn) {
+    resetBtn.setAttribute('type','button');
+    resetBtn.onclick = e => {
+      e.preventDefault();
+      ['field1','field2','field3'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.value = '';
+      });
     };
   }
 }
@@ -1204,21 +1216,6 @@ document.getElementById('instrNext').addEventListener('click', () => {
 
 // 4) Initialize on load
 renderInstructions();
-
-// Test Return confirm
-document.getElementById('confirmReturnBtn').addEventListener('click', () => {
-  const ok = confirm('This prompt should be confirmed by the QR code scan.');
-  alert('Congratulations!');
-});
-
-// Hook up Reset Test to clear field1, field2, field3:
-document.getElementById('resetTestBtn').addEventListener('click', () => {
-  ['field1','field2','field3'].forEach(id => {
-    const el = document.getElementById(id);
-    if (el) el.value = '';
-  });
-});
-
 
 </script>
 </html>
