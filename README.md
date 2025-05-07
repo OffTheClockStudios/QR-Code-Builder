@@ -18,7 +18,7 @@
 * **Quick Trash Deletion** – Drag blocks to the trash area to remove them
 * **Tooltips & Visual Guidance** – Built-in tips for new users with symbolic cues and color-coded blocks
 * **Responsive Layout** – Optimized for modern desktop browsers (mobile support pending)
-* **Instructions** – Included topics for learning and testing the app
+* **Instructions** – Included topics for learning and testing the app (example puzzle added)
 
 ---
 
