@@ -32,7 +32,7 @@ No installation required. Open the app in your browser:
 
 Steps to begin:
 
-1. Drag items from the **Toolbox** to the center canvas.
+1. Drag items from the **Toolbox** to the **Dropzones** in the **Build Area**.
 2. Double-click any block to rename or modify it.
 3. Use **Build** to generate your QR code.
 4. Optionally, check **Copy After Build** to copy the image to your clipboard.
@@ -44,7 +44,7 @@ Steps to begin:
 
 Enabling **Advanced Mode** unlocks extra configuration and developer features:
 
-* Set **repeat counts** (iterations) for blocks like tabs (`⇥`) or returns (`⏎`)
+* Set **repeat counts / (iterations)** for blocks like text, tabs (`⇥`), or returns (`⏎`)
 * Double-click a block to edit both its label and how many times it repeats
 * Reveal additional controls for:
   - Copying preset configurations as JSON snippets
@@ -56,8 +56,8 @@ Enabling **Advanced Mode** unlocks extra configuration and developer features:
 
 To enable:
 
-1. In the **Controls** section, check the **Advanced Mode** box
-2. Use the new options that appear under the **Quick Tips** panel on the right and by double-clicking blocks
+1. In the **Footer**, check the **Advanced Mode** box
+2. Use the new options that appear in the **Right** panel on the right and by double-clicking blocks
 
 ---
 
@@ -76,11 +76,18 @@ You can install QR Code Builder as a Progressive Web App (PWA) for offline acces
 
 See the full [Changelog](./CHANGELOG.md) for details.
 
-### Highlights in v1.0.5:
+### Highlights in v1.0.4 - v1.0.6 (5/5/25 - 5/7/25):
 
 * Polished layout and spacing across sidebars and control panels using new spacer classes
 * Added instructions to help with using this tool
 * Added a "puzzle" for learning the building proccess and testing the QR code
+* Reworded several instructions to better emphasize the concept of "Building" a QR code
+* Changed references from "Canvas" to "Build Area"
+* Added a "Build Area" label
+* Added short callout above the Build Area to help guide new users
+* Added a tagline to the header
+* Dropzones now show a "Drop Here" label and highlight on hover
+* Added dedicated panel to track recent updates without requiring users to check GitHub
 * Minor code cleanup and layout refinements for better maintainability
 
 ---
@@ -90,8 +97,9 @@ See the full [Changelog](./CHANGELOG.md) for details.
 We welcome feedback and contributions. You can:
 
 * Submit issues or feature requests on GitHub
-* Suggest preset templates using the form
 * Fork and submit pull requests for improvements
+* Submit issues or feature requests through survey linked within the page
+* Suggest preset templates using the survey linked within the page
 
 ---
 
