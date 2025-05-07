@@ -189,7 +189,7 @@ select, .btn, .checkbox-container {
   text-overflow: ellipsis;
   white-space: nowrap;
   font-size: 20px;
-  min-height: 9px;
+  min-height: 10px;
   font-weight: bold;
   box-shadow: var(--shadow-soft);
   cursor: grab;
@@ -205,7 +205,7 @@ select, .btn, .checkbox-container {
 .dropzone {
   width: 90%;
   height: 8px;
-  min-height: 8px;
+  min-height: 12px;
   border: 1px dashed var(--color-black);
   border-radius: 50px;
   #box-shadow: var(--shadow-soft);
@@ -265,9 +265,68 @@ select, .btn, .checkbox-container {
   }
 
 
+
+.instruction-box .instructions-nav {
+  display: grid;
+  grid-template-columns: 40px 1fr 40px;
+  align-items: center;
+  width: 100%;
+  margin-bottom: 8px;
+  gap: 1px;
+  margin-bottom: 2px;
+}
+
+.instruction-box .instructions-nav {
+  position: relative;     
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  margin-bottom: 2px;
+}
+
+.instruction-box .instr-title {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  white-space: nowrap;  /* keep multiline titles from wrapping weirdly */
+}
+
+.instruction-box .instr-content {
+  font-size: 15px;
+  line-height: 1.1;
+}
+
+.form-grid {
+  display: grid;
+  grid-template-columns: 140px 1fr;  /* same fixed label width + fluid input */
+  column-gap: 20px;
+  row-gap: 8px;
+  width: 90%;
+  margin: 16px auto;
+}
+
+.form-grid label {
+  text-align: right;
+  align-self: center;  /* vertically center in its grid cell */
+  font-weight: bold;
+}
+
+.form-grid input {
+  width: 100%;         /* fill that second column */
+  font-size: 14px;
+  padding: 4px 8px;
+  box-sizing: border-box;
+}
+
+
+
+
 .spacer { height: 10px; }
 .spacer-small { height: 4px; }
+.spacer-bigger-small { height: 6px; }
 .spacer-extra-small { height: 1px; }
+
 
 </style>
 </head>
@@ -275,7 +334,7 @@ select, .btn, .checkbox-container {
 
 <header class="page-header">
   <div class="title">QR Code Builder</div>
-  <div class="version">v1.0.4</div>
+  <div class="version">v1.0.5</div>
 </header>
 
 <div class="layout">
@@ -298,88 +357,105 @@ select, .btn, .checkbox-container {
       <button class="btn btn-danger" id="deletePresetBtn" title="Delete the selected preset.">Delete Preset</button>
     </div>
 
-	<!-- Controls -->
+    <!-- Controls -->
     <div class="section">
       <h3>Controls</h3>
       <div class="checkbox-container" title="If enabled, the QR code image will be copied to clipboard after generation.">
         <input type="checkbox" id="copyToggle">
         <label for="copyToggle">Copy After Build</label>
-		<div class="spacer-small"></div>
-		<div class="spacer-small"></div>
-		<div class="spacer-small"></div>
-		<div class="spacer-small"></div>
+        <div class="spacer-small"></div>
+        <div class="spacer-small"></div>
+        <div class="spacer-small"></div>
+        <div class="spacer-small"></div>
       </div>
 
-      <button class="btn btn-primary" id="generateBtn" title="Build and display the QR code.">Build</button>
+      <button class="btn btn-primary" id="generateBtn" title="Build and display the QR code.">Build QR</button>
       <button class="btn btn-danger" id="clearBtn" title="Clear all blocks from the canvas.">Clear Canvas</button>
     </div>
 
-	<!-- QR Preview -->
+    <!-- QR Preview -->
     <div class="section">
       <h3>QR Preview</h3>
-	  <input id="qrLabelInput" type="text" placeholder="Optional QR label..." style="width: 85%; font-size: 14px; margin: 8px auto 0; display: block;"/>
+      <input id="qrLabelInput" type="text"  title="Label for the QR code." placeholder="Optional QR label..." style="width: 85%; font-size: 14px; margin: 8px auto 0; display: block;"/>
       <div class="qr-preview" id="qrPreview"></div>
     </div>
   </aside>
 
   <!-- ------------------ Canvas Area ------------------ -->
   <div class="canvas" id="canvas"></div>
-
   <!-- ------------------ Right Sidebar ------------------ -->
   
   <!-- Trash -->
   <aside class="panel garbage">
     <div class="garbage-content" style="flex: 1; overflow-y: auto;">
-	  <div class="spacer-extra-small"></div>
-	  <div class="section">
-	    <h3>Trash</h3>
-	    <div class="garbage-drop" id="garbageDrop">Drop to Trash</div>
-	  </div>
-	  <div class="spacer-small"></div>
-	  <div class="spacer-small"></div>
-	  <div class="spacer-small"></div>
-	  <div class="section" id="advancedSection" style="display: none;">
-	    <div class="section-debug-experimental">
-		  <div class="spacer-small"></div>
-		  <h3>Debug/Experimental</h3>
-		  <button class="btn btn-debug" onclick="copySelectedPresetJSON()" title="Copy the code for the selected preset.">Copy Preset JSON</button>
-		  <div class="spacer-small"></div>
-		  <button class="btn btn-debug" onclick="openJSONModal()" title="Paste and load a preset json.">Load Preset JSON</button>
-		  <div class="spacer-small"></div>
-		  <button class="btn btn-debug" onclick="resetAllQRCodeBuilderData()" title="This is a full reset of stored data.">Full Data Reset</button>
-		  <div class="spacer-small"></div>
-		  <div class="spacer-small"></div>
-	    </div>
-	  </div>
+      <div class="spacer-extra-small"></div>
+      <div class="section">
+        <h3>Trash</h3>
+        <div class="garbage-drop" id="garbageDrop">Drop to Trash</div>
+      </div>
+      
+      <div class="spacer-small"></div>
+      <div class="spacer-small"></div>
+      <div class="spacer-small"></div>
+      
+    <!-- Instructions Carousel -->
+    <div class="section instruction-box" id="instructionsSection">
+      <div class="instructions-nav">
+        <button class="instr-btn" id="instrPrev" aria-label="Previous">&larr;</button>
+        <span class="instr-title" id="instrTitle">Topic</span>
+        <button class="instr-btn" id="instrNext" aria-label="Next">&rarr;</button>
+      </div>
+      <div class="instr-content" id="instrContent">
+        <!-- first topic’s content will be injected here -->
+      </div>
+    </div>
+
+
+      <div class="spacer-small"></div>
+      <div class="spacer-small"></div>
+      <div class="spacer-small"></div>
+      <div class="section" id="advancedSection" style="display: none;">
+        <div class="section-debug-experimental">
+          <div class="spacer-small"></div>
+          <h3>Debug/Experimental</h3>
+          <button class="btn btn-debug" onclick="copySelectedPresetJSON()" title="Copy the code for the selected preset.">Copy Preset JSON</button>
+          <div class="spacer-small"></div>
+          <button class="btn btn-debug" onclick="openJSONModal()" title="Paste and load a preset json.">Load Preset JSON</button>
+          <div class="spacer-small"></div>
+          <button class="btn btn-debug" onclick="resetAllQRCodeBuilderData()" title="This is a full reset of stored data.">Full Data Reset</button>
+          <div class="spacer-small"></div>
+          <div class="spacer-small"></div>
+        </div>
+      </div>
     </div>
     <!-- Footer links fixed to bottom -->
     <div class="garbage-footer" style="padding: 10px; text-align: center; font-size: 14px;">
-	  <div class="checkbox-container" title="Enable advanced editing features like iterations.">
-	    <input type="checkbox" id="advancedToggle">
-	    <label for="advancedToggle">Advanced Mode</label>
-		<div class="spacer-small"></div>
-		<div class="spacer-small"></div>
-	  </div>
-	  <div class="spacer-small"></div>
-	  <a href="https://github.com/OffTheClockStudios/QR-Code-Builder/tree/main"
-	     target="_blank"
-	     title="Visit the GitHub repository for QR Code Builder."
-	     style="display:block; margin-bottom: 6px; color: var(--color-tab-symbol); text-decoration: underline;">
-	    Visit GitHub Page
-	  </a>
-	  <div class="spacer-small"></div>
-	  <a href="https://forms.office.com/r/BQ31NpaecJ"
-	     target="_blank"
-	     title="Submit feedback or preset requests."
-	     style="display:block; color: var(--color-return-symbol); text-decoration: underline;">
-	    Submit Feedback
-	  </a>
+      <div class="checkbox-container" title="Enable advanced editing features like iterations.">
+        <input type="checkbox" id="advancedToggle">
+        <label for="advancedToggle">Advanced Mode</label>
+        <div class="spacer-small"></div>
+        <div class="spacer-small"></div>
+      </div>
+      <div class="spacer-small"></div>
+      <a href="https://github.com/OffTheClockStudios/QR-Code-Builder/tree/main"
+         target="_blank"
+         title="Visit the GitHub repository for QR Code Builder."
+         style="display:block; margin-bottom: 6px; color: var(--color-tab-symbol); text-decoration: underline;">
+        Visit GitHub Page
+      </a>
+      <div class="spacer-small"></div>
+      <a href="https://forms.office.com/r/BQ31NpaecJ"
+         target="_blank"
+         title="Submit feedback or preset requests."
+         style="display:block; color: var(--color-return-symbol); text-decoration: underline;">
+        Submit Feedback
+      </a>
     </div>
   </aside>
 
 </body>
-<!-- <<script src="qrcode.min.js"></script> -->
-<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<<script src="qrcode.min.js"></script>
+<!-- <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script> -->
 <script>
 
 // DOM references for key interactive regions
@@ -459,36 +535,37 @@ const Drag = {
 
     el.draggable = true;
 
-	// Allow drag
+    // Allow drag
     el.ondragstart = e => {
       e.dataTransfer.setData('index', idx);
     };
 
-	// Allow double-click edit of label (Text and actual Label)
-	el.ondblclick = () => {
-	  const isAdvanced = document.getElementById('advancedToggle')?.checked;
-	  let label = data.label;
-	  let iterations = data.iterations || 1;
+    // Allow double-click edit of label (Text and actual Label)
+    el.ondblclick = () => {
+      const isAdvanced = document.getElementById('advancedToggle')?.checked;
+      let label = data.label;
+      let iterations = data.iterations || 1;
 
-	  if (isAdvanced) {
-		const combined = prompt('Edit (label | iterations):', `${label} | ${iterations}`);
-		if (combined != null) {
-		  const [newLabelRaw, iterRaw] = combined.split('|').map(s => s.trim());
-		  const newLabel = newLabelRaw || label;
-		  const newIterations = Math.max(1, parseInt(iterRaw)) || 1;
-		  BlockManager.update(idx, newLabel, newIterations);
-		}
-	  } else {
-		const newLabel = prompt('Edit label:', label);
-		if (newLabel != null) {
-		  BlockManager.update(idx, newLabel, iterations);
-		}
-	  }
-	};
+      if (isAdvanced) {
+        const combined = prompt('Edit (label | iterations):', `${label} | ${iterations}`);
+        if (combined != null) {
+          const [newLabelRaw, iterRaw] = combined.split('|').map(s => s.trim());
+          const newLabel = newLabelRaw || label;
+          const newIterations = Math.max(1, parseInt(iterRaw)) || 1;
+          BlockManager.update(idx, newLabel, newIterations);
+        }
+      } else {
+        const newLabel = prompt('Edit label:', label);
+        if (newLabel != null) {
+          BlockManager.update(idx, newLabel, iterations);
+        }
+      }
+    };
 
     return el;
   },
 
+  // Creates a dropzone used for inserting or moving blocks
   // Creates a dropzone used for inserting or moving blocks
   createDropzone(pos) {
     const dz = document.createElement('div');
@@ -497,28 +574,36 @@ const Drag = {
     dz.ondragover = e => e.preventDefault();
 
     dz.ondrop = e => {
-      e.preventDefault();
-      const from = e.dataTransfer.getData('index');
-      const type = e.dataTransfer.getData('text');
+	  e.preventDefault();
+	  const fromRaw = e.dataTransfer.getData('index');
+	  const type    = e.dataTransfer.getData('text');
 
-      if (from !== '') {
-        const blk = BlockManager.blocks.splice(from, 1)[0];
-        BlockManager.blocks.splice(pos, 0, blk);
-      } else if (type) {
-        const label =
-          type === 'text'
-            ? prompt('Text:', '') || 'Text'
-            : type === 'tab'
-            ? '\t'
-            : '\r';
-        BlockManager.add(type, label, pos);
-      }
+	  if (fromRaw !== '') {
+	    // moving an existing block
+	    const from = Number(fromRaw);
+	    let to     = pos;
+	    // if you removed an element before your dropzone, shift the insert index down by one
+	    if (from < to) to--;
 
-      BlockManager.rebuild();
+	    const blk = BlockManager.blocks.splice(from, 1)[0];
+	    BlockManager.blocks.splice(to, 0, blk);
+
+	  } else if (type) {
+	    // dragging in a new block from the toolbox
+	    const label =
+		  type === 'text'   ? prompt('Text:', '') || 'Text'
+	    : type === 'tab'    ? '\t'
+	    :                    '\r';
+
+	    BlockManager.add(type, label, pos);
+	  }
+
+	  BlockManager.rebuild();
     };
 
     return dz;
   }
+
 };
 
 // Setup drag behavior for toolbox items
@@ -549,11 +634,6 @@ const PresetsManager = {
 
   // === Built-in (read-only) presets included with the app ===
   defaultPresets: {
-    "New": {
-      label: "",
-      blocks: [
-      ]
-    },
     "Example 01": {
       label: "Greeting QR",
       blocks: [
@@ -564,6 +644,18 @@ const PresetsManager = {
         { type: "text", label: "Goodbye", iterations: 1 }
       ]
     },
+	"Puzzle 1": {
+	  label: "",
+	  blocks: [
+		{ type: "text", label: "4", iterations: 1 },
+		{ type: "tab", label: "tab to next field", iterations: 1 },
+		{ type: "text", label: "-1", iterations: 1 },
+		{ type: "tab", label: "tab to next field", iterations: 1 },
+		{ type: "text", label: "Awesome", iterations: 1 },
+		{ type: "tab", label: "tab to button", iterations: 1 },
+		{ type: "return", label: "return to press button", iterations: 1 }
+	  ]
+	},
     "ESSYM - Dept, Line, Shift": {
       label: "ESSYM - Dept, Line, Shift",
       blocks: [
@@ -577,14 +669,14 @@ const PresetsManager = {
         { type: "text", label: "1st", iterations: 1 }
       ]
     },
-	"Unnamed Build": {
-	  label: "",
-	  blocks: [
-		{ type: "text", label: "jijij", iterations: 1 },
-		{ type: "tab", label: "\t", iterations: 1 },
-		{ type: "return", label: "\r", iterations: 1 }
-	  ]
-	}
+    "Preset Example": {
+      label: "",
+      blocks: [
+        { type: "text", label: "Hello", iterations: 1 },
+        { type: "return", label: "\r", iterations: 1 },
+        { type: "text", label: "World", iterations: 1 }
+      ]
+    }
   },
 
   // === LocalStorage Access ===
@@ -660,8 +752,8 @@ const PresetsManager = {
     this.saveUserPresets(presets);
     this.refreshDropdown();
     presetSelect.value = '';
-	this.refreshDropdown();
-	BlockManager.clear();
+    this.refreshDropdown();
+    BlockManager.clear();
   },
 
   // Load a preset into the canvas by name
@@ -763,7 +855,6 @@ document.getElementById('loadPresetBtn').onclick = () => {
 document.getElementById('deletePresetBtn').onclick = () => PresetsManager.deleteSelected();
 
 // === Advanced Mode Toggle ===
-// === Advanced Mode Toggle ===
 const advToggle = document.getElementById('advancedToggle');
 const advSection = document.getElementById('advancedSection');
 
@@ -819,18 +910,18 @@ document.getElementById('generateBtn').onclick = () => {
       ctx.font = `bold ${labelFontSize}px sans-serif`;
       ctx.fillStyle = '#000';
       ctx.textAlign = 'center';
-	  
-	  // Auto-resize font if label is too wide
-	  let fontSize = labelFontSize;
-	  ctx.font = `bold ${fontSize}px sans-serif`;
-	  let textWidth = ctx.measureText(labelText).width;
-	  while (textWidth > canvas.width && fontSize > 8) {
-	    fontSize--;
-	    ctx.font = `bold ${fontSize}px sans-serif`;
-	    textWidth = ctx.measureText(labelText).width;
-	}
+      
+      // Auto-resize font if label is too wide
+      let fontSize = labelFontSize;
+      ctx.font = `bold ${fontSize}px sans-serif`;
+      let textWidth = ctx.measureText(labelText).width;
+      while (textWidth > canvas.width && fontSize > 8) {
+        fontSize--;
+        ctx.font = `bold ${fontSize}px sans-serif`;
+        textWidth = ctx.measureText(labelText).width;
+    }
 
-	ctx.fillText(labelText, canvas.width / 2, qrSize + paddingAboveLabel + fontSize / 1.2);
+    ctx.fillText(labelText, canvas.width / 2, qrSize + paddingAboveLabel + fontSize / 1.2);
     }
 
     // Output final QR image
@@ -981,6 +1072,141 @@ function convertBuildToSnippet(name = "Unnamed Preset") {
   console.log("🟢 Script-ready preset snippet:\n\n" + snippet);
   return snippet;
 }
+
+// 1) Define your “slides”:
+const instructionsData = [
+    {
+      title: 'Instructions',
+      content: ``
+    },
+    {
+      title: 'The Interface',
+      content: `
+        <ul>
+          <li><strong>Toolbox</strong>: Drag <strong>Text</strong>, <strong>Tab</strong>, or <strong>Return</strong> blocks into your QR build.</li>
+		  <div class="spacer-bigger-small"></div>
+          <li><strong>Canvas</strong>: The center area where you arrange blocks—just drop them into the outlined zones.</li>
+		  <div class="spacer-bigger-small"></div>
+          <li><strong>Presets</strong>: Select, save, or delete saved QR layouts from this dropdown.</li>
+		  <div class="spacer-bigger-small"></div>
+          <li><strong>Controls</strong>: Use <strong>Build QR</strong> to generate your code or <strong>Clear Canvas</strong> to start over.</li>
+		  <div class="spacer-bigger-small"></div>
+          <li><strong>QR Preview</strong>: See your QR image here and add an optional label.</li>
+		  <div class="spacer-bigger-small"></div>
+          <li><strong>Trash</strong>: Drag blocks here to remove them from the canvas.</li>
+        </ul>`
+    },
+    {
+      title: 'Create a Simple QR',
+      content: `
+        <ul>
+          <li>In the Toolbox, click and hold the <strong>Text</strong> block.</li>
+		  <div class="spacer-bigger-small"></div>
+          <li>Drag it over a highlighted drop zone in the Canvas and release.</li>
+		  <div class="spacer-bigger-small"></div>
+          <li>When prompted, type your text and click <strong>OK</strong>.</li>
+		  <div class="spacer-bigger-small"></div>
+          <li>In the Controls section, click the <strong>Build QR</strong> button.</li>
+		  <div class="spacer-bigger-small"></div>
+          <li>In the QR Preview section, type a label for the QR or leave empty for an unlabeled QR code.</li>
+		  <div class="spacer-bigger-small"></div>
+          <li>Optionally, check <strong>Copy After Build</strong> to copy the QR image to your clipboard.</li>
+        </ul>`
+    },
+    {
+      title: 'Using Presets',
+      content: `
+        <ul>
+          <li>Open the <strong>Presets</strong> dropdown to see your saved layouts.</li>
+		  <div class="spacer-bigger-small"></div>
+          <li>Default presets (marked with ⭐) can’t be edited or deleted.</li>
+		  <div class="spacer-bigger-small"></div>
+          <li>Select <strong>⭐ Preset Example</strong> and click <strong>Load</strong>.</li>
+		  <div class="spacer-bigger-small"></div>
+          <li>Click <strong>Build QR</strong> to generate the code from that preset.</li>
+		  <div class="spacer-bigger-small"></div>
+          <li>To modify it, double-click the “Hello” text block, change it to “Hi,” and press <strong>Enter</strong>.</li>
+		  <div class="spacer-bigger-small"></div>
+          <li>Click <strong>Save</strong>, name your preset <strong>Hi Example</strong>, and press <strong>Enter</strong>.</li>
+		  <div class="spacer-bigger-small"></div>
+          <li>Click <strong>Build QR</strong> again to see your updated code.</li>
+		  <div class="spacer-bigger-small"></div>
+          <li>In the dropdown, select <strong>⭐ Preset Example</strong> and click <strong>Load</strong> to revert to the original.</li>
+		  <div class="spacer-bigger-small"></div>
+          <li>Then choose <strong>Hi Example</strong> and load it. Then click <strong>Delete Preset</strong> to remove it.</li>
+		  <div class="spacer-bigger-small"></div>
+          <li>All done—you’ve loaded, edited, saved, and deleted a preset.</li>
+        </ul>`
+    },
+    {
+      title: 'Puzzle 1',
+      content: `
+        <ul>
+          <li>Below are various fields and a button.</li>
+		  <div class="spacer-bigger-small"></div>
+          <li>Here you can try out different combinations of the text, tab, and return blocks.</li>
+		  <div class="spacer-bigger-small"></div>
+          <li>Try to create a code that allows you to complete the puzzle with a single QR code.</li>
+		  <div class="spacer-bigger-small"></div>
+          <li>Answer can be loaded with preset ⭐ Puzzle 1.</li>
+		  <div class="spacer-bigger-small"></div>
+          <li>*If the loaded answer does not work, then your scanner isn't setup for the tab & return functions.</li>
+        </ul>
+
+        <form class="form-grid">
+          <label for="field1">2 + 2 = </label>
+          <input id="field1" type="text" placeholder="Text..."/>
+
+          <label for="field2">5 - 6 = </label>
+          <input id="field2" type="text" placeholder="Text..."/>
+
+          <label for="field3">Heath is... </label>
+          <input id="field3" type="text" placeholder="Text..."/>
+          
+          <label for="confirmBtn">This should be confirmed via scan:</label>
+          <button class="btn btn-purple" id="confirmReturnBtn" title="Test the return function.">Return Button</button>
+        </form>
+
+        <button class="btn btn-debug" id="resetTestBtn" title="Resets puzzle field.">Reset Test</button>
+      `
+    },
+];
+
+// 2) Keep track of the current index & a render function
+let instrIndex = 0;
+function renderInstructions() {
+  const { title, content } = instructionsData[instrIndex];
+  document.getElementById('instrTitle').textContent = title;
+  document.getElementById('instrContent').innerHTML = content;
+}
+
+// 3) Wire up the arrow buttons
+document.getElementById('instrPrev').addEventListener('click', () => {
+  instrIndex = (instrIndex - 1 + instructionsData.length) % instructionsData.length;
+  renderInstructions();
+});
+document.getElementById('instrNext').addEventListener('click', () => {
+  instrIndex = (instrIndex + 1) % instructionsData.length;
+  renderInstructions();
+});
+
+// 4) Initialize on load
+renderInstructions();
+
+// Test Return confirm
+document.getElementById('confirmReturnBtn').addEventListener('click', () => {
+  const ok = confirm('This prompt should be confirmed by the QR code scan.');
+  alert('Congratulations!');
+});
+
+// Hook up Reset Test to clear field1, field2, field3:
+document.getElementById('resetTestBtn').addEventListener('click', () => {
+  ['field1','field2','field3'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.value = '';
+  });
+});
+
 
 </script>
 </html>
