@@ -12,6 +12,7 @@ All notable changes to this project will be documented in this file.
 - Added a tagline to the header
 - Dropzones now show a "Drop Here" label and highlight on hover
 - Added dedicated panel to track recent updates without requiring users to check GitHub
+- Added two more informative panels/examples
 
 ---
 
