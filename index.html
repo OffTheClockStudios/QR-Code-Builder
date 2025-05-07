@@ -715,16 +715,6 @@ const PresetsManager = {
 
   // === Built-in (read-only) presets included with the app ===
   defaultPresets: {
-    "Example 01": {
-      label: "Greeting QR",
-      blocks: [
-        { type: "text", label: "Hello", iterations: 9 },
-        { type: "tab", label: "\t", iterations: 1 },
-        { type: "text", label: "World", iterations: 1 },
-        { type: "return", label: "\r", iterations: 1 },
-        { type: "text", label: "Goodbye", iterations: 1 }
-      ]
-    },
 	"Puzzle 1": {
 	  label: "",
 	  blocks: [
@@ -1189,6 +1179,19 @@ const instructionsData = [
 		</ul>
 	  `
 	},
+  {
+    title: 'Create a Login QR',
+    content: `
+      <ul class="step-list">
+        <li>Start with a <strong>Text</strong> block with the text "Username".</li>
+        <li>Insert a <strong>Tab</strong> block to move to the next input field.</li>
+        <li>Add another <strong>Text</strong> block with the text "Password".</li>
+        <li>Follow that with a <strong>Return</strong> block to simulate form submission.</li>
+        <li>Click <strong>Build QR</strong> to preview the structured output.</li>
+        <li><em>Scanners are often setup to include the <strong>Return</strong> at the end of the scan, so adding a <strong>Return</strong> block may not be required. This tool is handy because if the <strong>Return</strong> is required, you simply add it to the QR code instead of using a different scanner or adjusting its programming..</em></li>
+      </ul>
+    `
+  },
 	{
 	  title: 'Using Presets',
 	  content: `
@@ -1234,6 +1237,22 @@ const instructionsData = [
 		<button class="btn btn-debug" id="resetTestBtn" title="Resets puzzle fields.">Reset Test</button>
 	  `
 	},
+  {
+    title: 'How I Use This Tool',
+    content: `
+      <ul class="step-list">
+        <li>I think of this tool like solving a puzzle: the goal is to get the scanner to enter data exactly where I want it, even if the system behaves oddly.</li>
+        <li>Some platforms are smooth. Others—like ESSYM or Lotus Notes—require workarounds like extra tabs or returns just to position the cursor correctly.</li>
+        <li>This builder gives me precise control: text, tabs, returns, repeats, and timing.</li>
+        <li>In <strong>Advanced Mode</strong>, I often use high iteration counts—especially in slower sites like Nexus. For example, setting a <strong>Tab</strong> block to repeat 32 times helps “walk” the focus forward until a field is ready. It keeps things compact in the builder since this is all within one block, while still handling timing quirks in the website.</li>
+        <li>Even if the block sequence looks strange, what matters is whether it works reliably when scanned.</li>
+        <li>Since not everyone enjoys reverse-engineering input quirks, I created default presets. That way, once one person solves the puzzle, everyone else can use it. <em>(for now, submit them to me directly—it’s not a full app yet)</em></li>
+        <li>If you treat this like building a structured recipe for the QR code (not just filling out a form), you’ll pick it up quickly.</li>
+        <li>Try performing your task normally—then recreate it using blocks. My process is to perform the actual step, place a block, build, scan. If the scan gets me to the current step, then I proceed with the next step and repeat until finished. If something doesn’t work, throw in a tab or return or both and see if that moves things forward. If I am still stuck, I backtrack and regroup.</li>
+        <li>Some sites and programs will not be able to take the quick input. In these scenerios, it might be better to address the timing by adjusting the scanner.</li>
+      </ul>
+    `
+  },
   {
     title: 'Feedback-Based Changes',
     content: `
