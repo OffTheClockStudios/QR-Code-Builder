@@ -7,6 +7,8 @@
 :root {
   --color-bg: #f7f9fc;
   --color-canvas: #e9ecef;
+  --color-dropzone-fill: #dbdee1;
+  --color-info-fill: #f0f1f1;
   --color-panel: #ffffff;
   --color-sections: #f0f2f5;
   --color-primary: #2e7d32;
@@ -162,6 +164,39 @@ select, .btn, .checkbox-container {
   gap: 4px;
 }
 
+.canvas-header {
+  font-weight: bold;
+  font-size: 16px;
+  padding: 6px 0;
+  text-align: center;
+  width: 100%;
+  border-bottom: 1px solid #ccc;
+}
+
+.canvas-info-group {
+  text-align: center;
+  margin-top: 9px;
+  margin-bottom: 9px;
+  padding: 6px 0;
+  width: 90%;
+  font-size: 12px;
+  line-height: 1.4;
+  color: var(--color-shadow-soft);
+  background: var(--color-info-fill);
+  box-shadow: var(--shadow-soft);
+}
+.canvas-info {
+  margin: 2px 0;
+}
+
+.canvas-body {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+}
+
 .canvas {
   flex: 1;
   background: var(--color-canvas);
@@ -204,11 +239,35 @@ select, .btn, .checkbox-container {
 
 .dropzone {
   width: 90%;
-  height: 8px;
+  height: 16px;
   min-height: 12px;
   border: 1px dashed var(--color-black);
   border-radius: 50px;
-  #box-shadow: var(--shadow-soft);
+  position: relative;
+  background-color: var(--color-dropzone-fill);
+  transition: background 0.2s ease-in-out;
+}
+
+.dropzone::before {
+  content: "Drop here";
+  position: absolute;
+  top: -1px;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 14px;
+  font-weight: bold;
+  color: var(--color-grey);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.2s;
+}
+
+.dropzone.drag-hover {
+  background-color: rgba(0, 0, 0, 0.2);
+}
+
+.dropzone.drag-hover::before {
+  opacity: 1;
 }
 
 .qr-preview {
@@ -241,6 +300,7 @@ select, .btn, .checkbox-container {
   background: var(--color-garbage-background);
   display: flex;
   align-items: center;
+  padding: 1px;
   justify-content: center;
   color: var(--color-danger);
   font-weight: bold;
@@ -265,17 +325,6 @@ select, .btn, .checkbox-container {
   }
 
 
-
-.instruction-box .instructions-nav {
-  display: grid;
-  grid-template-columns: 40px 1fr 40px;
-  align-items: center;
-  width: 100%;
-  margin-bottom: 8px;
-  gap: 1px;
-  margin-bottom: 2px;
-}
-
 .instruction-box .instructions-nav {
   position: relative;     
   display: flex;
@@ -286,15 +335,34 @@ select, .btn, .checkbox-container {
 }
 
 .instruction-box .instr-title {
-  position: absolute;
-  left: 50%;
-  transform: translateX(-50%);
-  white-space: nowrap;  /* keep multiline titles from wrapping weirdly */
+  text-align: center;
+  flex: 1;
 }
 
 .instruction-box .instr-content {
-  font-size: 15px;
-  line-height: 1.1;
+  font-size: 13px;
+  line-height: 1.2;
+}
+
+.instruction-box ul {
+  margin-left: 1px;
+  padding-left: 16px;
+  line-height: 1.2;
+}
+
+.instruction-box li {
+  margin-left: 1px;
+  margin-bottom: 6px;
+  padding-left: 2px;
+  line-height: 1.2;
+}
+
+.instruction-box p {
+  margin-left: 0px;
+  margin-bottom: 3px;
+  line-height: 1;
+  text-align: center;
+  justify-content: center;
 }
 
 .form-grid {
@@ -334,7 +402,9 @@ select, .btn, .checkbox-container {
 
 <header class="page-header">
   <div class="title">QR Code Builder</div>
-  <div class="version">v1.0.5</div>
+  <div class="version">v1.0.6 || Last Updated on 05/07/2025 @ 16:45</div>
+  <div class="spacer-small"></div>
+  <div class="version">Visually build your QR code—one block, one step at a time.</div>
 </header>
 
 <div class="layout">
@@ -370,7 +440,7 @@ select, .btn, .checkbox-container {
       </div>
 
       <button class="btn btn-primary" id="generateBtn" title="Build and display the QR code.">Build QR</button>
-      <button class="btn btn-danger" id="clearBtn" title="Clear all blocks from the canvas.">Clear Canvas</button>
+      <button class="btn btn-danger" id="clearBtn" title="Clear all blocks from the build area.">Clear Build Area</button>
     </div>
 
     <!-- QR Preview -->
@@ -381,8 +451,15 @@ select, .btn, .checkbox-container {
     </div>
   </aside>
 
-  <!-- ------------------ Canvas Area ------------------ -->
-  <div class="canvas" id="canvas"></div>
+  <!-- ------------------ Canvas Area / Build Area ------------------ -->
+  <div class="canvas">
+    <div class="canvas-header">Build Area</div>
+    <div class="canvas-info-group">
+      <div class="canvas-info">Drag blocks from the Toolbox</div>
+      <div class="canvas-info">and drop them into the zones below</div>
+    </div>
+    <div class="canvas-body" id="canvas"></div>
+  </div>
   <!-- ------------------ Right Sidebar ------------------ -->
   
   <!-- Trash -->
@@ -455,12 +532,12 @@ select, .btn, .checkbox-container {
 
 </body>
 <!-- link is for original, made a copy so to be independent and secure -->
-<<script src="qrcode.min.js"></script>
+<script src="qrcode.min.js"></script>
 <!-- <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script> -->
 <script>
 
 // DOM references for key interactive regions
-const canvasEl = document.getElementById('canvas');
+const canvasEl = document.getElementById('canvas'); // now refers to canvas-body
 const qrPreview = document.getElementById('qrPreview');
 const garbageDrop = document.getElementById('garbageDrop');
 const presetSelect = document.getElementById('presetSelect');
@@ -566,46 +643,49 @@ const Drag = {
     return el;
   },
 
-  // Creates a dropzone used for inserting or moving blocks
-  // Creates a dropzone used for inserting or moving blocks
   createDropzone(pos) {
     const dz = document.createElement('div');
     dz.className = 'dropzone';
 
-    dz.ondragover = e => e.preventDefault();
+    dz.ondragover = e => {
+      e.preventDefault();
+      dz.classList.add('drag-hover');
+    };
+
+    dz.ondragleave = () => {
+      dz.classList.remove('drag-hover');
+    };
 
     dz.ondrop = e => {
-	  e.preventDefault();
-	  const fromRaw = e.dataTransfer.getData('index');
-	  const type    = e.dataTransfer.getData('text');
+      e.preventDefault();
+      dz.classList.remove('drag-hover');
 
-	  if (fromRaw !== '') {
-	    // moving an existing block
-	    const from = Number(fromRaw);
-	    let to     = pos;
-	    // if you removed an element before your dropzone, shift the insert index down by one
-	    if (from < to) to--;
+      const fromRaw = e.dataTransfer.getData('index');
+      const type = e.dataTransfer.getData('text');
 
-	    const blk = BlockManager.blocks.splice(from, 1)[0];
-	    BlockManager.blocks.splice(to, 0, blk);
+      if (fromRaw !== '') {
+        const from = Number(fromRaw);
+        let to = pos;
+        if (from < to) to--;
 
-	  } else if (type) {
-	    // dragging in a new block from the toolbox
-	    const label =
-		  type === 'text'   ? prompt('Text:', '') || 'Text'
-	    : type === 'tab'    ? '\t'
-	    :                    '\r';
+        const blk = BlockManager.blocks.splice(from, 1)[0];
+        BlockManager.blocks.splice(to, 0, blk);
+      } else if (type) {
+        const label =
+          type === 'text' ? prompt('Text:', '') || 'Text'
+        : type === 'tab'  ? '\t'
+        :                   '\r';
 
-	    BlockManager.add(type, label, pos);
-	  }
+        BlockManager.add(type, label, pos);
+      }
 
-	  BlockManager.rebuild();
+      BlockManager.rebuild();
     };
 
     return dz;
   }
-
 };
+
 
 // Setup drag behavior for toolbox items
 document.querySelectorAll('.toolbox-item').forEach(it =>
@@ -1023,7 +1103,7 @@ function resetAllQRCodeBuilderData() {
  */
 function convertBuildToJSON(name = "Unnamed Build") {
   if (!BlockManager.blocks.length) {
-    console.warn("⚠️ Canvas is empty. Nothing to convert.");
+    console.warn("⚠️ Build Area is empty. Nothing to convert.");
     return;
   }
 
@@ -1056,7 +1136,7 @@ function convertBuildToJSON(name = "Unnamed Build") {
  */
 function convertBuildToSnippet(name = "Unnamed Preset") {
   if (!BlockManager.blocks.length) {
-    console.warn("⚠️ Canvas is empty. Nothing to convert.");
+    console.warn("⚠️ Build Area is empty. Nothing to convert.");
     return;
   }
 
@@ -1076,101 +1156,108 @@ function convertBuildToSnippet(name = "Unnamed Preset") {
 
 // 1) Define your “slides”:
 const instructionsData = [
-    {
-      title: 'Cycle Instructions',
-      content: ``
-    },
-    {
-      title: 'The Interface',
-      content: `
-        <ul>
-          <li><strong>Toolbox</strong>: Drag <strong>Text</strong>, <strong>Tab</strong>, or <strong>Return</strong> blocks into your QR build.</li>
-		  <div class="spacer-bigger-small"></div>
-          <li><strong>Canvas</strong>: The center area where you arrange blocks—just drop them into the outlined zones.</li>
-		  <div class="spacer-bigger-small"></div>
-          <li><strong>Presets</strong>: Select, save, or delete saved QR layouts from this dropdown.</li>
-		  <div class="spacer-bigger-small"></div>
-          <li><strong>Controls</strong>: Use <strong>Build QR</strong> to generate your code or <strong>Clear Canvas</strong> to start over.</li>
-		  <div class="spacer-bigger-small"></div>
-          <li><strong>QR Preview</strong>: See your QR image here and add an optional label.</li>
-		  <div class="spacer-bigger-small"></div>
-          <li><strong>Trash</strong>: Drag blocks here to remove them from the canvas.</li>
-        </ul>`
-    },
-    {
-      title: 'Create a Simple QR',
-      content: `
-        <ul>
-          <li>In the Toolbox, click and hold the <strong>Text</strong> block.</li>
-		  <div class="spacer-bigger-small"></div>
-          <li>Drag it over a highlighted drop zone in the Canvas and release.</li>
-		  <div class="spacer-bigger-small"></div>
-          <li>When prompted, type your text and click <strong>OK</strong>.</li>
-		  <div class="spacer-bigger-small"></div>
-          <li>In the Controls section, click the <strong>Build QR</strong> button.</li>
-		  <div class="spacer-bigger-small"></div>
-          <li>In the QR Preview section, type a label for the QR or leave empty for an unlabeled QR code.</li>
-		  <div class="spacer-bigger-small"></div>
-          <li>Optionally, check <strong>Copy After Build</strong> to copy the QR image to your clipboard.</li>
-        </ul>`
-    },
-    {
-      title: 'Using Presets',
-      content: `
-        <ul>
-          <li>Open the <strong>Presets</strong> dropdown to see your saved layouts.</li>
-		  <div class="spacer-bigger-small"></div>
-          <li>Default presets (marked with ⭐) can’t be edited or deleted.</li>
-		  <div class="spacer-bigger-small"></div>
-          <li>Select <strong>⭐ Preset Example</strong> and click <strong>Load</strong>.</li>
-		  <div class="spacer-bigger-small"></div>
-          <li>Click <strong>Build QR</strong> to generate the code from that preset.</li>
-		  <div class="spacer-bigger-small"></div>
-          <li>To modify it, double-click the “Hello” text block, change it to “Hi,” and press <strong>Enter</strong>.</li>
-		  <div class="spacer-bigger-small"></div>
-          <li>Click <strong>Save</strong>, name your preset <strong>Hi Example</strong>, and press <strong>Enter</strong>.</li>
-		  <div class="spacer-bigger-small"></div>
-          <li>Click <strong>Build QR</strong> again to see your updated code.</li>
-		  <div class="spacer-bigger-small"></div>
-          <li>In the dropdown, select <strong>⭐ Preset Example</strong> and click <strong>Load</strong> to revert to the original.</li>
-		  <div class="spacer-bigger-small"></div>
-          <li>Then choose <strong>Hi Example</strong> and load it. Then click <strong>Delete Preset</strong> to remove it.</li>
-		  <div class="spacer-bigger-small"></div>
-          <li>All done—you’ve loaded, edited, saved, and deleted a preset.</li>
-        </ul>`
-    },
-    {
-      title: 'Puzzle 1',
-      content: `
-        <ul>
-          <li>Below are various fields and a button.</li>
-		  <div class="spacer-bigger-small"></div>
-          <li>Here you can try out different combinations of the text, tab, and return blocks.</li>
-		  <div class="spacer-bigger-small"></div>
-          <li>Try to create a code that allows you to complete the puzzle with a single QR code.</li>
-		  <div class="spacer-bigger-small"></div>
-          <li>Answer can be loaded with preset ⭐ Puzzle 1.</li>
-		  <div class="spacer-bigger-small"></div>
-          <li>*If the loaded answer does not work, then your scanner isn't setup for the tab & return functions.</li>
-        </ul>
+  {
+    title: 'Cycle Through Information',
+    content: `<p>Use the ← and → arrows to browse</p>
+    <p>through different help topics.</p>
+    ` 
+  },
+	{
+	  title: 'The Interface',
+	  content: `
+		<ul>
+		  <li><strong>Toolbox</strong>: Drag <strong>Text</strong>, <strong>Tab</strong> (⇥), or <strong>Return</strong> (⏎) blocks to start building your QR layout—each block represents an action or input.</li>
+		  <li><strong>Build Area</strong>: The central drop area where you visually arrange your QR "recipe." You can add, rearrange, or remove blocks at any time.</li>
+      <li><strong>Dropzones</strong>: Highlighted areas within the Build Area where blocks can be inserted or rearranged.</li>
+		  <li><strong>Presets</strong>: Use this dropdown to load saved QR layouts, save new ones, or delete old ones.</li>
+		  <li><strong>Controls</strong>: Click <strong>Build</strong> to generate the QR code, or <strong>Clear</strong> to reset your Build Area.</li>
+		  <li><strong>QR Preview</strong>: Displays your generated QR code, optionally labeled. Can also be copied to your clipboard.</li>
+		  <li><strong>Trash</strong>: Drag any block here to delete it from your layout.</li>
+		</ul>
+	  `
+	},
+	{
+	  title: 'Create a Simple QR',
+	  content: `
+		<ul class="step-list">
+		  <li>In the <strong>Toolbox</strong>, click and hold the <strong>Text</strong> block.</li>
+		  <li>Drag it over a highlighted drop zone in the <strong>Build Area</strong> and release.</li>
+		  <li>When prompted, type your text and click <strong>OK</strong>.</li>
+		  <li>In the <strong>Controls</strong> section, click the <strong>Build QR</strong> button.</li>
+		  <li>In the <strong>QR Preview</strong> section, enter a label or leave it blank for an unlabeled code.</li>
+		  <li>Optionally, check <strong>Copy After Build</strong> to copy the image to your clipboard.</li>
+		</ul>
+	  `
+	},
+	{
+	  title: 'Using Presets',
+	  content: `
+		<ul class="step-list">
+		  <li>The <strong>Presets</strong> dropdown lets you save and reuse custom QR layouts.</li>
+		  <li>Default presets (marked with a <strong>⭐</strong>) are built-in and can't be edited or deleted.</li>
+		  <li>Select <strong>⭐ Preset Example</strong> from the dropdown and click <strong>Load</strong> to preview it in the Build Area.</li>
+		  <li>Click <strong>Build QR</strong> to generate the code based on that preset's layout.</li>
+		  <li>Try editing the layout: double-click the “Hello” block, change the text to “Hi,” and press <strong>Enter</strong>.</li>
+		  <li>Click <strong>Save</strong>, name your new preset <strong>Hi Example</strong>, and press <strong>Enter</strong>.</li>
+		  <li>Click <strong>Build QR</strong> again to see your updated version in the QR Preview.</li>
+		  <li>Want to switch back? Select <strong>⭐ Preset Example</strong> from the dropdown and click <strong>Load</strong>.</li>
+		  <li>You can also select <strong>Hi Example</strong> and click <strong>Delete Preset</strong> if you no longer need it.</li>
+		  <li>That’s it—you’ve now loaded, customized, saved, and removed a preset layout.</li>
+		</ul>
+	  `
+	},
+	{
+	  title: 'Puzzle 1',
+	  content: `
+		<ul class="step-list">
+		  <li>Use the inputs below as your test environment.</li>
+		  <li>Try to create a QR layout using <strong>Text</strong>, <strong>Tab</strong>, and <strong>Return</strong> blocks that fills in all fields and submits the form with a single scan.</li>
+		  <li>This is meant to test your understanding of block behavior and scanner compatibility.</li>
+		  <li>You can view the intended answer by loading <strong>⭐ Puzzle 1</strong> from the Presets dropdown.</li>
+		  <li><em>If the answer preset doesn’t work, your scanner may not support tabs or carriage returns without configuration.</em></li>
+		</ul>
 
-        <form class="form-grid">
-          <label for="field1">2 + 2 = </label>
-          <input id="field1" type="text" placeholder="Text..."/>
+		<form class="form-grid">
+		  <label for="field1">2 + 2 = </label>
+		  <input id="field1" type="text" placeholder="Text..." />
 
-          <label for="field2">5 - 6 = </label>
-          <input id="field2" type="text" placeholder="Text..."/>
+		  <label for="field2">5 - 6 = </label>
+		  <input id="field2" type="text" placeholder="Text..." />
 
-          <label for="field3">Heath is... </label>
-          <input id="field3" type="text" placeholder="Text..."/>
-          
-          <label for="confirmBtn">This should be confirmed via scan:</label>
-          <button type="button" class="btn btn-purple" id="confirmReturnBtn" title="Test the return function."> Return Button </button>
-        </form>
+		  <label for="field3">Heath is... </label>
+		  <input id="field3" type="text" placeholder="Text..." />
+		  
+		  <label for="confirmBtn">This should be confirmed via scan:</label>
+		  <button type="button" class="btn btn-purple" id="confirmReturnBtn" title="Test the return function.">Return Button</button>
+		</form>
 
-        <button class="btn btn-debug" id="resetTestBtn" title="Resets puzzle field.">Reset Test</button>
-      `
-    },
+		<button class="btn btn-debug" id="resetTestBtn" title="Resets puzzle fields.">Reset Test</button>
+	  `
+	},
+  {
+    title: 'Feedback-Based Changes',
+    content: `
+      <ul>
+        <li><strong>User Onboarding & Concept Clarity</strong>
+        <div class="spacer-bigger-small"></div>
+          <ul>
+            <li>Updated terminology (e.g., 'Canvas' renamed to 'Build Area')</li>
+            <li>Refined instructions/examples to better communicate the concept of constructing the QR recipe from the ground up</li>
+          </ul>
+        </li>
+        <div class="spacer-bigger-small"></div>
+        <li><strong>Interface Affordance</strong>
+        <div class="spacer-bigger-small"></div>
+          <ul>
+            <li>Added label for the Build Area</li>
+            <li>Added a basic instructions box to help users start out</li>
+            <li>Adjusted Build Area visuals to better indicate interactivity</li>
+            <li>Added hover cues when dragging over a dropzone</li>
+          </ul>
+        </li>
+      </ul>
+    `
+  }
 ];
 
 // 2) Keep track of the current index & a render function
