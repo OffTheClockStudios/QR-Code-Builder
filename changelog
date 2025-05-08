@@ -2,6 +2,16 @@
 
 All notable changes to this project will be documented in this file.
 
+## \[v1.0.7] – 2025-05-08
+
+### Overhaul
+- Testing new interface layouts based on feedback
+- Removed debug/experimental options—they’re not a priority right now
+- Removed the outdated instructions after recent UI changes
+- Removed "Copy on Build" || * ADDED "Copy" & "Load" buttons
+
+---
+
 ## \[v1.0.6] – 2025-05-07
 
 ### UI & UX Improvements
