@@ -914,16 +914,6 @@ document.getElementById('loadPresetBtn').onclick = () => {
 };
 document.getElementById('deletePresetBtn').onclick = () => PresetsManager.deleteSelected();
 
-// === Advanced Mode Toggle ===
-const advToggle = document.getElementById('advancedToggle');
-const advSection = document.getElementById('advancedSection');
-
-advToggle.addEventListener('change', e => {
-  const show = e.target.checked;
-  advSection.style.display = show ? 'block' : 'none';
-  BlockManager.rebuild();
-});
-
 // === Build QR Code ===
 document.getElementById('generateBtn').onclick = () => {
   // Generate QR content from block list
