@@ -1,0 +1,1403 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>QR Builder – Visual Mode</title>
+<style>
+:root {
+  --color-bg: #f7f9fc;
+  --color-canvas: #e9ecef;
+  --color-dropzone-fill: #dbdee1;
+  --color-info-fill: #f0f1f1;
+  --color-panel: #ffffff;
+  --color-sections: #f0f2f5;
+  --color-primary: #2e7d32;
+  --color-danger: #c62828;
+  --color-primary-hover: #2e7d00;
+  --color-danger-hover: #c62800;
+  --color-section-debug-experimental: #c6f8e7;
+  --color-debug-btn: #fcb270;
+  --color-debug-text: #212121;
+  --color-tab-symbol: #1976d2;
+  --color-return-symbol: #6a1b9a;
+  --color-version-text: #616161;
+  --color-toolbox-item: #eef2f7;
+  --color-border-black: #736b6b;
+  --color-internal-text-btn: #fff;
+  --color-border-light: #ccc;
+  --color-black: #212121;
+  --color-grey: #616161;
+  --color-block-text: #212121;
+  --color-instruction-text: #212121;
+  --color-garbage-background: #ffecec;
+  --shadow-soft: 0 1px 3px rgba(0, 0, 0, 0.58);
+  --radius: 6px;
+  --side-w: 300px;
+  --font: 'Roboto', sans-serif;
+  --header-height: 45px;
+}
+
+body {
+  margin: 0;
+  font-family: var(--font);
+  background: var(--color-bg);
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  overflow: hidden;
+}
+
+.page-header {
+  height: auto;
+  background: var(--color-panel);
+  border-bottom: 1px solid var(--color-border-light);
+  padding: 5px;
+  display: flex;
+  flex-direction: column; /* stack title + version vertically */
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+  flex-shrink: 0;
+}
+
+.page-header .title {
+  font-size: 24px;
+  font-weight: bold;
+}
+
+.page-header .version {
+  font-size: 12px;
+  color: var(--color-version-text);
+  margin-top: 4px;
+}
+
+.layout {
+  flex: 1;
+  display: flex;
+  overflow: hidden;
+}
+
+.panel {
+  width: var(--side-w);
+  background: var(--color-panel);
+  padding: 10px;
+  box-shadow: var(--shadow-soft);
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  overflow-y: auto;
+}
+
+.toolbox { border-right: 1px solid var(--color-border-black); }
+.garbage { border-left: 1px solid var(--color-border-black); }
+
+.section {
+  background: var(--color-sections);
+  padding: 10px;
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-soft);
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.section h3 {
+  font-size: 15px;
+  margin: 0 0 8px;
+  padding-bottom: 4px;
+  border-bottom: 3px solid #dde;
+  text-align: center;
+}
+
+.toolbox-item {
+  background: var(--color-toolbox-item);
+  padding: 8px;
+  border-radius: var(--radius);
+  border: 1px solid var(--color-border-black);
+  text-align: center;
+  cursor: grab;
+  user-select: none;
+  font-size: 18px;
+  font-weight: bold;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.58);
+}
+
+/* Toolbox-specific coloring */
+.toolbox-item.text { color: var(--color-block-text); }
+.toolbox-item.tab { color: var(--color-tab-symbol); }
+.toolbox-item.return { color: var(--color-return-symbol); }
+
+/* Canvas-specific coloring */
+.block.text { color: var(--color-block-text); }
+.block.tab { color: var(--color-tab-symbol); }
+.block.return { color: var(--color-return-symbol); }
+
+.btn {
+  padding: 10px;
+  font-size: 13px;
+  font-weight: bold;
+  border: none;
+  border-radius: var(--radius);
+  cursor: pointer;
+  transition: background 0.2s;
+  color: var(--color-internal-text-btn);
+  box-shadow: var(--shadow-soft);
+}
+
+.btn-primary { background: var(--color-primary); box-shadow: var(--shadow-soft); }
+.btn-primary:hover { background: var(--color-primary-hover); box-shadow: var(--shadow-soft); }
+.btn-danger { background: var(--color-danger); box-shadow: var(--shadow-soft); }
+.btn-danger:hover { background: var(--color-danger-hover); box-shadow: var(--shadow-soft); }
+.btn-blue { background: var(--color-tab-symbol); box-shadow: var(--shadow-soft); }
+.btn-purple { background: var(--color-return-symbol); box-shadow: var(--shadow-soft); }
+
+select, .btn, .checkbox-container {
+  width: 100%;
+}
+
+.checkbox-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  font-weight: bold;
+  gap: 4px;
+}
+
+.canvas-header {
+  font-weight: bold;
+  font-size: 16px;
+  padding: 6px 0;
+  text-align: center;
+  width: 100%;
+  border-bottom: 1px solid #ccc;
+}
+
+.canvas-info-group {
+  text-align: center;
+  margin-top: 9px;
+  margin-bottom: 9px;
+  padding: 6px 0;
+  width: 90%;
+  font-size: 12px;
+  line-height: 1.4;
+  color: var(--color-shadow-soft);
+  background: var(--color-info-fill);
+  box-shadow: var(--shadow-soft);
+}
+.canvas-info {
+  margin: 2px 0;
+}
+
+.canvas-body {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+}
+
+.canvas {
+  flex: 1;
+  background: var(--color-canvas);
+  overflow-y: auto;
+  padding: 10px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  border-left: 1px solid var(--color-border-black);
+  border-right: 1px solid var(--color-border-black);
+}
+
+.block {
+  width: 90%;
+  background: var(--color-panel);
+  padding: 10px;
+  border: 0.5px solid var(--color-black);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-soft);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 20px;
+  min-height: 10px;
+  font-weight: bold;
+  box-shadow: var(--shadow-soft);
+  cursor: grab;
+  user-select: none;
+}
+
+.iterations {
+  font-size: 0.7em;
+  vertical-align: super;
+  margin-left: 4px;
+}
+
+.dropzone {
+  width: 90%;
+  height: 16px;
+  min-height: 12px;
+  border: 1px dashed var(--color-black);
+  border-radius: 50px;
+  position: relative;
+  background-color: var(--color-dropzone-fill);
+  transition: background 0.2s ease-in-out;
+}
+
+.dropzone::before {
+  content: "Drop here";
+  position: absolute;
+  top: -1px;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 14px;
+  font-weight: bold;
+  color: var(--color-grey);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.2s;
+}
+
+.dropzone.drag-hover {
+  background-color: rgba(0, 0, 0, 0.2);
+}
+
+.dropzone.drag-hover::before {
+  opacity: 1;
+}
+
+.qr-preview {
+  background: var(--color-panel);
+  border: 1px solid var(--color-black);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-soft);
+  padding: 8px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.qr-preview canvas {
+  width: 75px;
+  height: 75px;
+  box-shadow: var(--shadow-soft);
+}
+
+.panel.garbage {
+  display: flex;
+  flex-direction: column;
+}
+
+.garbage-drop {
+  height: 100px;
+  border: 2px dashed var(--color-danger);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-soft);
+  background: var(--color-garbage-background);
+  display: flex;
+  align-items: center;
+  padding: 1px;
+  justify-content: center;
+  color: var(--color-danger);
+  font-weight: bold;
+  font-size: 20px;
+}
+
+.section-debug-experimental {
+  background: var(--color-section-debug-experimental);
+  padding: 4px;
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-soft);
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.btn-debug {
+  background: var(--color-debug-btn);
+  box-shadow: var(--shadow-soft);
+  color: var(--color-debug-text);
+  font-size: 12px;
+  }
+
+
+.instruction-box .instructions-nav {
+  position: relative;     
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  margin-bottom: 2px;
+}
+
+.instruction-box .instr-title {
+  text-align: center;
+  flex: 1;
+}
+
+.instruction-box .instr-content {
+  font-size: 13px;
+  line-height: 1.2;
+}
+
+.instruction-box ul {
+  margin-left: 1px;
+  padding-left: 16px;
+  line-height: 1.2;
+}
+
+.instruction-box li {
+  margin-left: 1px;
+  margin-bottom: 6px;
+  padding-left: 2px;
+  line-height: 1.2;
+}
+
+.instruction-box p {
+  margin-left: 0px;
+  margin-bottom: 3px;
+  line-height: 1;
+  text-align: center;
+  justify-content: center;
+}
+
+.form-grid {
+  display: grid;
+  grid-template-columns: 140px 1fr;  /* same fixed label width + fluid input */
+  column-gap: 20px;
+  row-gap: 8px;
+  width: 90%;
+  margin: 16px auto;
+}
+
+.form-grid label {
+  text-align: right;
+  align-self: center;  /* vertically center in its grid cell */
+  font-weight: bold;
+}
+
+.form-grid input {
+  width: 100%;         /* fill that second column */
+  font-size: 14px;
+  padding: 4px 8px;
+  box-sizing: border-box;
+}
+
+#jsonModal {
+  display: none;
+  position: fixed;
+  top: 15%;
+  left: 50%;
+  transform: translateX(-50%);
+  background: #fff;
+  padding: 20px 24px;
+  width: 500px;
+  max-width: 90%;
+  border-radius: 8px;
+  border: 1px solid #ccc;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.25);
+  z-index: 9999;
+  font-family: 'Roboto', sans-serif;
+}
+
+#jsonModal h3 {
+  margin-top: 0;
+  font-size: 18px;
+  border-bottom: 1px solid #ddd;
+  padding-bottom: 6px;
+}
+
+#jsonInput {
+  width: 100%;
+  font-family: monospace;
+  font-size: 13px;
+  padding: 10px;
+  border-radius: 4px;
+  border: 1px solid #bbb;
+  box-sizing: border-box;
+  resize: vertical;
+}
+
+.json-modal-actions {
+  margin-top: 16px;
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+}
+
+
+.spacer { height: 10px; }
+.spacer-small { height: 4px; }
+.spacer-bigger-small { height: 6px; }
+.spacer-extra-small { height: 1px; }
+
+
+</style>
+</head>
+<body>
+
+<header class="page-header">
+  <div class="title">QR Code Builder</div>
+  <div class="version">v1.0.6 || Last Updated on 05/08/2025 @ 01:20</div>
+  <div class="spacer-small"></div>
+  <div class="version">Visually build your QR code—one block, one step at a time.</div>
+</header>
+
+<div class="layout">
+  <!-- ------------------ Left Sidebar ------------------ -->
+  <!-- Toolbox -->
+  <aside class="panel toolbox">
+    <div class="section">
+      <h3>Toolbox</h3>
+      <div class="toolbox-item text" draggable="true" data-type="text" title="Drag & drop to insert a &quot;Text&quot; block. Double-click to edit the text.">Text</div>
+      <div class="toolbox-item tab" draggable="true" data-type="tab" title="Drag & drop to insert a &quot;Tab&quot; block. Double-click to rename it.">⇥</div>
+      <div class="toolbox-item return" draggable="true" data-type="return" title="Drag & drop to insert a &quot;Return&quot; block. Double-click to rename it.">⏎</div>
+    </div>
+
+  <!-- Presets -->
+    <div class="section">
+      <h3>Presets</h3>
+      <select id="presetSelect" style="font-size: 14px;" title="Choose a saved preset."></select>
+      <button class="btn btn-primary" id="loadPresetBtn" title="Load the selected preset into the canvas.">Load</button>
+      <button class="btn btn-primary" id="savePresetBtn" title="Save the current build as a preset.">Save</button>
+      <button class="btn btn-danger" id="deletePresetBtn" title="Delete the selected preset.">Delete Preset</button>
+    </div>
+
+    <!-- Controls -->
+    <div class="section">
+      <h3>Controls</h3>
+      <div class="checkbox-container" title="If enabled, the QR code image will be copied to clipboard after generation.">
+        <input type="checkbox" id="copyToggle">
+        <label for="copyToggle">Copy After Build</label>
+        <div class="spacer-small"></div>
+        <div class="spacer-small"></div>
+        <div class="spacer-small"></div>
+        <div class="spacer-small"></div>
+      </div>
+
+      <button class="btn btn-primary" id="generateBtn" title="Build and display the QR code.">Build QR</button>
+      <button class="btn btn-danger" id="clearBtn" title="Clear all blocks from the build area.">Clear Build Area</button>
+    </div>
+
+    <!-- QR Preview -->
+    <div class="section">
+      <h3>QR Preview</h3>
+      <input id="qrLabelInput" type="text"  title="Label for the QR code." placeholder="Optional QR label..." style="width: 85%; font-size: 14px; margin: 8px auto 0; display: block;"/>
+      <div class="qr-preview" id="qrPreview"></div>
+    </div>
+  </aside>
+
+  <!-- ------------------ Canvas Area / Build Area ------------------ -->
+  <div class="canvas">
+    <div class="canvas-header">Build Area</div>
+    <div class="canvas-info-group">
+      <div class="canvas-info">Drag blocks from the Toolbox</div>
+      <div class="canvas-info">and drop them into the zones below</div>
+    </div>
+    <div class="canvas-body" id="canvas"></div>
+  </div>
+  <!-- ------------------ Right Sidebar ------------------ -->
+  
+  <!-- Trash -->
+  <aside class="panel garbage">
+    <div class="garbage-content" style="flex: 1; overflow-y: auto;">
+      <div class="spacer-extra-small"></div>
+      <div class="section">
+        <h3>Trash</h3>
+        <div class="garbage-drop" id="garbageDrop">Drop to Trash</div>
+      </div>
+      
+      <div class="spacer-small"></div>
+      <div class="spacer-small"></div>
+      <div class="spacer-small"></div>
+      
+    <!-- Instructions Carousel -->
+    <div class="section instruction-box" id="instructionsSection">
+      <div class="instructions-nav">
+        <button class="instr-btn" id="instrPrev" aria-label="Previous">&larr;</button>
+        <span class="instr-title" id="instrTitle">Topic</span>
+        <button class="instr-btn" id="instrNext" aria-label="Next">&rarr;</button>
+      </div>
+      <div class="instr-content" id="instrContent">
+        <!-- first topic’s content will be injected here -->
+      </div>
+    </div>
+
+
+      <div class="spacer-small"></div>
+      <div class="spacer-small"></div>
+      <div class="spacer-small"></div>
+      <div class="section" id="advancedSection" style="display: none;">
+        <div class="section-debug-experimental">
+          <div class="spacer-small"></div>
+          <h3>Debug/Experimental</h3>
+          <button class="btn btn-debug" onclick="copySelectedPresetJSON()" title="Copy the code for the selected preset.">Copy Preset JSON</button>
+          <div class="spacer-small"></div>
+          <button class="btn btn-debug" onclick="openJSONModal()" title="Paste and load a preset json.">Load Preset JSON</button>
+          <div class="spacer-small"></div>
+          <button class="btn btn-debug" onclick="resetAllQRCodeBuilderData()" title="This is a full reset of stored data.">Full Data Reset</button>
+          <div class="spacer-small"></div>
+          <div class="spacer-small"></div>
+        </div>
+      </div>
+    </div>
+    <!-- Footer links fixed to bottom -->
+    <div class="garbage-footer" style="padding: 10px; text-align: center; font-size: 14px;">
+      <div class="checkbox-container" title="Enable advanced editing features like iterations.">
+        <input type="checkbox" id="advancedToggle">
+        <label for="advancedToggle">Advanced Mode</label>
+        <div class="spacer-small"></div>
+        <div class="spacer-small"></div>
+      </div>
+      <div class="spacer-small"></div>
+      <a href="https://github.com/OffTheClockStudios/QR-Code-Builder/tree/main"
+         target="_blank"
+         title="Visit the GitHub repository for QR Code Builder."
+         style="display:block; margin-bottom: 6px; color: var(--color-tab-symbol); text-decoration: underline;">
+        Visit GitHub Page
+      </a>
+      <div class="spacer-small"></div>
+      <a href="https://forms.office.com/r/BQ31NpaecJ"
+         target="_blank"
+         title="Submit feedback or preset requests."
+         style="display:block; color: var(--color-return-symbol); text-decoration: underline;">
+        Submit Feedback
+      </a>
+    </div>
+  </aside>
+  
+<div id="jsonModal">
+  <h3>Paste Preset JSON</h3>
+  <textarea id="jsonInput" rows="18"></textarea>
+  <div class="json-modal-actions">
+    <button class="btn btn-primary" onclick="submitJSON()">Load</button>
+    <button class="btn btn-danger" onclick="closeJSONModal()">Cancel</button>
+  </div>
+</div>
+
+</body>
+<!-- link is for original, made a copy so to be independent and secure -->
+<script src="qrcode.min.js"></script>
+<!-- <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script> -->
+<script>
+
+// DOM references for key interactive regions
+const canvasEl = document.getElementById('canvas'); // now refers to canvas-body
+const qrPreview = document.getElementById('qrPreview');
+const garbageDrop = document.getElementById('garbageDrop');
+const presetSelect = document.getElementById('presetSelect');
+
+/**
+ * BlockManager handles the current set of blocks displayed on the canvas.
+ * Provides methods to add, update, clear, and rebuild the canvas content.
+ */
+const BlockManager = {
+  blocks: [],
+
+  // Add a new block at the given position (or end if null)
+  add(type, label, pos = null) {
+    this.blocks.splice(pos == null ? this.blocks.length : pos, 0, { type, label, iterations: 1 });
+    this.rebuild();
+  },
+
+  // Update an existing block's label and iterations
+  update(idx, label, iterations) {
+    this.blocks[idx].label = label;
+    this.blocks[idx].iterations = iterations;
+    this.rebuild();
+  },
+
+  // Clear all blocks and reset preview
+  clear() {
+    this.blocks = [];
+    this.rebuild();
+    qrPreview.innerHTML = '';
+  },
+
+  // Redraws the canvas with current blocks and dropzones
+  rebuild() {
+    canvasEl.innerHTML = '';
+    if (this.blocks.length === 0) {
+      canvasEl.append(Drag.createDropzone(0));
+    } else {
+      this.blocks.forEach((b, i) => {
+        canvasEl.append(Drag.createDropzone(i), Drag.createBlock(b, i));
+      });
+      canvasEl.append(Drag.createDropzone(this.blocks.length));
+    }
+  }
+};
+
+/**
+ * Drag handles creation of draggable block elements and dropzones.
+ * Each block responds to double-click for editing and supports drag-reorder.
+ */
+const Drag = {
+  // Creates a draggable block element for a given block of data
+  createBlock(data, idx) {
+    const el = document.createElement('div');
+    el.className = `block ${data.type}`;
+
+    const typeSymbols = {
+      tab: '⇥',
+      return: '⏎'
+    };
+
+    const symbol = typeSymbols[data.type] || '';
+    const label = data.label?.trim() || '';
+    const isAdvanced = document.getElementById('advancedToggle')?.checked;
+
+    const showIteration = isAdvanced || data.iterations > 1;
+    const iter = showIteration
+      ? `<span class="iterations">×${data.iterations}</span>`
+      : '';
+
+    el.innerHTML = symbol
+      ? `${symbol} ${label} ${iter}`
+      : `${label} ${iter}`;
+
+    el.draggable = true;
+
+    // Allow drag
+    el.ondragstart = e => {
+      e.dataTransfer.setData('index', idx);
+    };
+
+    // Allow double-click edit of label (Text and actual Label)
+    el.ondblclick = () => {
+      const isAdvanced = document.getElementById('advancedToggle')?.checked;
+      let label = data.label;
+      let iterations = data.iterations || 1;
+
+      if (isAdvanced) {
+        const combined = prompt('Edit (label | iterations):', `${label} | ${iterations}`);
+        if (combined != null) {
+          const [newLabelRaw, iterRaw] = combined.split('|').map(s => s.trim());
+          const newLabel = newLabelRaw || label;
+          const newIterations = Math.max(1, parseInt(iterRaw)) || 1;
+          BlockManager.update(idx, newLabel, newIterations);
+        }
+      } else {
+        const newLabel = prompt('Edit label:', label);
+        if (newLabel != null) {
+          BlockManager.update(idx, newLabel, iterations);
+        }
+      }
+    };
+
+    return el;
+  },
+
+  createDropzone(pos) {
+    const dz = document.createElement('div');
+    dz.className = 'dropzone';
+
+    dz.ondragover = e => {
+      e.preventDefault();
+      dz.classList.add('drag-hover');
+    };
+
+    dz.ondragleave = () => {
+      dz.classList.remove('drag-hover');
+    };
+
+    dz.ondrop = e => {
+      e.preventDefault();
+      dz.classList.remove('drag-hover');
+
+      const fromRaw = e.dataTransfer.getData('index');
+      const type = e.dataTransfer.getData('text');
+
+      if (fromRaw !== '') {
+        const from = Number(fromRaw);
+        let to = pos;
+        if (from < to) to--;
+
+        const blk = BlockManager.blocks.splice(from, 1)[0];
+        BlockManager.blocks.splice(to, 0, blk);
+      } else if (type) {
+        const label =
+          type === 'text' ? prompt('Text:', '') || 'Text'
+        : type === 'tab'  ? '\t'
+        :                   '\r';
+
+        BlockManager.add(type, label, pos);
+      }
+
+      BlockManager.rebuild();
+    };
+
+    return dz;
+  }
+};
+
+
+// Setup drag behavior for toolbox items
+document.querySelectorAll('.toolbox-item').forEach(it =>
+  it.addEventListener('dragstart', e => e.dataTransfer.setData('text', it.dataset.type))
+);
+
+// Setup drag-to-delete behavior for the trash area
+garbageDrop.ondragover = e => e.preventDefault();
+garbageDrop.ondrop = e => {
+  e.preventDefault();
+  const idx = e.dataTransfer.getData('index');
+  if (idx !== '') {
+    BlockManager.blocks.splice(idx, 1);
+    BlockManager.rebuild();
+  }
+};
+
+
+/**
+ * PresetsManager handles all logic related to managing default and user-defined presets.
+ * - Default presets are bundled into the app (read-only)
+ * - User presets are stored in localStorage under the key 'qrbuilder_presets'
+ * - The manager supports CRUD operations, import/export, and integration with the dropdown UI
+ */
+const PresetsManager = {
+  key: 'qrbuilder_presets',
+
+  // === Built-in (read-only) presets included with the app ===
+  defaultPresets: {
+	"Puzzle 1": {
+	  label: "",
+	  blocks: [
+		{ type: "text", label: "4", iterations: 1 },
+		{ type: "tab", label: "tab to next field", iterations: 1 },
+		{ type: "text", label: "-1", iterations: 1 },
+		{ type: "tab", label: "tab to next field", iterations: 1 },
+		{ type: "text", label: "Awesome", iterations: 1 },
+		{ type: "tab", label: "tab to button", iterations: 1 },
+		{ type: "return", label: "return to press button", iterations: 1 }
+	  ]
+	},
+    "ESSYM - Dept, Line, Shift": {
+      label: "ESSYM - Dept, Line, Shift",
+      blocks: [
+        { type: "text", label: "052 - BSD", iterations: 1 },
+        { type: "tab", label: "\t", iterations: 1 },
+        { type: "return", label: "\r", iterations: 1 },
+        { type: "text", label: "BSD", iterations: 1 },
+        { type: "return", label: "\r", iterations: 1 },
+        { type: "tab", label: "\t", iterations: 1 },
+        { type: "return", label: "\r", iterations: 1 },
+        { type: "text", label: "1st", iterations: 1 }
+      ]
+    },
+    "Preset Example": {
+      label: "",
+      blocks: [
+        { type: "text", label: "Hello", iterations: 1 },
+        { type: "return", label: "\r", iterations: 1 },
+        { type: "text", label: "World", iterations: 1 }
+      ]
+    }
+  },
+
+  // === LocalStorage Access ===
+  getUserPresets() {
+    return JSON.parse(localStorage.getItem(this.key) || '{}');
+  },
+
+  saveUserPresets(presets) {
+    localStorage.setItem(this.key, JSON.stringify(presets));
+  },
+
+  getAllPresets() {
+     // Combine defaults and user-defined presets into one object
+    return { ...this.defaultPresets, ...this.getUserPresets() };
+  },
+
+  isDefault(name) {
+    return Object.hasOwn(this.defaultPresets, name);
+  },
+
+  // === UI Integration ===
+  refreshDropdown() {
+    const allPresets = this.getAllPresets();
+    presetSelect.innerHTML = '<option value="">Select a Preset</option>';
+    for (const name in allPresets) {
+      const opt = document.createElement('option');
+      opt.value = name;
+      opt.textContent = this.isDefault(name) ? `⭐ ${name}` : name;
+      presetSelect.appendChild(opt);
+    }
+  },
+
+  // Converts current canvas build to an object for saving
+  exportPresetObject(name) {
+    const label = document.getElementById('qrLabelInput')?.value.trim() || '';
+    return {
+      [name]: {
+        label,
+        blocks: JSON.parse(JSON.stringify(BlockManager.blocks))
+      }
+    };
+  },
+
+  // Save current canvas as a named user preset
+  saveCurrent() {
+    const name = prompt('Name this preset:');
+    if (!name) return;
+
+    if (this.isDefault(name)) {
+      alert('❌ Cannot overwrite a default preset. Use a new name.');
+      return;
+    }
+
+    const userPresets = this.getUserPresets();
+    userPresets[name] = this.exportPresetObject(name)[name];
+    this.saveUserPresets(userPresets);
+    this.refreshDropdown();
+    presetSelect.value = name;
+  },
+
+  // Delete selected user-defined preset
+  deleteSelected() {
+    const name = presetSelect.value;
+    if (!name) return alert('Select a preset to delete.');
+    if (this.isDefault(name)) {
+      return alert('❌ Cannot delete a default preset.');
+    }
+
+    if (!confirm(`Delete user preset "${name}"?`)) return;
+
+    const presets = this.getUserPresets();
+    delete presets[name];
+    this.saveUserPresets(presets);
+    this.refreshDropdown();
+    presetSelect.value = '';
+    this.refreshDropdown();
+    BlockManager.clear();
+  },
+
+  // Load a preset into the canvas by name
+  loadPreset(name, sourcePresets = null) {
+    const allPresets = sourcePresets || this.getAllPresets();
+    const preset = allPresets[name];
+
+    if (!preset || !Array.isArray(preset.blocks)) {
+      alert('❌ Invalid preset.');
+      return;
+    }
+
+    BlockManager.blocks = preset.blocks.map(b => ({
+      ...b,
+      iterations: b.iterations || 1
+    }));
+    BlockManager.rebuild();
+
+    const labelInput = document.getElementById('qrLabelInput');
+    if (labelInput) labelInput.value = preset.label || '';
+  },
+
+
+  // === Clipboard / Import-Export Utilities ===
+  
+  // Copy selected preset to clipboard as JSON
+  copyToClipboardAsJSON(name) {
+    const allPresets = this.getAllPresets();
+    const preset = allPresets[name];
+    if (!preset || !Array.isArray(preset.blocks)) {
+      alert('❌ No valid preset found.');
+      return;
+    }
+
+    const json = {
+      [name]: {
+        label: preset.label || '',
+        blocks: preset.blocks.map(b => ({
+          type: b.type,
+          label: b.label,
+          iterations: b.iterations || 1
+        }))
+      }
+    };
+
+    const formatted = JSON.stringify(json, null, 2);
+
+    navigator.clipboard.writeText(formatted).then(() => {
+      alert("✅ JSON copied to clipboard!");
+    }).catch(err => {
+      console.error("Clipboard error:", err);
+      alert("❌ Failed to copy.");
+    });
+  },
+
+  // Import preset from raw JSON (used by dev tools or paste modal)
+  importJSON(jsonString) {
+    try {
+      const parsed = JSON.parse(jsonString);
+      const name = Object.keys(parsed)[0];
+      const preset = parsed[name];
+
+      if (!preset || !Array.isArray(preset.blocks)) {
+        alert("❌ Invalid preset format.");
+        return;
+      }
+
+      const userPresets = this.getUserPresets();
+      userPresets[name] = preset;
+      this.saveUserPresets(userPresets);
+      this.refreshDropdown();
+      presetSelect.value = name;
+      this.loadPreset(name);
+
+      alert(`✅ Imported and loaded: ${name}`);
+    } catch (err) {
+      console.error(err);
+      alert("❌ Failed to parse JSON.");
+    }
+  },
+
+  // Preload on app start
+  preloadDefaults() {
+    this.refreshDropdown();
+  }
+};
+
+
+// === App Initialization ===
+PresetsManager.preloadDefaults(); // Load default + user presets into the dropdown
+BlockManager.rebuild();  // Render current canvas state (likely empty on first load)
+
+// === Preset Controls ===
+document.getElementById('savePresetBtn').onclick = () => PresetsManager.saveCurrent();
+document.getElementById('loadPresetBtn').onclick = () => {
+  const name = presetSelect.value;
+  if (name) PresetsManager.loadPreset(name);
+};
+document.getElementById('deletePresetBtn').onclick = () => PresetsManager.deleteSelected();
+
+// === Advanced Mode Toggle ===
+const advToggle = document.getElementById('advancedToggle');
+const advSection = document.getElementById('advancedSection');
+
+advToggle.addEventListener('change', e => {
+  const show = e.target.checked;
+  advSection.style.display = show ? 'block' : 'none';
+  BlockManager.rebuild();
+});
+
+// === Build QR Code ===
+document.getElementById('generateBtn').onclick = () => {
+  // Generate QR content from block list
+  const payload = BlockManager.blocks.map(b => {
+    const unit = b.type === 'tab' ? '\t'
+               : b.type === 'return' ? '\r'
+               : b.label;
+    return unit.repeat(b.iterations || 1);
+  }).join('');
+
+  const labelText = document.getElementById('qrLabelInput')?.value.trim() || '';
+  const qrSize = 100;
+  const paddingAboveLabel = 10;
+  const labelFontSize = 14;
+  const labelAreaHeight = labelText ? labelFontSize + paddingAboveLabel : 0;
+
+  // Clear previous preview
+  qrPreview.innerHTML = '';
+
+  // Setup canvas (include label space)
+  const canvas = document.createElement('canvas');
+  canvas.width = qrSize;
+  canvas.height = qrSize + labelAreaHeight;
+  const ctx = canvas.getContext('2d');
+
+  // Generate QR code temporarily
+  const tmpDiv = document.createElement('div');
+  new QRCode(tmpDiv, {
+    text: payload,
+    width: qrSize,
+    height: qrSize
+  });
+
+  // Wait for QR to render, then draw it + optional label
+  setTimeout(() => {
+    const qrCanvas = tmpDiv.querySelector('canvas');
+    if (!qrCanvas) return;
+
+    // Draw QR image
+    ctx.drawImage(qrCanvas, 0, 0);
+
+    // Draw label below if present
+    if (labelText) {
+      ctx.font = `bold ${labelFontSize}px sans-serif`;
+      ctx.fillStyle = '#000';
+      ctx.textAlign = 'center';
+      
+      // Auto-resize font if label is too wide
+      let fontSize = labelFontSize;
+      ctx.font = `bold ${fontSize}px sans-serif`;
+      let textWidth = ctx.measureText(labelText).width;
+      while (textWidth > canvas.width && fontSize > 8) {
+        fontSize--;
+        ctx.font = `bold ${fontSize}px sans-serif`;
+        textWidth = ctx.measureText(labelText).width;
+    }
+
+    ctx.fillText(labelText, canvas.width / 2, qrSize + paddingAboveLabel + fontSize / 1.2);
+    }
+
+    // Output final QR image
+    const img = new Image();
+    img.src = canvas.toDataURL();
+    qrPreview.appendChild(img);
+
+    // Optionally copy to clipboard
+    if (document.getElementById('copyToggle').checked) {
+      canvas.toBlob(blob => {
+        const item = new ClipboardItem({ 'image/png': blob });
+        navigator.clipboard.write([item])
+          .then(() => alert('✅ QR Code copied to clipboard!'))
+          .catch(err => alert('❌ Failed to copy QR Code.'));
+      });
+    }
+  }, 100);
+};
+
+
+// === Canvas Controls ===
+document.getElementById('clearBtn').onclick = () => {
+  if (confirm('Clear all blocks?')) BlockManager.clear();
+};
+
+
+// === JSON Debug/Experimental Tools ===
+function copySelectedPresetJSON() {
+  const name = presetSelect.value;
+  if (!name) {
+    alert("Select a preset first.");
+    return;
+  }
+  PresetsManager.copyToClipboardAsJSON(name);
+}
+
+
+function openJSONModal() {
+  document.getElementById('jsonInput').value = '';
+  document.getElementById('jsonModal').style.display = 'block';
+}
+
+function closeJSONModal() {
+  document.getElementById('jsonModal').style.display = 'none';
+}
+
+function submitJSON() {
+  const input = document.getElementById('jsonInput').value;
+  closeJSONModal();
+  if (input) loadPresetFromJSON(input);
+}
+
+function loadPresetFromJSON(jsonString) {
+  PresetsManager.importJSON(jsonString);
+}
+
+
+
+/**
+ * Fully resets all QR Code Builder data stored in the browser.
+ *
+ * ⚠️ Use with caution — this operation is irreversible and intended
+ * only for testing, development, or recovery scenarios.
+ *
+ * Can be called manually from the browser console:
+ *     resetAllQRCodeBuilderData()
+ */
+function resetAllQRCodeBuilderData() {
+  if (!confirm("This will delete all saved presets and reset the app. Continue?")) return;
+
+  // Clear presets
+  localStorage.removeItem('qrbuilder_presets');
+
+  // Clear canvas
+  BlockManager.clear();
+
+  // Reset dropdown
+  PresetsManager.refreshDropdown();
+  presetSelect.value = '';
+
+  alert("All QR Builder data has been reset.");
+}
+
+
+
+/**
+ ********************************************
+ * === HIDDEN DEBUG & DEVELOPMENT TOOLS === *
+ ********************************************
+ */
+
+/**
+ * Converts the current canvas build to a JSON-formatted string.
+ * This is useful for exporting the current block layout for manual testing or integration.
+ *
+ * Call this from the browser console:
+ *     convertBuildToJSON("New Preset Name")
+ */
+function convertBuildToJSON(name = "Unnamed Build") {
+  if (!BlockManager.blocks.length) {
+    console.warn("⚠️ Build Area is empty. Nothing to convert.");
+    return;
+  }
+
+  const label = document.getElementById('qrLabelInput')?.value.trim() || '';
+  const snippet = {
+    [name]: {
+      label,
+      blocks: BlockManager.blocks.map(b => ({
+        type: b.type,
+        label: b.label,
+        iterations: b.iterations || 1
+      }))
+    }
+  };
+
+  const formatted = JSON.stringify(snippet, null, 2);
+  console.log("🟢 JSON output based on current canvas build:\n\n" + formatted);
+  return formatted; // allows optional use like const json = convertBuildToJSON("My Example");
+}
+
+
+/**
+ * Converts the current canvas build into a JavaScript object literal snippet,
+ *
+ * This is intended for developer use when preparing new hardcoded presets.
+ * The output is printed to the console and can be manually copied.
+ *
+ * Call this from the browser console:
+ *     convertBuildToSnippet("New Preset Name")
+ */
+function convertBuildToSnippet(name = "Unnamed Preset") {
+  if (!BlockManager.blocks.length) {
+    console.warn("⚠️ Build Area is empty. Nothing to convert.");
+    return;
+  }
+
+  const label = document.getElementById('qrLabelInput')?.value.trim() || '';
+
+  const snippet = `"${name}": {\n` +
+    `  label: ${JSON.stringify(label)},\n` +
+    `  blocks: [\n` +
+    BlockManager.blocks.map(b => {
+      return `    { type: ${JSON.stringify(b.type)}, label: ${JSON.stringify(b.label)}, iterations: ${b.iterations || 1} }`;
+    }).join(",\n") +
+    `\n  ]\n},`;
+
+  console.log("🟢 Script-ready preset snippet:\n\n" + snippet);
+  return snippet;
+}
+
+// 1) Define your “slides”:
+const instructionsData = [
+  {
+    title: 'Cycle Through Information',
+    content: `<p>Use the ← and → arrows to browse</p>
+    <p>through different help topics.</p>
+    ` 
+  },
+	{
+	  title: 'The Interface',
+	  content: `
+		<ul>
+		  <li><strong>Toolbox</strong>: Drag <strong>Text</strong>, <strong>Tab</strong> (⇥), or <strong>Return</strong> (⏎) blocks to start building your QR layout—each block represents an action or input.</li>
+		  <li><strong>Build Area</strong>: The central drop area where you visually arrange your QR "recipe." You can add, rearrange, or remove blocks at any time.</li>
+      <li><strong>Dropzones</strong>: Highlighted areas within the Build Area where blocks can be inserted or rearranged.</li>
+		  <li><strong>Presets</strong>: Use this dropdown to load saved QR layouts, save new ones, or delete old ones.</li>
+		  <li><strong>Controls</strong>: Click <strong>Build</strong> to generate the QR code, or <strong>Clear</strong> to reset your Build Area.</li>
+		  <li><strong>QR Preview</strong>: Displays your generated QR code, optionally labeled. Can also be copied to your clipboard.</li>
+		  <li><strong>Trash</strong>: Drag any block here to delete it from your layout.</li>
+		</ul>
+	  `
+	},
+	{
+	  title: 'Create a Simple QR',
+	  content: `
+		<ul class="step-list">
+		  <li>In the <strong>Toolbox</strong>, click and hold the <strong>Text</strong> block.</li>
+		  <li>Drag it over a highlighted drop zone in the <strong>Build Area</strong> and release.</li>
+		  <li>When prompted, type your text and click <strong>OK</strong>.</li>
+		  <li>In the <strong>Controls</strong> section, click the <strong>Build QR</strong> button.</li>
+		  <li>In the <strong>QR Preview</strong> section, enter a label or leave it blank for an unlabeled code.</li>
+		  <li>Optionally, check <strong>Copy After Build</strong> to copy the image to your clipboard.</li>
+		</ul>
+	  `
+	},
+  {
+    title: 'Create a Login QR',
+    content: `
+      <ul class="step-list">
+        <li>Start with a <strong>Text</strong> block with the text "Username".</li>
+        <li>Insert a <strong>Tab</strong> block to move to the next input field.</li>
+        <li>Add another <strong>Text</strong> block with the text "Password".</li>
+        <li>Follow that with a <strong>Return</strong> block to simulate form submission.</li>
+        <li>Click <strong>Build QR</strong> to preview the structured output.</li>
+        <li><em>Scanners are often setup to include the <strong>Return</strong> at the end of the scan, so adding a <strong>Return</strong> block may not be required. This tool is handy because if the <strong>Return</strong> is required, you simply add it to the QR code instead of using a different scanner or adjusting its programming..</em></li>
+      </ul>
+    `
+  },
+	{
+	  title: 'Using Presets',
+	  content: `
+		<ul class="step-list">
+		  <li>The <strong>Presets</strong> dropdown lets you save and reuse custom QR layouts.</li>
+		  <li>Default presets (marked with a <strong>⭐</strong>) are built-in and can't be edited or deleted.</li>
+		  <li>Select <strong>⭐ Preset Example</strong> from the dropdown and click <strong>Load</strong> to preview it in the Build Area.</li>
+		  <li>Click <strong>Build QR</strong> to generate the code based on that preset's layout.</li>
+		  <li>Try editing the layout: double-click the “Hello” block, change the text to “Hi,” and press <strong>Enter</strong>.</li>
+		  <li>Click <strong>Save</strong>, name your new preset <strong>Hi Example</strong>, and press <strong>Enter</strong>.</li>
+		  <li>Click <strong>Build QR</strong> again to see your updated version in the QR Preview.</li>
+		  <li>Want to switch back? Select <strong>⭐ Preset Example</strong> from the dropdown and click <strong>Load</strong>.</li>
+		  <li>You can also select <strong>Hi Example</strong> and click <strong>Delete Preset</strong> if you no longer need it.</li>
+		  <li>That’s it—you’ve now loaded, customized, saved, and removed a preset layout.</li>
+		</ul>
+	  `
+	},
+	{
+	  title: 'Puzzle 1',
+	  content: `
+		<ul class="step-list">
+		  <li>Use the inputs below as your test environment.</li>
+		  <li>Try to create a QR layout using <strong>Text</strong>, <strong>Tab</strong>, and <strong>Return</strong> blocks that fills in all fields and submits the form with a single scan.</li>
+		  <li>This is meant to test your understanding of block behavior and scanner compatibility.</li>
+		  <li>You can view the intended answer by loading <strong>⭐ Puzzle 1</strong> from the Presets dropdown.</li>
+		  <li><em>If the answer preset doesn’t work, your scanner may not support tabs or carriage returns without configuration.</em></li>
+		</ul>
+
+		<form class="form-grid">
+		  <label for="field1">2 + 2 = </label>
+		  <input id="field1" type="text" placeholder="Text..." />
+
+		  <label for="field2">5 - 6 = </label>
+		  <input id="field2" type="text" placeholder="Text..." />
+
+		  <label for="field3">Heath is... </label>
+		  <input id="field3" type="text" placeholder="Text..." />
+		  
+		  <label for="confirmBtn">This should be confirmed via scan:</label>
+		  <button type="button" class="btn btn-purple" id="confirmReturnBtn" title="Test the return function.">Return Button</button>
+		</form>
+
+		<button class="btn btn-debug" id="resetTestBtn" title="Resets puzzle fields.">Reset Test</button>
+	  `
+	},
+  {
+    title: 'How I Use This Tool',
+    content: `
+      <ul class="step-list">
+        <li>I treat this tool like solving a puzzle—the goal is to get the scanner to complete a task exactly as I would, step by step.</li>
+        <li>Each block represents one intentional action: typing text, tabbing forward, or hitting return.</li>
+        <li>My process is simple: I perform the task manually first, then recreate it block by block in the builder.</li>
+        <li>I scan often while building. If a scan doesn’t behave as expected, I experiment with adding a tab or return to keep the process moving.</li>
+        <li>Even if a block sequence looks strange, if it solves the problem and works every time—it’s a win.</li>
+        <li>This tool gives me precise control, especially for finicky or inconsistent platforms.</li>
+      </ul>
+    `
+  },
+  {
+    title: 'Advanced – Iterations',
+    content: `
+      <ul class="step-list">
+        <li><strong>Advanced Mode</strong> unlocks the ability to repeat any block using custom iteration counts.</li>
+        <li>To enable it, toggle <strong>Advanced Mode</strong> in the <strong>bottom-right corner</strong> of the screen.</li>
+        <li>I use this mainly when I want to move quickly through long forms. For example, adding a <strong>Tab</strong> block with <strong>5 iterations</strong> lets me jump over multiple fields without cluttering the Build Area with 5 separate blocks.</li>
+        <li>Think of iterated <strong>Tab</strong> blocks as a way to “walk” the scanner through a page to land exactly where you want it.</li>
+        <li>To edit a block, double-click it in the Build Area. A prompt will appear showing <code>Your Text | 5</code>—where <code>5</code> is the iteration count. You can adjust both parts at once.</li>
+      </ul>
+    `
+  },
+  {
+    title: 'Debug / Experimental Tools',
+    content: `
+      <ul class="step-list">
+        <li>When <strong>Advanced Mode</strong> is enabled, a new section titled <strong>Debug / Experimental</strong> appears in the right sidebar.</li>
+        <li>These tools are designed for power users—great for contributors, testers, or anyone who wants to share or back up their work.</li>
+        <li><strong>Copy Preset JSON</strong> lets you export your current layout in a structured format. Use it to share builds or submit new default presets.</li>
+        <li>In the <strong>Submit Feedback</strong> form, there's a field to paste this JSON for review and potential inclusion.</li>
+        <li>To back up a build manually, paste the copied JSON into Notepad or another text editor—ideal if you ever lose your browser cache or cookies.</li>
+        <li><strong>Load Preset JSON</strong> allows you to paste a valid JSON snippet to restore a layout exactly as it was.</li>
+        <li>Yes, it’s a bit technical—but it gives you flexibility while keeping the tool lightweight and browser-based.</li>
+        <li>You’ll also see a <strong>Full Data Reset</strong> option.</li>
+        <li>This clears all saved user presets and resets the builder to its original state—only default ⭐ presets remain.</li>
+        <li>Use it when you want a clean slate or if your saved data becomes cluttered during testing. Just note: this action is irreversible.</li>
+      </ul>
+    `
+  },
+  {
+    title: 'Feedback-Based Changes',
+    content: `
+      <ul>
+        <li><strong>User Onboarding & Concept Clarity</strong>
+        <div class="spacer-bigger-small"></div>
+          <ul>
+            <li>Updated terminology (e.g., 'Canvas' renamed to 'Build Area')</li>
+            <li>Refined instructions/examples to better communicate the concept of constructing the QR recipe from the ground up</li>
+          </ul>
+        </li>
+        <div class="spacer-bigger-small"></div>
+        <li><strong>Interface Affordance</strong>
+        <div class="spacer-bigger-small"></div>
+          <ul>
+            <li>Added label for the Build Area</li>
+            <li>Added a basic instructions box to help users start out</li>
+            <li>Adjusted Build Area visuals to better indicate interactivity</li>
+            <li>Added hover cues when dragging over a dropzone</li>
+          </ul>
+        </li>
+      </ul>
+    `
+  }
+];
+
+// 2) Keep track of the current index & a render function
+let instrIndex = 0;
+function renderInstructions() {
+  const { title, content } = instructionsData[instrIndex];
+  document.getElementById('instrTitle').textContent = title;
+  document.getElementById('instrContent').innerHTML = content;
+  // --- Confirm-Return button setup ---
+  const confirmBtn = document.getElementById('confirmReturnBtn');
+  if (confirmBtn) {
+    confirmBtn.setAttribute('type','button');
+    confirmBtn.onclick = e => {
+      e.preventDefault();
+      if (confirm('This prompt should be confirmed by the QR code scan.')) {
+        alert('Congratulations!');
+      }
+    };
+  }
+
+  // --- Reset-Test button setup ---
+  const resetBtn = document.getElementById('resetTestBtn');
+  if (resetBtn) {
+    resetBtn.setAttribute('type','button');
+    resetBtn.onclick = e => {
+      e.preventDefault();
+      ['field1','field2','field3'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.value = '';
+      });
+    };
+  }
+}
+
+// 3) Wire up the arrow buttons
+document.getElementById('instrPrev').addEventListener('click', () => {
+  instrIndex = (instrIndex - 1 + instructionsData.length) % instructionsData.length;
+  renderInstructions();
+});
+document.getElementById('instrNext').addEventListener('click', () => {
+  instrIndex = (instrIndex + 1) % instructionsData.length;
+  renderInstructions();
+});
+
+// 4) Initialize on load
+renderInstructions();
+
+</script>
+</html>
