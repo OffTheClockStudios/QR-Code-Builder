@@ -13,12 +13,10 @@
 * **Advanced Mode** – Configure repeat counts (iterations) for blocks such as tabs and returns
 * **QR Label Support** – Add a custom label beneath your generated QR code
 * **QR Preview** – See your final QR output rendered in real-time
-* **Copy to Clipboard** – Copy the final QR image (with label) directly to the clipboard
-* **Preset Snippet Tools** – Export or import JSON snippets of your layout (Advanced Mode only)
+* **Copy & Download** – Copy the final QR image (with label) directly to the clipboard or download it
 * **Quick Trash Deletion** – Drag blocks to the trash area to remove them
 * **Tooltips & Visual Guidance** – Built-in tips for new users with symbolic cues and color-coded blocks
 * **Responsive Layout** – Optimized for modern desktop browsers (mobile support pending)
-* **Instructions** – Included topics for learning and testing the app (example puzzle added)
 
 ---
 
@@ -46,18 +44,8 @@ Enabling **Advanced Mode** unlocks extra configuration and developer features:
 
 * Set **repeat counts / (iterations)** for blocks like text, tabs (`⇥`), or returns (`⏎`)
 * Double-click a block to edit both its label and how many times it repeats
-* Reveal additional controls for:
-  - Copying preset configurations as JSON snippets
-  - Pasting and loading shared snippets
-  - Performing a full reset of stored data (for testing/debugging)
-* Paste JSON into the **Load Preset Snippet** modal to import new templates
 
-> These features are especially helpful during development or when contributing preset templates.
-
-To enable:
-
-1. In the **Footer**, check the **Advanced Mode** box
-2. Use the new options that appear in the **Right** panel on the right and by double-clicking blocks
+**Advanced Mode** can be found in the **Footer**, enabled by checking the **Advanced Mode** box
 
 ---
 
@@ -76,19 +64,13 @@ You can install QR Code Builder as a Progressive Web App (PWA) for offline acces
 
 See the full [Changelog](./CHANGELOG.md) for details.
 
-### Highlights in v1.0.4 - v1.0.6 (5/5/25 - 5/7/25):
+### Recent Changes with v1.0.7 (5/8/25):
 
-* Polished layout and spacing across sidebars and control panels using new spacer classes
-* Added instructions to help with using this tool
-* Added a "puzzle" for learning the building proccess and testing the QR code
-* Reworded several instructions to better emphasize the concept of "Building" a QR code
-* Changed references from "Canvas" to "Build Area"
-* Added a "Build Area" label
-* Added short callout above the Build Area to help guide new users
-* Added a tagline to the header
-* Dropzones now show a "Drop Here" label and highlight on hover
-* Added dedicated panel to track recent updates without requiring users to check GitHub
-* Minor code cleanup and layout refinements for better maintainability
+* TESTING new interface layouts based on feedback
+* REMOVED debug/experimental options—they’re not a priority right now
+* REMOVED the outdated instructions after recent UI changes
+* REMOVED "Copy on Build"
+* ADDED "Copy" & "Load" buttons and functions
 
 ---
 
