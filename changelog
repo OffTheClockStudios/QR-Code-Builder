@@ -10,6 +10,7 @@ All notable changes to this project will be documented in this file.
 - Removed the outdated instructions after recent UI changes
 - Removed "Copy on Build" || * ADDED "Copy" & "Load" buttons
 - Changed section "Presets" -> "Build Area Presets"
+- Added changed-based survey link
 
 ---
 
