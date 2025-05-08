@@ -989,15 +989,6 @@ document.getElementById('generateBtn').onclick = () => {
     img.src = canvas.toDataURL();
     qrPreview.appendChild(img);
 
-    // Optionally copy to clipboard
-    if (document.getElementById('copyToggle').checked) {
-      canvas.toBlob(blob => {
-        const item = new ClipboardItem({ 'image/png': blob });
-        navigator.clipboard.write([item])
-          .then(() => alert('✅ QR Code copied to clipboard!'))
-          .catch(err => alert('❌ Failed to copy QR Code.'));
-      });
-    }
   }, 100);
 };
 
