@@ -387,7 +387,47 @@ select, .btn, .checkbox-container {
   box-sizing: border-box;
 }
 
+#jsonModal {
+  display: none;
+  position: fixed;
+  top: 15%;
+  left: 50%;
+  transform: translateX(-50%);
+  background: #fff;
+  padding: 20px 24px;
+  width: 500px;
+  max-width: 90%;
+  border-radius: 8px;
+  border: 1px solid #ccc;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.25);
+  z-index: 9999;
+  font-family: 'Roboto', sans-serif;
+}
 
+#jsonModal h3 {
+  margin-top: 0;
+  font-size: 18px;
+  border-bottom: 1px solid #ddd;
+  padding-bottom: 6px;
+}
+
+#jsonInput {
+  width: 100%;
+  font-family: monospace;
+  font-size: 13px;
+  padding: 10px;
+  border-radius: 4px;
+  border: 1px solid #bbb;
+  box-sizing: border-box;
+  resize: vertical;
+}
+
+.json-modal-actions {
+  margin-top: 16px;
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+}
 
 
 .spacer { height: 10px; }
@@ -402,7 +442,7 @@ select, .btn, .checkbox-container {
 
 <header class="page-header">
   <div class="title">QR Code Builder</div>
-  <div class="version">v1.0.6 || Last Updated on 05/07/2025 @ 18:45</div>
+  <div class="version">v1.0.6 || Last Updated on 05/08/2025 @ 01:20</div>
   <div class="spacer-small"></div>
   <div class="version">Visually build your QR code—one block, one step at a time.</div>
 </header>
@@ -529,11 +569,20 @@ select, .btn, .checkbox-container {
       </a>
     </div>
   </aside>
+  
+<div id="jsonModal">
+  <h3>Paste Preset JSON</h3>
+  <textarea id="jsonInput" rows="18"></textarea>
+  <div class="json-modal-actions">
+    <button class="btn btn-primary" onclick="submitJSON()">Load</button>
+    <button class="btn btn-danger" onclick="closeJSONModal()">Cancel</button>
+  </div>
+</div>
 
 </body>
 <!-- link is for original, made a copy so to be independent and secure -->
-<script src="qrcode.min.js"></script>
-<!-- <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script> -->
+<!-- <script src="qrcode.min.js"></script> -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script> -->
 <script>
 
 // DOM references for key interactive regions
@@ -1241,15 +1290,41 @@ const instructionsData = [
     title: 'How I Use This Tool',
     content: `
       <ul class="step-list">
-        <li>I think of this tool like solving a puzzle: the goal is to get the scanner to enter data exactly where I want it, even if the system behaves oddly.</li>
-        <li>Some platforms are smooth. Others—like ESSYM or Lotus Notes—require workarounds like extra tabs or returns just to position the cursor correctly.</li>
-        <li>This builder gives me precise control: text, tabs, returns, repeats, and timing.</li>
-        <li>In <strong>Advanced Mode</strong>, I often use high iteration counts—especially in slower sites like Nexus. For example, setting a tab block to repeat 32 times helps “walk” the focus forward until a field is ready. It keeps things compact in the builder since this is all within one block, while still handling timing quirks in the website.</li>
-        <li>Even if the block sequence looks strange, what matters is whether it works reliably when scanned.</li>
-        <li>Since not everyone enjoys reverse-engineering input quirks, I created default presets. That way, once one person solves the puzzle, everyone else can use it. <em>(for now, submit them to me directly—it’s not a full app yet)</em></li>
-        <li>If you treat this like building a structured recipe for the QR code (not just filling out a form), you’ll pick it up quickly.</li>
-        <li>Try performing your task normally—then recreate it using blocks. My process is to perform the actual step, place a block, build, scan. If the scan gets me to the current step, then I proceed with the next step and repeat until finished. If something doesn’t work, throw in a tab or return or both and see if that moves things forward. If I am still stuck, I backtrack and regroup.</li>
-        <li>Some sites and programs will not be able to take the quick input. In these scenerios, it might be better to address the timing by adjusting the scanner.</li>
+        <li>I treat this tool like solving a puzzle—the goal is to get the scanner to complete a task exactly as I would, step by step.</li>
+        <li>Each block represents one intentional action: typing text, tabbing forward, or hitting return.</li>
+        <li>My process is simple: I perform the task manually first, then recreate it block by block in the builder.</li>
+        <li>I scan often while building. If a scan doesn’t behave as expected, I experiment with adding a tab or return to keep the process moving.</li>
+        <li>Even if a block sequence looks strange, if it solves the problem and works every time—it’s a win.</li>
+        <li>This tool gives me precise control, especially for finicky or inconsistent platforms.</li>
+      </ul>
+    `
+  },
+  {
+    title: 'Advanced – Iterations',
+    content: `
+      <ul class="step-list">
+        <li><strong>Advanced Mode</strong> unlocks the ability to repeat any block using custom iteration counts.</li>
+        <li>To enable it, toggle <strong>Advanced Mode</strong> in the <strong>bottom-right corner</strong> of the screen.</li>
+        <li>I use this mainly when I want to move quickly through long forms. For example, adding a <strong>Tab</strong> block with <strong>5 iterations</strong> lets me jump over multiple fields without cluttering the Build Area with 5 separate blocks.</li>
+        <li>Think of iterated <strong>Tab</strong> blocks as a way to “walk” the scanner through a page to land exactly where you want it.</li>
+        <li>To edit a block, double-click it in the Build Area. A prompt will appear showing <code>Your Text | 5</code>—where <code>5</code> is the iteration count. You can adjust both parts at once.</li>
+      </ul>
+    `
+  },
+  {
+    title: 'Debug / Experimental Tools',
+    content: `
+      <ul class="step-list">
+        <li>When <strong>Advanced Mode</strong> is enabled, a new section titled <strong>Debug / Experimental</strong> appears in the right sidebar.</li>
+        <li>These tools are designed for power users—great for contributors, testers, or anyone who wants to share or back up their work.</li>
+        <li><strong>Copy Preset JSON</strong> lets you export your current layout in a structured format. Use it to share builds or submit new default presets.</li>
+        <li>In the <strong>Submit Feedback</strong> form, there's a field to paste this JSON for review and potential inclusion.</li>
+        <li>To back up a build manually, paste the copied JSON into Notepad or another text editor—ideal if you ever lose your browser cache or cookies.</li>
+        <li><strong>Load Preset JSON</strong> allows you to paste a valid JSON snippet to restore a layout exactly as it was.</li>
+        <li>Yes, it’s a bit technical—but it gives you flexibility while keeping the tool lightweight and browser-based.</li>
+        <li>You’ll also see a <strong>Full Data Reset</strong> option.</li>
+        <li>This clears all saved user presets and resets the builder to its original state—only default ⭐ presets remain.</li>
+        <li>Use it when you want a clean slate or if your saved data becomes cluttered during testing. Just note: this action is irreversible.</li>
       </ul>
     `
   },
