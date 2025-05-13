@@ -19,6 +19,7 @@
 * **Responsive Layout** – Optimized for modern desktop browsers (mobile support pending)
 * **Batch Generation** – Testing batch QR creation with different coding options (Standard, Escape Sequences, Hex Escapes, Unicode Escapes, Raw-Hex, & Base64)
 * **QR Settings** - Testing QR error levels, colors, dimensions, versions, etc.
+* **Additional Tools** - Adding other tools that help with data tracking and standardization (like my near-fuzzies.html)
 
 ---
 
