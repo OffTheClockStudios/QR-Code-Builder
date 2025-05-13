@@ -2,6 +2,15 @@
 
 All notable changes to this project will be documented in this file.
 
+## \[v1.0.8] – 2025-05-13
+
+### Testing
+- Testing new interface layouts based on feedback
+- Testing batch QR generation with various modes
+- Testing QR Settings with different colors, error levels, versions, etc.
+
+---
+
 ## \[v1.0.7] – 2025-05-08
 
 ### Overhaul
