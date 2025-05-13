@@ -105,6 +105,7 @@
     <div id="parameters"></div>
     <button id="run-button">Run</button>
     <button id="clear-button" style="margin-top: 10px; background-color: #999; color: white; border: none; padding: 10px; border-radius: 6px; cursor: pointer;">Clear</button>
+    <button id="load-sample-button" style="margin-top: 10px; background-color: #999; color: white; border: none; padding: 10px; border-radius: 6px; cursor: pointer;">Load Sample</button>
   </div>
   <div id="main">
     <div class="text-area">
@@ -407,6 +408,70 @@
     parametersContainer.innerHTML = "";
     document.querySelectorAll(".tool-btn").forEach(b => b.classList.remove("selected"));
   };
+  
+  document.getElementById("load-sample-button").onclick = () => {
+    document.getElementById("input-text").value = `The quick brown fox jumps over the lazy dog.
+I love eating pizza on rainy days.
+Pizza is my favorite food to eat.
+The quick brown fox leaps over the lazy dog.
+The quick brown fox jumps over a lazy dog.
+The quick brown fox jumps over the lazy cat.
+The quick brown dog jumps over the lazy fox.
+Quick brown fox jumps over lazy dog.
+the quick brown fox jumps over the lazy dog.
+THE QUICK BROWN FOX JUMPS OVER THE LAZY DOG.
+The quick brown fox jumps over the lazy dog
+The quick brown fox jumps over the lazy dog..
+The quick brown fox jumps over the lazy dog.
+The quick brown fox jumps over the lazy dog.
+The quick brown fox jumps over the lazy dog.
+The quick browwn fox jumps over the lazy dog.
+The quik brown fox jumps over the lazy dog.
+Thequick brown fox jumps over the lazy dog.
+The quick brown fox jumps over the lazy frog.
+A quick brown fox jumps over the lazy dog.
+The quick brown fox jumps over the lazy dogs.
+The quick brown fox jumps over lazy dogs.
+The quick brown fox was jumping over the lazy dog.
+A swift brown fox hops over the idle hound.
+A swift brown fox hops o’er th’ idle hound.
+Swift brown fox hops over idle hound.
+The brown quick fox jumps over the lazy dog.
+The quick brown fox, jumps over the lazy dog.
+The quick brown fox jumps, over the lazy dog.
+The quick brown fox jumps over the lazy dog!
+The quick brown fox jumps over the lazy dog?.
+The quick brown fox jumps over the energetic dog.
+The quick brown cat jumps over the lazy dog.
+The quick brown foxes jump over the lazy dog.
+The quick brown fox jumps high over the lazy dog.
+High the quick brown fox jumps over the lazy dog.
+Over the lazy dog, the quick brown fox jumps.
+the quick brown fox jumps over the drzay dog.
+Th3 quick brown fox jumps ov3r th3 lazy dog.
+The quick Brown fox jumps over the lazy Dog.
+THe QuIck BrOwn FoX jUmPs OvEr ThE lAzY dOg.
+The quick brown fox jumps over the lazy dog.
+The quick brown fox jumps over the lazy dog
+The quick brown fox jumps over the lazy dog.
+The quick brown fox—jumps over the lazy dog.
+The quick brown fox–jumps over the lazy dog.
+ↈhe quick brown fox jumps over the lazy dog.
+The quick brown fox jumps over the lazy dog.
+The quick brown fox jumps over the lazy dog.
+The quick brown fox jumps over the lazy dog.`;
+    
+    // Auto-run current tool if one is selected
+    if (selectedTool) {
+      const params = {};
+      parametersContainer.querySelectorAll("input").forEach(el => {
+        const val = el.type === 'number' ? parseFloat(el.value) : el.value;
+        params[el.name] = val;
+      });
+      document.getElementById("output-text").value = runTool(selectedTool, document.getElementById("input-text").value, params);
+    }
+  };
+
   </script>
 </body>
 </html>
