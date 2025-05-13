@@ -17,6 +17,8 @@
 * **Quick Trash Deletion** – Drag blocks to the trash area to remove them
 * **Tooltips & Visual Guidance** – Built-in tips for new users with symbolic cues and color-coded blocks
 * **Responsive Layout** – Optimized for modern desktop browsers (mobile support pending)
+* **Batch Generation** – Testing batch QR creation with different coding options (Standard, Escape Sequences, Hex Escapes, Unicode Escapes, Raw-Hex, & Base64)
+* **QR Settings** - Testing QR error levels, colors, dimensions, versions, etc.
 
 ---
 
@@ -64,13 +66,11 @@ You can install QR Code Builder as a Progressive Web App (PWA) for offline acces
 
 See the full [Changelog](./CHANGELOG.md) for details.
 
-### Recent Changes with v1.0.7 (5/8/25):
+### Recent Changes with v1.0.8 (5/12/25):
 
 * TESTING new interface layouts based on feedback
-* REMOVED debug/experimental options—they’re not a priority right now
-* REMOVED the outdated instructions after recent UI changes
-* REMOVED "Copy on Build"
-* ADDED "Copy" & "Load" buttons and functions
+* ADDED functions for batch generation and downloading QR codes
+* ADDED QR settings for error levels, versions, colors, etc.
 
 ---
 
