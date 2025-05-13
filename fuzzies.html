@@ -1,0 +1,381 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Fuzzy Line Similarity Tool</title>
+  <style>
+/* ----------- BODY ----------- */
+    body {
+      margin: 0;
+      font-family: 'Segoe UI', sans-serif;
+      display: flex;
+      height: 100vh;
+      background-color: #fdfdfd;
+    }
+
+/* ----------- LAYOUT ----------- */
+    #left-panel {
+      width: 9%;
+      min-width: 80px;
+      max-width: 160px;
+      display: flex;
+      flex-direction: column;
+      background-color: #f1f1f1;
+      padding: 10px;
+      box-sizing: border-box;
+      border-right: 1px solid #ccc;
+    }
+
+/* ----------- MAIN ----------- */
+    #main {
+      display: flex;
+      width: 95.72%;
+    }
+
+/* ----------- INPUT / OUTPUT TEXT AREAS ----------- */
+    .text-area {
+      width: 49.25%;
+      padding: 20px;
+      box-sizing: border-box;
+      border-right: 1px solid #eee;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+    }
+
+    textarea {
+      flex-grow: 1;
+      width: 100%;
+      resize: none;
+      padding: 10px;
+      border: 1px solid #ccc;
+      border-radius: 6px;
+      font-size: 14px;
+      line-height: 1.4;
+      box-shadow: inset 0 1px 3px rgba(0,0,0,0.1);
+    }
+
+    textarea:focus {
+      outline: none;
+      border-color: #007acc;
+      box-shadow: 0 0 0 1px #007acc;
+    }
+
+/* ----------- H2 HEADER ----------- */
+    h2 {
+      margin-top: 0;
+      font-size: 18px;
+      color: #333;
+    }
+    
+/* ----------- SELECT FUNCTION ----------- */
+    select, button {
+      width: 100%;
+      padding: 8px;
+      margin-bottom: 10px;
+      font-size: 0.75rem;
+      border-radius: 5px;
+      border: 1px solid #ccc;
+    }
+
+    select {
+      background-color: white;
+    }
+
+    button {
+      background-color: #007acc;
+      color: white;
+      border: none;
+      cursor: pointer;
+      font-weight: bold;
+    }
+
+    button:hover {
+      background-color: #005f99;
+    }
+
+  </style>
+</head>
+<body>
+
+  <div id="left-panel">
+    <h2>Tools</h2>
+    <select id="tool-selector">
+      <option value="analyzeText">Similarity Score 1</option>
+      <option value="analyzeText2">Similarity Score 2</option>
+      <option value="findDuplicates">Find Duplicates</option>
+      <option value="findCommonWords">Find Common Words</option>
+      <option value="findCommonPrefixes">Find Common Prefixes</option>
+      <option value="normalizeLines">Normalize Lines</option>
+      <option value="clusterLines">Cluster (threshold 0.6)</option>
+      <option value="exploreNGrams2">Explore 2-grams</option>
+      <option value="exploreNGrams3">Explore 3-grams</option>
+    </select>
+    <button onclick="runSelectedTool()">Run</button>
+  </div>
+
+  <div id="main">
+    <div class="text-area">
+      <h2>Input Text</h2>
+      <textarea id="input-text" placeholder="Paste or write lines of text here..."></textarea>
+    </div>
+    <div class="text-area">
+      <h2>Output Text</h2>
+      <textarea id="output-text" readonly placeholder="Similarity results will appear here..."></textarea>
+    </div>
+  </div>
+
+<script type="module">
+  import { fuzzy } from 'https://cdn.skypack.dev/fast-fuzzy';
+
+  function similarityScore(a, b) {
+    return fuzzy(a, b); // Returns a score between 0 and 1
+  }
+
+  function analyzeText() {
+    const input = document.getElementById("input-text").value.trim();
+    const lines = input.split("\n").map(line => line.trim()).filter(Boolean);
+
+    const scores = lines.map((lineA, i) => {
+      let total = 0;
+      let count = 0;
+      for (let j = 0; j < lines.length; j++) {
+        if (i !== j) {
+          const score = similarityScore(lineA, lines[j]);
+          total += score;
+          count++;
+        }
+      }
+      return {
+        line: lineA,
+        avgSimilarity: count ? total / count : 0
+      };
+    });
+
+    scores.sort((a, b) => b.avgSimilarity - a.avgSimilarity);
+
+    const output = scores.map((s, i) =>
+      `${i + 1}. [avg similarity: ${s.avgSimilarity.toFixed(3)}] - ${s.line}`
+    ).join("\n");
+
+    document.getElementById("output-text").value = output || "No lines to compare.";
+  }
+
+  
+  function findDuplicates() {
+    const input = document.getElementById("input-text").value.trim().toLowerCase();
+    const lines = input.split("\n").map(line => line.trim()).filter(Boolean);
+    const seen = new Map();
+    const duplicates = [];
+
+    lines.forEach((line, i) => {
+      if (seen.has(line)) {
+        duplicates.push(`Duplicate: "${line}" (Line ${i + 1}, original on Line ${seen.get(line) + 1})`);
+      } else {
+        seen.set(line, i);
+      }
+    });
+
+    document.getElementById("output-text").value = duplicates.length
+      ? duplicates.join("\n")
+      : "No duplicates found.";
+  }
+
+
+  function findCommonWords(minLength = 3) {
+    const input = document.getElementById("input-text").value.toLowerCase();
+    const words = input.match(/\b\w+\b/g);
+    const counts = {};
+
+    words.forEach(word => {
+      if (word.length >= minLength) {
+        counts[word] = (counts[word] || 0) + 1;
+      }
+    });
+
+    const sorted = Object.entries(counts)
+      .sort((a, b) => b[1] - a[1])
+      .map(([word, count]) => `${word}: ${count}`);
+
+    document.getElementById("output-text").value = sorted.slice(0, 30).join("\n") || "No significant words found.";
+  }
+
+
+  function findCommonPrefixes() {
+    const input = document.getElementById("input-text").value.trim();
+    const lines = input.split("\n").map(l => l.trim()).filter(Boolean);
+    const minCommon = 3;
+
+    let prefix = lines[0] || "";
+    for (let line of lines) {
+      while (!line.startsWith(prefix) && prefix.length > 0) {
+        prefix = prefix.slice(0, -1);
+      }
+    }
+
+    document.getElementById("output-text").value = 
+      prefix.length >= minCommon ? `Common prefix: "${prefix}"` : "No significant common prefix found.";
+  }
+
+
+  function normalizeLines() {
+    const input = document.getElementById("input-text").value.trim();
+    const lines = input.split("\n").map(line => 
+      line.toLowerCase().replace(/[^\w\s]/g, '').trim()
+    );
+
+    document.getElementById("output-text").value = lines.join("\n");
+  }
+  
+
+  function clusterLines(jaccardThreshold = 0.5) {
+    const input = document.getElementById("input-text").value.trim();
+    const lines = input.split("\n").map(line => line.trim()).filter(Boolean);
+    const tokenSets = lines.map(line => new Set(line.toLowerCase().split(/\s+/)));
+
+    const clusters = [];
+    const assigned = new Array(lines.length).fill(false);
+
+    function jaccard(a, b) {
+      const intersection = new Set([...a].filter(x => b.has(x)));
+      const union = new Set([...a, ...b]);
+      return intersection.size / union.size;
+    }
+
+    for (let i = 0; i < lines.length; i++) {
+      if (assigned[i]) continue;
+
+      const cluster = [lines[i]];
+      assigned[i] = true;
+
+      for (let j = i + 1; j < lines.length; j++) {
+        if (!assigned[j] && jaccard(tokenSets[i], tokenSets[j]) >= jaccardThreshold) {
+          cluster.push(lines[j]);
+          assigned[j] = true;
+        }
+      }
+
+      clusters.push(cluster);
+    }
+
+    const output = clusters.map((group, i) => {
+      return `Cluster ${i + 1} (${group.length} lines):\n` + group.map(line => `  - ${line}`).join("\n");
+    }).join("\n\n");
+
+    document.getElementById("output-text").value = output || "No clusters found.";
+  }
+
+
+  function exploreNGrams(n = 2, minCount = 2) {
+    const input = document.getElementById("input-text").value.toLowerCase();
+    const lines = input.split("\n").map(line => line.trim()).filter(Boolean);
+
+    const ngramCounts = {};
+
+    lines.forEach(line => {
+      const words = line.split(/\s+/).filter(Boolean);
+      for (let i = 0; i <= words.length - n; i++) {
+        const ngram = words.slice(i, i + n).join(" ");
+        ngramCounts[ngram] = (ngramCounts[ngram] || 0) + 1;
+      }
+    });
+
+    const results = Object.entries(ngramCounts)
+      .filter(([_, count]) => count >= minCount)
+      .sort((a, b) => b[1] - a[1])
+      .map(([phrase, count]) => `${phrase}: ${count}`);
+
+    document.getElementById("output-text").value =
+      results.length ? results.join("\n") : `No ${n}-grams found that occur at least ${minCount} times.`;
+  }
+
+
+
+  function levenshtein(a, b) {
+    const matrix = Array.from({ length: a.length + 1 }, (_, i) =>
+      Array(b.length + 1).fill(0)
+    );
+
+    for (let i = 0; i <= a.length; i++) matrix[i][0] = i;
+    for (let j = 0; j <= b.length; j++) matrix[0][j] = j;
+
+    for (let i = 1; i <= a.length; i++) {
+      for (let j = 1; j <= b.length; j++) {
+        if (a[i - 1] === b[j - 1]) {
+          matrix[i][j] = matrix[i - 1][j - 1];
+        } else {
+          matrix[i][j] = 1 + Math.min(
+            matrix[i - 1][j],
+            matrix[i][j - 1],
+            matrix[i - 1][j - 1]
+          );
+        }
+      }
+    }
+    return matrix[a.length][b.length];
+  }
+
+  function similarityScore2(a, b) {
+    const maxLength = Math.max(a.length, b.length);
+    if (maxLength === 0) return 1;
+    return 1 - levenshtein(a.toLowerCase(), b.toLowerCase()) / maxLength;
+  }
+
+  function analyzeText2() {
+    const input = document.getElementById("input-text").value.trim();
+    const lines = input.split("\n").map(line => line.trim()).filter(Boolean);
+
+    const scores = lines.map((line, i) => {
+      let total = 0;
+      let count = 0;
+      for (let j = 0; j < lines.length; j++) {
+        if (i !== j) {
+          total += similarityScore2(line, lines[j]);
+          count++;
+        }
+      }
+      return {
+        line,
+        avgSimilarity: count ? total / count : 0
+      };
+    });
+
+    scores.sort((a, b) => b.avgSimilarity - a.avgSimilarity);
+
+    const output = scores.map((s, i) =>
+      `${i + 1}. [avg similarity: ${s.avgSimilarity.toFixed(3)}] - ${s.line}`
+    ).join("\n");
+
+    document.getElementById("output-text").value = output || "No lines to compare.";
+  }
+
+  function runSelectedTool() {
+    const selected = document.getElementById("tool-selector").value;
+    switch (selected) {
+      case 'analyzeText': analyzeText(); break;
+      case 'analyzeText2': analyzeText2(); break;
+      case 'findDuplicates': findDuplicates(); break;
+      case 'findCommonWords': findCommonWords(); break;
+      case 'findCommonPrefixes': findCommonPrefixes(); break;
+      case 'normalizeLines': normalizeLines(); break;
+      case 'clusterLines': clusterLines(0.6); break;
+      case 'exploreNGrams2': exploreNGrams(2); break;
+      case 'exploreNGrams3': exploreNGrams(3); break;
+    }
+  }
+
+  window.analyzeText = analyzeText;
+  window.analyzeText2 = analyzeText2;
+  window.findDuplicates = findDuplicates;
+  window.findCommonWords = findCommonWords;
+  window.findCommonPrefixes = findCommonPrefixes;
+  window.normalizeLines = normalizeLines;
+  window.clusterLines = clusterLines;
+  window.exploreNGrams = exploreNGrams;
+  window.runSelectedTool = runSelectedTool;
+  
+</script>
+</body>
+</html>
