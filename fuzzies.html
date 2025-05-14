@@ -125,14 +125,6 @@
       analyzeText2: { name: "Similarity Score 2" },
       findDuplicates: { name: "Find Duplicates" },
       findCommonWords: { name: "Find Common Words", params: [{ label: "Min Length", name: "minLength", type: "number", value: 3, min: 1 }] },
-      findCommonPrefixes: {
-        name: "Find Common Prefixes",
-        params: [{ label: "Min Length", name: "minLength", type: "number", value: 3, min: 1 }]
-      },
-      findCommonSuffixes: {
-        name: "Find Common Suffixes",
-        params: [{ label: "Min Length", name: "minLength", type: "number", value: 3, min: 1 }]
-      },
       normalizeLines: { name: "Normalize Lines" },
       clusterLines: {
         name: "Cluster Lines",
@@ -228,8 +220,6 @@
         case 'analyzeText2': return analyzeText2(lines);
         case 'findDuplicates': return findDuplicates(lines);
         case 'findCommonWords': return findCommonWords(input, params.minLength);
-        case 'findCommonPrefixes': return findCommonPrefixes(lines, params.minLength);
-        case 'findCommonSuffixes': return findCommonSuffixes(lines, params.minLength);
         case 'normalizeLines': return normalizeLines(lines);
         case 'clusterLines': return clusterLines(lines, params.threshold);
         case 'exploreNGrams': return exploreNGrams(lines, params.n, params.minCount);
@@ -316,46 +306,6 @@
         .sort((a, b) => b[1] - a[1])
         .map(([word, count]) => `${word}: ${count}`)
         .slice(0, 30).join("\n") || "No significant words found.";
-    }
-
-    function findCommonPrefixes(lines, minLength = 3) {
-      const counts = {};
-      for (let line of lines) {
-        for (let i = minLength; i <= line.length; i++) {
-          const prefix = line.slice(0, i);
-          counts[prefix] = (counts[prefix] || 0) + 1;
-        }
-      }
-
-      const results = Object.entries(counts)
-        .filter(([prefix]) => prefix.length >= minLength)
-        .sort((a, b) => b[1] - a[1] || a[0].length - b[0].length)
-        .map(([prefix, count]) => `"${prefix}" (shared by ${count} lines)`);
-
-      return results.length
-        ? `Top prefixes:\n${results.slice(0, 5).join("\n")}`
-        : "No significant common prefix found.";
-    }
-
-    function findCommonSuffixes(lines, minLength = 3) {
-      const counts = {};
-      for (let line of lines) {
-        for (let i = line.length - minLength; i >= 0; i--) {
-          const suffix = line.slice(i);
-          if (suffix.length >= minLength) {
-            counts[suffix] = (counts[suffix] || 0) + 1;
-          }
-        }
-      }
-
-      const results = Object.entries(counts)
-        .filter(([suffix]) => suffix.length >= minLength)
-        .sort((a, b) => b[1] - a[1] || a[0].length - b[0].length)
-        .map(([suffix, count]) => `"${suffix}" (shared by ${count} lines)`);
-
-      return results.length
-        ? `Top suffixes:\n${results.slice(0, 5).join("\n")}`
-        : "No significant common suffix found.";
     }
 
     function normalizeLines(lines) {
