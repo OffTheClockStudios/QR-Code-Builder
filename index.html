@@ -12,7 +12,7 @@
 
 <header class="page-header">
   <div class="title">QR Code Builder</div>
-  <div class="version">v1.0.8 || Last Updated on 05/13/2025</div>
+  <div class="version">v1.0.9 || Last Updated on 06/7/2025</div>
   <div class="spacer-small"></div>
   <div class="version">Visually build your QR code—one block, one step at a time.</div>
   <div class="spacer-small"></div>
@@ -843,19 +843,26 @@ get('copyBtn').addEventListener('click', () => {
     .catch(err => alert('❌ Copy failed.'));
 });
 
-// download as PNG
+// download as PNG with prompt for filename
 get('downloadBtn').addEventListener('click', () => {
   const img = document.querySelector('#qrPreview img');
   if (!img) return alert('Generate a QR code first!');
-  
+
+  const filename = prompt("Enter filename for your QR code (without .png):", "qr-code");
+
+  // If user cancels, do nothing
+  if (filename === null) return;
+
+  const finalName = filename.trim() === "" ? "qr-code" : filename.trim();
+
   const a = createEl('a', {
-    attrs: { href: img.src, download: 'qr-code.png' }
+    attrs: { href: img.src, download: `${finalName}.png` }
   });
+
   document.body.appendChild(a);
   a.click();
   document.body.removeChild(a);
 });
-
 
 
 /**
