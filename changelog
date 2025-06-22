@@ -2,9 +2,20 @@
 
 All notable changes to this project will be documented in this file.
 
-## \[v1.0.9] – 2025-06-07
+## \[v1.0.9] – 2025-06-22
 ### New Features
-* Added prompt for changing the filename when downloading QRs
+* Filename prompt when using the Download button to save QR codes
+  * If a QR label is set, it will be used as the filename
+  * If the QR label is blank, the filename defaults to the current preset name
+
+### Testing
+* Print Pages & Print Cards HTML: Testing different endgame formats for the QR codes
+
+### Enhancements
+* Fuzzies now opens in a new tab when clicked
+* Loading a preset will now automatically build the QR code
+* Presets are sorted A → Z, with defaults listed after your custom presets
+* The Download button now builds the QR code and prompts for a filename automatically
 
 ---
 
