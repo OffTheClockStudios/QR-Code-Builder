@@ -20,7 +20,7 @@
 * **Batch Generation** – Testing batch QR creation with different coding options (Standard, Escape Sequences, Hex Escapes, Unicode Escapes, Raw-Hex, & Base64)
 * **QR Settings** - Testing QR error levels, colors, dimensions, versions, etc.
 
-##Additional Tools - Adding other tools that help with data tracking and standardization (like my near-fuzzies.html)
+## Additional Tools
 * **Fuzzies** - Used to help with data standardization for QR contents
 * **Print Pages/Cards** - Testing pages for printing QR codes in a repeatable format
 
