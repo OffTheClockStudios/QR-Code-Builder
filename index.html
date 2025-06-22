@@ -12,9 +12,11 @@
 
 <header class="page-header">
   <div class="title">QR Code Builder</div>
-  <div class="version">v1.0.9 || Last Updated on 06/7/2025</div>
+    <div id="versionToggle" class="version">
+      Last Updated to v1.0.9 on 06/22/2025 Click for more information
+    </div>
   <div class="spacer-small"></div>
-  <div class="version">Visually build your QR code—one block, one step at a time.</div>
+  <div class="tagline">Visually build your QR code—one block, one step at a time.</div>
   <div class="spacer-small"></div>
 </header>
 
@@ -40,7 +42,9 @@
     </div>
     <div class="section">
       <h3>Other Tools From OffTheClockStudios</h3>
-      <button onclick="location.href='fuzzies.html'" class="btn btn-primary">Open Fuzzies</button>
+      <button onclick="window.open('fuzzies.html', '_blank', 'noopener');" class="btn btn-primary">Fuzzies</button>
+      <button onclick="window.open('print.html', '_blank', 'noopener');" class="btn btn-primary">Print Pages</button>
+      <button onclick="window.open('print2.html', '_blank', 'noopener');" class="btn btn-primary">Print Cards</button>
     </div>
   </aside>
 
@@ -65,7 +69,7 @@
       <!-- button groups -->
       <div class="button-group" style="display:flex; gap:20px; justify-content:center; margin-top:8px;">
         <button class="btn btn-blue" id="copyBtn" type="button" title="Copy the QR code to your clipboard.">Copy</button>
-        <button class="btn btn-debug" id="downloadBtn" type="button" title="Download the QR code.">Download</button>
+        <button class="btn btn-debug" id="downloadBtn" type="button" title="Build & Download the QR code.">Download</button>
       </div>
       <div class="button-group" style="display:flex; gap:20px; justify-content:center; margin-top:8px;">
         <button class="btn btn-primary" id="generateBtn" title="Build and display the QR code.">Build</button>
@@ -84,6 +88,46 @@
       </div>
       
   </aside>
+  
+  <!-- the hidden changelog dialog -->
+  <dialog id="changelog" aria-labelledby="changelog-title">
+    <h2 id="changelog-title">What’s New in v1.0.9</h2>
+
+    <h3 id="changelog-recent">🆕 Recently Added:</h3>
+    <ul>
+      <li>Changelog popup so users can view recent updates</li>
+      <li>
+        Filename prompt when using the Download button to save QR codes
+        <ul>
+          <li>If a QR label is set, it will be used as the filename</li>
+          <li>If the QR label is blank, the filename defaults to the current preset name</li>
+        </ul>
+      </li>
+      <li>Print Pages & Print Cards HTML: Testing different endgame formats for the QR codes</li>
+    </ul>
+
+    <div class="spacer"></div>
+
+    <h3 id="changelog-qol">🔀 Quality of Life Improvements:</h3>
+    <ul>
+      <li>Fuzzies now opens in a new tab when clicked</li>
+      <li>Loading a preset will now automatically build the QR code</li>
+      <li>Presets are sorted A → Z, with defaults listed after your custom presets</li>
+      <li>The Download button now builds the QR code and prompts for a filename automatically</li>
+    </ul>
+    <!-- <div class="spacer"></div>
+    <h3 id="changelog-title">🗑️ Recently Removed:</h3>
+    <ul>
+      <li>...</li>
+    </ul>
+    <div class="spacer"></div>
+    <h3 id="changelog-title">🩹 Recently Fixed:</h3>
+    <ul>
+      <li>...</li>
+    </ul> -->
+    <div class="spacer"></div>
+    <button id="closeChangelog" type="button">Close</button>
+  </dialog>
   
 <div id="jsonModal">
   <h3>Paste Preset JSON</h3>
@@ -196,7 +240,7 @@
 <!-- link is for original testing js, made a copy to be independent and secure -->
 <!-- <script src="qrcode.min.js"></script> -->
 <!-- <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script> -->
-<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<script src="qrcode.min.js"></script>
 <script>
 
 // 
@@ -509,6 +553,25 @@ const PresetsManager = {
         { type: "text", label: "1st", iterations: 1 }
       ]
     },
+    "ESSYM - Step #1": {
+      label: "",
+      blocks: [
+        { type: "text", label: "Part Number", iterations: 1 },
+        { type: "return", label: "\r", iterations: 1 }
+      ]
+    },
+    "ESSYM - Step #2": {
+      label: "",
+      blocks: [
+        { type: "return", label: "\r", iterations: 1 },
+        { type: "text", label: "Defect Mode", iterations: 1 },
+        { type: "return", label: "\r", iterations: 1 },
+        { type: "text", label: "Defect Type", iterations: 1 },
+        { type: "return", label: "\r", iterations: 2 },
+        { type: "tab", label: "\t", iterations: 4 },
+        { type: "text", label: "Comment", iterations: 1 }
+      ]
+    },
     "Preset Example": {
       label: "",
       blocks: [
@@ -552,11 +615,36 @@ const PresetsManager = {
 
   // === UI Integration ===
   refreshDropdown() {
-    const allPresets = this.getAllPresets();
+    const userPresets = this.getUserPresets();
+    const defaultPresets = this.defaultPresets;
+
+    const sortedUserNames = Object.keys(userPresets).sort((a, b) => a.localeCompare(b));
+    const sortedDefaultNames = Object.keys(defaultPresets).sort((a, b) => a.localeCompare(b));
+
     presetSelect.innerHTML = '<option value="">Select a Preset</option>';
-    for (const name in allPresets) {
+
+    // Add user presets first
+    for (const name of sortedUserNames) {
       const opt = createEl('option', {
-        text: this.isDefault(name) ? `⭐ ${name}` : name,
+        text: name,
+        attrs: { value: name }
+      });
+      presetSelect.appendChild(opt);
+    }
+
+    // Optional: Visual separator between user and default presets
+    if (sortedUserNames.length && sortedDefaultNames.length) {
+      const divider = createEl('option', {
+        text: '—— Default Presets ——',
+        attrs: { disabled: true }
+      });
+      presetSelect.appendChild(divider);
+    }
+
+    // Add default presets next
+    for (const name of sortedDefaultNames) {
+      const opt = createEl('option', {
+        text: `⭐ ${name}`,
         attrs: { value: name }
       });
       presetSelect.appendChild(opt);
@@ -623,6 +711,9 @@ const PresetsManager = {
 
     const labelInput = get('qrLabelInput');
     if (labelInput) labelInput.value = preset.label || '';
+    
+    // Auto-regenerate QR code
+    get('generateBtn').click();
   },
 
   copyToClipboardAsJSON(name) {
@@ -843,25 +934,39 @@ get('copyBtn').addEventListener('click', () => {
     .catch(err => alert('❌ Copy failed.'));
 });
 
-// download as PNG with prompt for filename
+// build and download as PNG with prompt for filename
 get('downloadBtn').addEventListener('click', () => {
-  const img = document.querySelector('#qrPreview img');
-  if (!img) return alert('Generate a QR code first!');
+  // Trigger QR regeneration
+  get('generateBtn').click();
 
-  const filename = prompt("Enter filename for your QR code (without .png):", "qr-code");
+  // Wait briefly to ensure the QR image is ready
+  setTimeout(() => {
+    const img = document.querySelector('#qrPreview img');
+    if (!img) return alert('Generate a QR code first!');
 
-  // If user cancels, do nothing
-  if (filename === null) return;
+    const labelValue = get('qrLabelInput').value.trim();
+    const presetName = presetSelect.value.trim();
 
-  const finalName = filename.trim() === "" ? "qr-code" : filename.trim();
+    let defaultName = 'qr-code';
+    if (labelValue !== '') {
+      defaultName = labelValue;
+    } else if (presetName && presetName !== 'Select a Preset') {
+      defaultName = presetName;
+    }
 
-  const a = createEl('a', {
-    attrs: { href: img.src, download: `${finalName}.png` }
-  });
+    const filename = prompt("Enter filename for your QR code (without .png):", defaultName);
+    if (filename === null) return;
 
-  document.body.appendChild(a);
-  a.click();
-  document.body.removeChild(a);
+    const finalName = filename.trim() === '' ? 'qr-code' : filename.trim();
+
+    const a = createEl('a', {
+      attrs: { href: img.src, download: `${finalName}.png` }
+    });
+
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+  }, 150); // Wait at least 100–200ms to ensure QR canvas is ready
 });
 
 
@@ -1078,7 +1183,34 @@ function resetAllQRCodeBuilderData() {
   alert("All QR Builder data has been reset.");
 }
 
+document.addEventListener('DOMContentLoaded', () => {
+  const versionToggle = get('versionToggle');
+  const changelog     = get('changelog');
+  const closeBtn      = get('closeChangelog');
 
+  // open the dialog when you click the version line
+  versionToggle.addEventListener('click', () => {
+    changelog.showModal();
+  });
+
+  // close via the “Close” button
+  closeBtn.addEventListener('click', () => {
+    changelog.close();
+  });
+
+  // optional: click outside the dialog content to close it
+  changelog.addEventListener('click', (e) => {
+    const rect = changelog.getBoundingClientRect();
+    if (
+      e.clientX <  rect.left  ||
+      e.clientX >  rect.right ||
+      e.clientY <  rect.top   ||
+      e.clientY >  rect.bottom
+    ) {
+      changelog.close();
+    }
+  });
+});
 
 </script>
 </html>
