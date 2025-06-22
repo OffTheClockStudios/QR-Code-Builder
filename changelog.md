@@ -1,0 +1,197 @@
+# Changelog
+
+All notable changes to this project will be documented in this file.
+
+
+## \[v1.0.9] – 2025-06-22
+
+### New Features
+* Filename prompt when using the Download button to save QR codes
+  * If a QR label is set, it will be used as the filename
+  * If the QR label is blank, the filename defaults to the current preset name
+
+### Testing
+* Print Pages & Print Cards HTML: Testing different endgame formats for the QR codes
+
+### Enhancements
+* Fuzzies now opens in a new tab when clicked
+* Loading a preset will now automatically build the QR code
+* Presets are sorted A → Z, with defaults listed after your custom presets
+* The Download button now builds the QR code and prompts for a filename automatically
+
+---
+
+## \[v1.0.8] – 2025-05-13
+
+### Testing
+- Testing new interface layouts based on feedback
+- Testing batch QR generation with various modes
+- Testing QR Settings with different colors, error levels, versions, etc.
+
+---
+
+## \[v1.0.7] – 2025-05-08
+### Overhaul
+- Testing new interface layouts based on feedback
+- Removed debug/experimental options—they’re not a priority right now
+- Removed the outdated instructions after recent UI changes
+- Removed "Copy on Build" || * ADDED "Copy" & "Load" buttons
+- Changed section "Presets" -> "Build Area Presets"
+- Added changed-based survey link
+
+---
+
+## \[v1.0.6] – 2025-05-07
+
+### UI & UX Improvements
+- Reworded several instructions to better emphasize the concept of "Building" a QR code
+- Changed references from "Canvas" to "Build Area"
+- Added a "Build Area" label
+- Added short callout above the Build Area to help guide new users
+- Added a tagline to the header
+- Dropzones now show a "Drop Here" label and highlight on hover
+- Added dedicated panel to track recent updates without requiring users to check GitHub
+- Added two more informative panels/examples
+
+---
+
+## \[v1.0.5] – 2025-05-07
+
+### Enhancements
+- Added the previously removed tips/instructions panel
+- Added a Puzzle for testing/learning input from the QR code
+
+### UI & UX Improvements
+- Slight cleanup for fonts and padding
+- Some insignificant adjustments to the margins
+- Unified styling of the label input field with the rest of the UI
+- Enhanced spacing and legibility in the right sidebar "Quick Tips" section
+
+### Under-the-Hood Changes
+- Fixed order issue where blocks 1, 2, 3, 4 could have 1 dropped between 2 & 3, making the order 2, 3, 1, 4 (splice offset)
+- Fixed inner html issue with reset/return buttons
+
+---
+
+## \[v1.0.4] – 2025-05-05
+
+### UI and UX Improvements
+* Refined spacing and layout across the interface using new spacer classes (`.spacer-small`, `.spacer-extra-small`)
+* Moved **Advanced Mode** toggle to the bottom of the right panel for better separation from core controls
+* Moved **Github and Survey** buttons to the bottom of the right panel as links for better separation from core controls
+* Adjusted padding and alignment for more consistent vertical rhythm in sidebars
+* Improved clarity and grouping in the Trash and Debug sections
+* Enhanced visual hierarchy of toolbox and preset sections with tighter spacing and balanced headers
+* Added tooltips to all major controls to improve discoverability and reduce user confusion
+* Applied additional spacing control to checkbox containers and section headers
+* Ensured consistent block styling and coloring across both toolbox and canvas
+* Improved QR label input styling for visual balance with other controls
+
+### Under-the-Hood Changes
+* Cleaned up unused spacing elements and minor inline styling redundancies
+* Fine-tuned `BlockManager.rebuild()` to ensure consistent dropzone rendering in edge cases
+* Improved internal consistency for block color assignment and iteration display logic
+* Improved preset handling with JSON reliance instead of my previous custom methods
+
+---
+
+## \[v1.0.3] – 2025-05-03
+### Enhancements
+- Added **Advanced Mode**: allows blocks to repeat a set number of times (iterations)
+- Implemented **Load Preset Snippet** modal for importing JSON-formatted templates
+- Exported snippets are now formatted as valid, readable JSON for easier sharing
+- Moved snippet and debug tools behind **Advanced Mode** to simplify the interface for casual users
+- Automatically loads a preset after pasting it via the snippet modal
+- Improved text scaling and layout when rendering QR code labels
+- Refined visual formatting for QR label area below the preview image
+
+### UI & UX Improvements
+- Fine-tuned padding, alignment, and font sizes across toolbox and canvas blocks
+- Increased canvas width slightly for better spatial balance
+- Unified styling of the label input field with the rest of the UI
+- Enhanced spacing and legibility in the right sidebar "Quick Tips" section
+
+### Under-the-Hood Changes
+- Improved legacy preset support: array-based formats now auto-convert to structured objects
+- Internal preset storage now always includes `iterations` for block consistency
+- Consolidated rendering logic to reduce redundancy and simplify maintenance
+- Dynamic font scaling ensures long QR labels do not overflow preview area
+
+---
+
+## \[v1.0.2] – 2025-05-03
+
+### New Features
+* Advanced Mode toggle: Enables block-level `iterations` (e.g., repeat a Tab 5× for 5 tab inputs)
+* QR Label Input: Users can now add a custom label beneath the QR code
+* Preset labels: Presets now store and restore the associated QR label
+* Visual iteration tags: Blocks display `×N` when repeated in Advanced Mode
+
+### Preset Format Update
+* Presets are now stored as an object with a `label` and `blocks`, enabling richer metadata
+
+  ```js
+  {
+    label: "My Label",
+    blocks: [{ type: "text", label: "Example", iterations: 1 }]
+  }
+  ```
+* Backward compatibility: Legacy array-based presets are automatically wrapped and converted
+
+### UI and UX Improvements
+* QR preview now uses a custom canvas to render both the code and its label in one image
+* Copy-to-clipboard now includes this labeled composite image
+* Minor UI polish: smaller spacing tweaks, consistent hover effects, and enhanced block visuals
+* Color palette adjusted for visual harmony and accessibility (color blindness awareness)
+
+### Improvements and Fixes
+* `copySelectedPresetAsDefaultSnippet()` now reflects new preset structure (with label and iterations)
+* Tooltip and layout alignment adjustments
+* Code cleanup and improved consistency in `BlockManager`, `Drag`, and `PresetsManager`
+
+---
+
+## \[v1.0.1] – 2025-05-02
+### UI and UX Improvements
+* Refactored sidebar panels into modular sections: Toolbox, Presets, Controls, and QR Preview
+* Right-side panel now includes dedicated Trash and Quick Tips sections
+* Introduced Export Preset Snippet button for sharing preset configurations
+* Added buttons to open GitHub and Feedback Form directly from the interface
+* New color palette and shadows for a cleaner, more polished look
+* Improved button styling (consistent `btn` class usage)
+* Color-coded tab and return blocks in both toolbox and canvas
+* Reintroduced tooltips that were lost during testing
+* Enlarged `presetSelect` font for better readability
+* Added version number display in header
+
+### Code Improvements
+* Consolidated and cleaned up repetitive CSS styles
+* Defined new CSS variables: `--color-scarlet`, `--color-blue`, `--color-purple`, `--color-black`, `--color-grey`
+* Reorganized HTML layout for improved readability and maintainability
+
+### User Experience Notes
+* Exported preset snippets can be submitted via the [feedback form](https://forms.office.com/r/BQ31NpaecJ) for potential inclusion as default templates in future updates
+
+---
+
+## \[v1.0.0] – 2024-04-29
+
+### Initial Release
+#### Features
+* Drag-and-drop block canvas for visually structuring QR data
+* Block types supported:
+  * Text
+  * Tabs (`\t`)
+  * Returns (`\r`)
+* Live QR code preview
+* Preset manager: save, load, and delete layouts using browser storage
+* Option to copy QR code as PNG to clipboard
+* Trash dropzone for deleting blocks
+* Desktop-optimized responsive layout
+
+#### Known Limitations
+* Touch input (mobile) support is limited; desktop interaction is required for full functionality
+* Clipboard image copy may not function on non-HTTPS sites or unsupported browsers
+* Mobile usability enhancements and long-press interaction support are planned for future versions
+
+---
