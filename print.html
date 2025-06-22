@@ -1,0 +1,568 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Card Print Layout</title>
+  <style>
+    :root {
+      --card-width: 90.00mm;
+      --card-height: 35.00mm;
+      --bg: #8bf2e5;
+      --white: #fff;
+      --text: #1e293b;
+      --primary: #F8FAFC;
+      --primary-hover: #cad7e4;
+      --danger: #ef8989;
+      --danger-hover: #ee6d6d;
+      --border: #006666;
+    }
+
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: sans-serif;
+      background: #e0e0e0;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* Toolbar */
+    #toolbar {
+      position: fixed;
+      top: 0; left: 0;
+      width: 100%;
+      padding: 12px 20px;
+      background: var(--bg);
+      color: var(--white);
+      border-bottom: 1px solid var(--border);
+      box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+      z-index: 10;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      font-size: 14px;
+    }
+
+    .toolbar-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 16px;
+      align-items: center;
+    }
+
+    /* Labels & inputs */
+    label {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-weight: bold;
+      font-size: 14px;
+      color: var(--text);
+      line-height: 1;
+      text-shadow: 0 1px 1px rgba(0,0,0,0.05);
+    }
+
+    input[type="number"],
+    input[type="checkbox"] {
+      padding: 4px 6px;
+      font-size: 16px;
+      font-weight: bold;
+      border: none;
+      border-radius: 4px;
+      background: var(--white);
+      color: var(--text);
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+      transition: box-shadow 0.2s, border-color 0.2s;
+    }
+
+    input[type="number"]:hover,
+    input[type="checkbox"]:hover {
+      box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+    }
+
+    input:focus {
+      outline: none;
+      border-color: var(--primary);
+      box-shadow: 0 0 0 3px rgba(14,116,144,0.2);
+    }
+
+    /* Buttons & upload */
+    .btn,
+    .custom-upload {
+      padding: 6px 12px;
+      font-size: 16px;
+      font-weight: bold;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      transition: background-color 0.2s, box-shadow 0.2s;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+
+    .btn-primary,
+    .custom-upload {
+      background: var(--primary);
+      color: var(--text);
+    }
+
+    .btn-primary:hover,
+    .custom-upload:hover {
+      background: var(--primary-hover);
+      box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+    }
+
+    .btn-danger {
+      background: var(--danger);
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+      color: var(--text);
+    }
+    .btn-danger:hover {
+      background: var(--danger-hover);
+      box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+    }
+
+    .btn:focus,
+    .custom-upload:focus,
+    .btn-danger:focus {
+      outline: none;
+      box-shadow: 0 0 0 3px rgba(14,116,144,0.2), 0 2px 4px rgba(0,0,0,0.1);
+    }
+
+    #cardList {
+      margin-top: 10px;
+      flex: 1;
+      overflow: auto;
+      display: grid;
+      grid-template-columns: repeat(auto-fit, var(--card-width));
+      gap: 10mm;
+      justify-content: center;
+      padding: 20mm;
+      flex-direction: column;
+    }
+
+    .card-box {
+      position: relative;
+      width: var(--card-width);
+      height: var(--card-height);
+      border: 1px solid #000;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      background: white;
+      padding: 0px;
+      transition: border 0.2s ease;
+      box-sizing: border-box;
+      break-inside: avoid;
+      page-break-inside: avoid;
+    }
+
+    .card-box.active {
+      border: 3px solid #4fc3f7;
+    }
+
+    .card-box img {
+      max-height: 100px;
+      max-width: 100%;
+      object-fit: contain;
+      transition: transform 0.2s ease;
+    }
+
+    .label {
+      text-align: center;
+      font-weight: bold;
+      margin-top: 4px;
+      width: 100%;
+    }
+    
+    .page-visual {
+      grid-column: 1 / -1; /* spans all columns */
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      margin: 5mm 0;
+      color: #888;
+      font-weight: bold;
+      font-size: 14px;
+      position: relative;
+    }
+
+    .page-visual::before {
+      content: "";
+      flex: 1;
+      height: 1px;
+      background: rgba(0,0,0,0.1);
+      margin-right: 10px;
+    }
+
+    .page-visual::after {
+      content: "";
+      flex: 1;
+      height: 1px;
+      background: rgba(0,0,0,0.1);
+      margin-left: 10px;
+    }
+    
+    .remove-button {
+      position: absolute;
+      top: 4px;
+      right: 4px;
+      background: var(--danger);
+      color: white;
+      border: none;
+      border-radius: 50%;
+      font-weight: bold;
+      font-size: 12px;
+      line-height: 1;
+      width: 22px;
+      height: 22px;
+      cursor: pointer;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.2);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 2;
+    }
+
+    .remove-button:hover {
+      background: var(--danger-hover);
+    }
+    
+    .toolbar-tip {
+      font-size: 18px;
+      background: transparent;
+      border: none;
+      cursor: pointer;
+      color: var(--text);
+      padding: 4px;
+      margin-left: auto;
+      align-self: flex-start;
+    }
+
+    .toolbar-tip:hover {
+      color: var(--border);
+    }
+
+    dialog#tips {
+      border: none;
+      border-radius: 8px;
+      padding: 24px 28px;
+      max-width: 550px; /* Increased from 400px */
+      width: 90%;        /* Makes it responsive */
+      font-size: 16px;   /* Increased from 14px */
+      box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+    }
+
+    dialog#tips::backdrop {
+      background: rgba(0, 0, 0, 0.3);
+    }
+
+    dialog#tips h2 {
+      margin-top: 0;
+    }
+
+    .spacer { display: block; }
+    .spacer--small { height: 10px; }
+    .spacer--large { height: 80px; }
+
+    @media print {
+      #cardList {
+        align-content: start !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        gap: 0 !important;
+        overflow: visible !important; /* Prevent scrollbar from appearing in print */
+      }
+
+      #toolbar,
+      #labelControls,
+      .spacer {
+        display: none !important;
+      }
+
+      body {
+        background: none;
+        overflow: visible !important; /* Also ensure body doesn't clip content */
+      }
+
+      .card-box.active {
+        border: 1px solid #000 !important;
+        page-break-inside: avoid;
+        break-inside: avoid;
+      }
+
+      .page-visual {
+        display: none !important;
+      }
+      
+      .remove-button {
+        display: none !important;
+      }
+    }
+
+  </style>
+</head>
+<body>
+  <div id="toolbar">
+    <div class="toolbar-row">
+      <label class="custom-upload">
+        Upload Images
+        <input type="file" id="uploader" multiple accept="image/*" hidden />
+      </label>
+      <button class="btn btn-danger" id="clearButton">Clear All</button>
+      <label>
+        Generate Labels
+        <input type="checkbox" id="showLabels" checked />
+      </label>
+      <button class="btn btn-primary" id="sortButton">Sort by Label</button>
+      <button class="btn btn-primary" id="printButton">Print</button>
+      <button class="toolbar-tip" id="openTips" title="View tips">💡</button>
+      </div>
+      <dialog id="tips" aria-labelledby="tips-title">
+        <h2 id="tips-title">What’s New in v1.0.9</h2>
+
+        <h3 id="tips-recent">Tips:</h3>
+        <ul>
+          <li>Double-click a card to select it. Use ←/→ to move it, or click ❌ to remove it.</li>
+          <div class="spacer--small"></div>
+          <li>Page breaks are based on US Letter pages with two columns per page.</li>
+          <div class="spacer--small"></div>
+          <li>To make this simple, adjust your window so two columns are visible.</li>
+          <div class="spacer--small"></div>
+          <li>If this format is helpful, more features and UI improvements may be added in the future.</li>
+        </ul>
+        <div class="spacer--large"></div>
+        <button class="btn btn-danger" id="closeTips" type="button">Close</button>
+      </dialog>
+    <div class="spacer spacer--small"></div>
+    <div class="toolbar-row" id="labelControls">
+      <label>
+        Image Scale:
+        <input type="number" id="scale" min="0.1" max="5" step="0.1" value="0.8" />
+      </label>
+      <label>
+        Label Font Size (px):
+        <input type="number" id="fontSize" min="6" max="48" step="1" value="13" />
+      </label>
+      <label>
+        Image–Label Spacing (px):
+        <input type="number" id="spacing" value="4" step="1" />
+      </label>
+      <label>
+        Card Width (mm):
+        <input type="number" id="cardWidth" value="90" step="0.1" min="10" />
+      </label>
+      <label>
+        Card Height (mm):
+        <input type="number" id="cardHeight" value="35" step="0.1" min="10" />
+      </label>
+    </div>
+  </div>
+
+  <div id="cardList"></div>
+
+  <script>
+    const uploader = document.getElementById('uploader');
+    const cardList = document.getElementById('cardList');
+    const showLabelsCheckbox = document.getElementById('showLabels');
+    const scaleInput = document.getElementById('scale');
+    const fontSizeInput = document.getElementById('fontSize');
+    const spacingInput = document.getElementById('spacing');
+    const cardWidthInput = document.getElementById('cardWidth');
+    const cardHeightInput = document.getElementById('cardHeight');
+
+    let fileList = [];
+    let activeCardName = null;
+    
+    function updateCardSize() {
+      const width = parseFloat(cardWidthInput.value);
+      const height = parseFloat(cardHeightInput.value);
+
+      document.documentElement.style.setProperty('--card-width', `${width}mm`);
+      document.documentElement.style.setProperty('--card-height', `${height}mm`);
+
+      // Update grid column logic too
+      cardList.style.gridTemplateColumns = `repeat(auto-fit, ${width}mm)`;
+
+      renderCards();
+    }
+
+    cardWidthInput.addEventListener('input', updateCardSize);
+    cardHeightInput.addEventListener('input', updateCardSize);
+
+    uploader.addEventListener('change', e => {
+      const files = Array.from(e.target.files);
+      files.forEach(file => {
+        const reader = new FileReader();
+        reader.onload = event => {
+          fileList.push({ src: event.target.result, name: file.name });
+          renderCards();
+        };
+        reader.readAsDataURL(file);
+      });
+    });
+
+    document.getElementById('clearButton').addEventListener('click', () => {
+      if (confirm('Clear all cards?')) {
+        fileList = [];
+        cardList.innerHTML = '';
+        uploader.value = '';
+        activeCardName = null;
+      }
+    });
+
+    [showLabelsCheckbox, scaleInput, fontSizeInput, spacingInput].forEach(input =>
+      input.addEventListener('input', renderCards)
+    );
+
+    function createCardBox(data, index) {
+      const box = document.createElement('div');
+      box.className = 'card-box';
+
+      // Image
+      const img = document.createElement('img');
+      img.src = data.src;
+      img.dataset.filename = data.name;
+      img.style.transform = `scale(${scaleInput.value})`;
+
+      img.addEventListener('dblclick', (e) => {
+        e.stopPropagation();
+        const isActive = box.classList.contains('active');
+        document.querySelectorAll('.card-box.active').forEach(b => b.classList.remove('active'));
+        if (!isActive) {
+          box.classList.add('active');
+          activeCardName = data.name;
+        } else {
+          activeCardName = null;
+        }
+        renderCards(); // <- re-render to show/hide remove button
+      });
+
+      box.appendChild(img);
+
+      // Label
+      if (showLabelsCheckbox.checked) {
+        const label = document.createElement('div');
+        label.className = 'label';
+        label.contentEditable = true;
+        label.textContent = data.name.replace(/\.[^/.]+$/, '');
+        label.style.fontSize = `${fontSizeInput.value}px`;
+        label.style.marginTop = `${spacingInput.value}px`;
+        box.appendChild(label);
+      }
+
+      if (data.name === activeCardName) {
+        box.classList.add('active');
+
+        const closeBtn = document.createElement('button');
+        closeBtn.textContent = '✕';
+        closeBtn.className = 'remove-button';
+        closeBtn.title = 'Remove card';
+        closeBtn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          fileList = fileList.filter(f => f.name !== data.name);
+          activeCardName = null;
+          renderCards();
+        });
+
+        box.appendChild(closeBtn);
+      }
+
+      return box;
+    }
+    
+    function getCardsPerPageEstimate() {
+      const usablePageHeight = 279; // mm (Letter)
+      const height = parseFloat(getComputedStyle(document.documentElement)
+                      .getPropertyValue('--card-height'));
+      const gap = 10; // mm
+
+      const rowsPerPage = Math.floor(usablePageHeight / (height + gap));
+      return rowsPerPage * 2; // 2 columns
+    }
+
+    function renderCards() {
+      cardList.innerHTML = '';
+
+      const cardsPerPage = getCardsPerPageEstimate();
+      const totalPages = Math.ceil(fileList.length / cardsPerPage);
+
+      for (let page = 0; page < totalPages; page++) {
+        const pageStartIndex = page * cardsPerPage;
+        const pageEndIndex = pageStartIndex + cardsPerPage;
+
+        const pageLabel = document.createElement('div');
+        pageLabel.className = 'page-visual';
+        pageLabel.textContent = `Page ${page + 1}`;
+        cardList.appendChild(pageLabel);
+
+        const pageCards = fileList.slice(pageStartIndex, pageEndIndex);
+        pageCards.forEach((data, index) => {
+          const card = createCardBox(data, pageStartIndex + index);
+          cardList.appendChild(card);
+        });
+      }
+    }
+
+    document.addEventListener('keydown', (e) => {
+      if (!activeCardName) return;
+
+      const index = fileList.findIndex(card => card.name === activeCardName);
+      if (index === -1) return;
+
+      let target = index;
+      if (e.key === 'ArrowLeft') {
+        target = index - 1;
+      } else if (e.key === 'ArrowRight') {
+        target = index + 1;
+      } else {
+        return;
+      }
+
+      if (target >= 0 && target < fileList.length) {
+        const [movingCard] = fileList.splice(index, 1);
+        fileList.splice(target, 0, movingCard);
+        activeCardName = movingCard.name;
+        renderCards();
+        e.preventDefault();
+      }
+    });
+    
+    document.getElementById('sortButton').addEventListener('click', () => {
+      // Get all current card elements
+      const cardElements = Array.from(cardList.querySelectorAll('.card-box'));
+
+      // Extract text from label elements
+      const sorted = cardElements.sort((a, b) => {
+        const labelA = a.querySelector('.label')?.textContent.trim().toLowerCase() || '';
+        const labelB = b.querySelector('.label')?.textContent.trim().toLowerCase() || '';
+        return labelA.localeCompare(labelB);
+      });
+
+      // Create a new fileList based on sorted elements
+      fileList = sorted.map(cardEl => {
+        const img = cardEl.querySelector('img');
+        return {
+          src: img.src,
+          name: img.dataset.filename
+        };
+      });
+
+      renderCards();
+    });
+    
+    updateCardSize();
+    document.getElementById('printButton').addEventListener('click', () => window.print());
+    document.getElementById('openTips').addEventListener('click', () => {
+      document.getElementById('tips').showModal();
+    });
+
+    document.getElementById('closeTips').addEventListener('click', () => {
+      document.getElementById('tips').close();
+    });
+
+  </script>
+</body>
+</html>
