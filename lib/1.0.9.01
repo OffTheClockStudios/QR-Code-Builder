@@ -1,0 +1,1084 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>QR Builder</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+
+<body>
+
+<button id="openSettingsBtn" class="btnsettings primary" title="QR Code Settings" >⚙️</button>
+
+<header class="page-header">
+  <div class="title">QR Code Builder</div>
+  <div class="version">v1.0.9 || Last Updated on 06/7/2025</div>
+  <div class="spacer-small"></div>
+  <div class="version">Visually build your QR code—one block, one step at a time.</div>
+  <div class="spacer-small"></div>
+</header>
+
+<div class="layout">
+  <!-- ------------------ Left Sidebar ------------------ -->
+  <!-- Toolbox -->
+  <aside class="panel toolbox">
+    <div class="section">
+      <h3>Toolbox</h3>
+      <div class="toolbox-item text" draggable="true" data-type="text" title="Drag & drop to insert a &quot;Text&quot; block. Double-click to edit the text.">Text</div>
+      <div class="toolbox-item tab" draggable="true" data-type="tab" title="Drag & drop to insert a &quot;Tab&quot; block. Double-click to rename it.">⇥</div>
+      <div class="toolbox-item return" draggable="true" data-type="return" title="Drag & drop to insert a &quot;Return&quot; block. Double-click to rename it.">⏎</div>
+    </div>
+
+  <!-- Presets -->
+    <div class="section">
+      <h3>Build Area Presets</h3>
+      <select id="presetSelect" style="font-size: 14px;" title="Choose a saved preset."></select>
+      <button class="btn btn-primary" id="loadPresetBtn" title="Load the selected preset into the canvas.">Load</button>
+      <button class="btn btn-primary" id="savePresetBtn" title="Save the current build as a preset.">Save</button>
+      <button class="btn btn-danger" id="deletePresetBtn" title="Delete the selected preset.">Delete Preset</button>
+      <button class="btn btn-danger" id="clearBtn" title="Clear all blocks from the build area.">Clear Build Area</button>
+    </div>
+    <div class="section">
+      <h3>Other Tools From OffTheClockStudios</h3>
+      <button onclick="location.href='fuzzies.html'" class="btn btn-primary">Open Fuzzies</button>
+    </div>
+  </aside>
+
+  <!-- ------------------ Canvas Area / Build Area ------------------ -->
+  <div class="canvas">
+    <div class="canvas-header">Build Area</div>
+    <div class="canvas-info-group">
+      <div class="canvas-info">Drag blocks from the Toolbox</div>
+      <div class="canvas-info">and drop them into the zones below</div>
+    </div>
+    <div class="canvas-body" id="canvas"></div>
+  </div>
+  <!-- ------------------ Right Sidebar ------------------ -->
+  
+  <aside class="panel right">
+
+    <!-- QR Preview -->
+    <div class="section">
+      <h3>Preview &amp; Actions</h3>
+      <div class="qr-preview" id="qrPreview"></div>
+      <input id="qrLabelInput" type="text" title="Label for the QR code." placeholder="Optional QR label…" style="width: 85%; font-size: 14px; margin: 8px auto 0; display: block;" />
+      <!-- button groups -->
+      <div class="button-group" style="display:flex; gap:20px; justify-content:center; margin-top:8px;">
+        <button class="btn btn-blue" id="copyBtn" type="button" title="Copy the QR code to your clipboard.">Copy</button>
+        <button class="btn btn-debug" id="downloadBtn" type="button" title="Download the QR code.">Download</button>
+      </div>
+      <div class="button-group" style="display:flex; gap:20px; justify-content:center; margin-top:8px;">
+        <button class="btn btn-primary" id="generateBtn" title="Build and display the QR code.">Build</button>
+      </div>
+      <button class="btn btn-debug" id="openBatchBtn">Batch Build (Testing)</button>
+    </div>
+
+    <!-- Footer (pinned to bottom) -->
+    
+    <!-- Trash -->
+    <div class="right-footer">
+      <!-- Trash (scrollable) -->
+      <div class="garbage-content">
+      <div class="section">
+        <div class="garbage-drop" id="garbageDrop">Drop to Trash</div>
+      </div>
+      
+  </aside>
+  
+<div id="jsonModal">
+  <h3>Paste Preset JSON</h3>
+  <textarea id="jsonInput" rows="18"></textarea>
+  <div class="json-modal-actions">
+    <button class="btn btn-primary" onclick="submitJSON()">Load</button>
+    <button class="btn btn-danger" onclick="closeJSONModal()">Cancel</button>
+  </div>
+</div>
+
+<!-- QR Settings Modal -->
+<div id="settingsModal" style="display:none; position:fixed; top:15%; left:50%; transform:translateX(-50%); background:#fff; padding:20px; border:1px solid #ccc; border-radius:8px; z-index:10000; width:300px; box-shadow:0 4px 12px rgba(0,0,0,0.15);">
+  <h3>QR Code Settings</h3>
+  <!-- Links: inline and centered -->
+  <div style="text-align: center; margin-bottom: 12px;">
+    <a
+      href="https://github.com/OffTheClockStudios/QR-Code-Builder/tree/main"
+      target="_blank"
+      title="Visit the GitHub repository for QR Code Builder."
+      style="display: inline-block; margin: 0 8px; color: var(--color-tab-symbol); text-decoration: underline;"
+    >
+      Visit GitHub Page
+    </a>
+    <a
+      href="https://forms.office.com/r/BQ31NpaecJ"
+      target="_blank"
+      title="Submit feedback or preset requests."
+      style="display: inline-block; margin: 0 8px; color: var(--color-return-symbol); text-decoration: underline;"
+    >
+      Submit Feedback
+    </a>
+  </div>
+  <div style="margin-bottom:8px;">
+    <label for="widthInput">Width (px):</label>
+    <input id="widthInput" type="number" min="50" style="width:100%;" />
+  </div>
+  <div style="margin-bottom:8px;">
+    <label for="heightInput">Height (px):</label>
+    <input id="heightInput" type="number" min="50" style="width:100%;" />
+  </div>
+  <div style="margin-bottom:8px;">
+    <label for="versionSelect">Version (1–40):</label>
+    <input id="versionSelect" type="number" min="1" max="40" style="width:100%;" />
+  </div>
+  <div style="margin-bottom:8px;">
+    <label for="errorSelect">Error Level:</label>
+    <select id="errorSelect" style="width:100%;">
+      <option value="L">L (Lowest)</option>
+      <option value="M">M</option>
+      <option value="Q">Q</option>
+      <option value="H">H (Highest)</option>
+    </select>
+  </div>
+  <div style="margin-bottom:8px;">
+    <label for="darkColor">Dark Color:</label>
+    <input id="darkColor" type="color" style="width:100%;" />
+  </div>
+  <div style="margin-bottom:12px;">
+    <label for="lightColor">Light Color:</label>
+    <input id="lightColor" type="color" style="width:100%;" />
+  </div>
+  <div style="margin-bottom:8px;">
+    <label for="labelColorInput">Label Color:</label>
+    <input id="labelColorInput" type="color" style="width:100%;" />
+  </div>
+  <div class="checkbox-container" title="If enabled, the QR code image will be copied to clipboard after generation.">
+    <input type="checkbox" id="copyToggleInput">
+    <label for="copyToggleInput">Copy After Build</label>
+  </div>
+  <div class="spacer-small"></div>
+  <div class="checkbox-container" title="Enable advanced editing features like iterations.">
+    <input type="checkbox" id="advancedToggleInput"/>
+    <label for="advancedToggleInput">Advanced Mode</label>
+  </div>
+  <div class="spacer-small"></div>
+  <div class="spacer-small"></div>
+  <div style="text-align:right;">
+    <button class="btn btn-danger" id="resetSettingsBtn">Defaults</button>
+    <button class="btn btn-primary" id="saveSettingsBtn">Save</button>
+  </div>
+</div>
+<div id="settingsBackdrop" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.4); z-index:9999;"></div>
+
+<!-- Batch QR Modal -->
+<div id="batchModal" style="display:none; position:fixed; top:15%; left:50%; transform:translateX(-50%); 
+     background:#fff; padding:20px; border:1px solid #ccc; border-radius:8px; z-index:10000;">
+  <h3>Batch Generate QR Codes</h3>
+  <p>Enter or paste QR contents with each line being one code. Blank lines are ignored.</p>
+  <label for="batchModeSelect">Mode:</label>
+  <select id="batchModeSelect" style="margin-bottom:8px; width:100%;">
+    <option value="standard">Standard (literal lines)</option>
+    <option value="escapes">Escape Sequences (\t, \n, \r)</option>
+    <option value="hexescapes">Hex Escapes (\xNN)</option>
+    <option value="unicode">Unicode Escapes (\uXXXX, \u{XXXXX})</option>
+    <option value="rawhex">Raw-Hex Mode (48656C6C6F → “Hello”)</option>
+    <option value="base64">Base64 Decode (SGVsbG8= → “Hello”)</option>
+    <!-- future modes here -->
+  </select>
+  <textarea id="batchInput" rows="10" style="width:100%; font-family:monospace;"></textarea>
+  <div style="margin-top:12px; text-align:right;">
+    <button class="btn btn-danger" id="closeBatchBtn">Cancel</button>
+    <button class="btn btn-primary" id="batchGenerateBtn">Build &amp; Download</button>
+  </div>
+</div>
+<!-- Backdrop -->
+<div id="batchBackdrop" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%;
+     background:rgba(0,0,0,0.4); z-index:9999;"></div>
+
+</body>
+<!-- link is for original testing js, made a copy to be independent and secure -->
+<!-- <script src="qrcode.min.js"></script> -->
+<!-- <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script> -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<script>
+
+// 
+const get = id => document.getElementById(id);
+const show = id => get(id).style.display = 'block';
+const hide = id => get(id).style.display = 'none';
+function createEl(tag, {
+  className = '',
+  html = '',
+  text = '',
+  attrs = {},
+  on = {}
+} = {}) {
+  const el = document.createElement(tag);
+  if (className) el.className = className;
+  if (html) el.innerHTML = html;
+  if (text) el.textContent = text;
+  for (const [k, v] of Object.entries(attrs)) el.setAttribute(k, v);
+  for (const [event, handler] of Object.entries(on)) el.addEventListener(event, handler);
+  return el;
+}
+
+
+
+// --- QR Settings Object & Defaults ---
+const defaultQRSettings = {
+  width: 256,
+  height: 256,
+  typeNumber: 4,
+  correctLevel: QRCode.CorrectLevel.H,
+  colorDark: '#000000',
+  colorLight: '#ffffff',
+  labelColor: '#000000',
+  copyToggle: false,
+  advancedToggle: false
+};
+
+// --- Load persisted settings or use defaults ---
+let qrSettings;
+try {
+  const stored = localStorage.getItem('qrSettings');
+  qrSettings = stored ? JSON.parse(stored) : { ...defaultQRSettings };
+} catch (e) {
+  console.warn('Failed to load QR settings from localStorage, using defaults', e);
+  qrSettings = { ...defaultQRSettings };
+}
+
+// --- DOM References ---
+const openSettingsBtn      = get('openSettingsBtn');
+const settingsModal        = get('settingsModal');
+const settingsBackdrop     = get('settingsBackdrop');
+const widthInput           = get('widthInput');
+const heightInput          = get('heightInput');
+const versionSelect        = get('versionSelect');
+const errorSelect          = get('errorSelect');
+const darkColor            = get('darkColor');
+const lightColor           = get('lightColor');
+const labelColorInput      = get('labelColorInput');
+const copyToggleInput      = get('copyToggleInput');
+const advancedToggleInput  = get('advancedToggleInput');
+const saveSettingsBtn      = get('saveSettingsBtn');
+const resetSettingsBtn     = get('resetSettingsBtn');
+
+// --- Helpers to sync settings ↔ form ---
+function applySettingsToForm(settings) {
+  widthInput.value            = settings.width;
+  heightInput.value           = settings.height;
+  versionSelect.value         = settings.typeNumber;
+  errorSelect.value           = Object.entries(QRCode.CorrectLevel)
+                                  .find(([k, v]) => v === settings.correctLevel)?.[0] || 'H';
+  darkColor.value             = settings.colorDark;
+  lightColor.value            = settings.colorLight;
+  labelColorInput.value       = settings.labelColor;
+  copyToggleInput.checked     = settings.copyToggle;
+  advancedToggleInput.checked = settings.advancedToggle;
+}
+
+function readSettingsFromForm() {
+  return {
+    width: parseInt(widthInput.value, 10),
+    height: parseInt(heightInput.value, 10),
+    typeNumber: Math.min(40, Math.max(1, parseInt(versionSelect.value, 10))),
+    correctLevel: QRCode.CorrectLevel[errorSelect.value],
+    colorDark: darkColor.value,
+    colorLight: lightColor.value,
+    labelColor: labelColorInput.value,
+    copyToggle: copyToggleInput.checked,
+    advancedToggle: advancedToggleInput.checked
+  };
+}
+
+// --- Open/Close Modal ---
+openSettingsBtn.addEventListener('click', () => {
+  applySettingsToForm(qrSettings);
+  show('settingsModal');
+  show('settingsBackdrop');
+});
+
+settingsBackdrop.addEventListener('click', closeSettings);
+function closeSettings() {
+  hide('settingsModal');
+  hide('settingsBackdrop');
+}
+
+// --- Save & Reset Handlers ---
+saveSettingsBtn.addEventListener('click', () => {
+  qrSettings = readSettingsFromForm();
+  try {
+    localStorage.setItem('qrSettings', JSON.stringify(qrSettings));
+  } catch (e) {
+    console.warn('Failed to save QR settings to localStorage', e);
+  }
+  closeSettings();
+});
+
+resetSettingsBtn.addEventListener('click', () => {
+  qrSettings = { ...defaultQRSettings };
+  localStorage.setItem('qrSettings', JSON.stringify(qrSettings));
+  applySettingsToForm(qrSettings);
+});
+
+
+
+// DOM references for key interactive regions
+const canvasEl = get('canvas');
+const qrPreview = get('qrPreview');
+const garbageDrop = get('garbageDrop');
+const presetSelect = get('presetSelect');
+
+/**
+ * BlockManager handles the current set of blocks displayed on the canvas.
+ * Provides methods to add, update, clear, and rebuild the canvas content.
+ */
+// === Constants ===
+const DATA_INDEX = 'index';
+const DATA_TYPE  = 'text';
+
+
+// === Helpers ===
+
+// Display logic for a block's inner content
+function getBlockDisplayHTML(data, isAdvanced) {
+  const typeSymbols = { tab: '⇥', return: '⏎' };
+  const symbol = typeSymbols[data.type] || '';
+  const label = data.label?.trim() || '';
+  const iter = (isAdvanced || data.iterations > 1)
+    ? `<span class="iterations">×${data.iterations}</span>`
+    : '';
+  return symbol ? `${symbol} ${label} ${iter}` : `${label} ${iter}`;
+}
+
+
+// === BlockManager ===
+const BlockManager = {
+  blocks: [],
+
+  add(type, label, pos = this.blocks.length) {
+    this.blocks.splice(pos, 0, { type, label, iterations: 1 });
+    this.rebuild();
+  },
+
+  update(idx, label, iterations) {
+    this.blocks[idx].label = label;
+    this.blocks[idx].iterations = iterations;
+    this.rebuild();
+  },
+
+  clear() {
+    this.blocks = [];
+    this.rebuild();
+    qrPreview.innerHTML = '';
+  },
+
+  rebuild(callback) {
+    canvasEl.innerHTML = '';
+    if (this.blocks.length === 0) {
+      canvasEl.append(Drag.createDropzone(0));
+    } else {
+      this.blocks.forEach((b, i) => {
+        canvasEl.append(Drag.createDropzone(i), Drag.createBlock(b, i));
+      });
+      canvasEl.append(Drag.createDropzone(this.blocks.length));
+    }
+    if (typeof callback === 'function') callback();
+  }
+};
+
+
+// === Drag ===
+const Drag = {
+  createBlock(data, idx) {
+    const el = createEl('div', {
+      className: `block ${data.type}`,
+      html: getBlockDisplayHTML(data, qrSettings.advancedToggle),
+      attrs: { draggable: true }
+    });
+
+    el.ondragstart = e => {
+      e.dataTransfer.setData(DATA_INDEX, idx);
+    };
+
+    el.ondblclick = () => this.editBlock(idx, data);
+
+    return el;
+  },
+
+  createDropzone(pos) {
+    const dz = createEl('div', { className: 'dropzone' });
+
+    dz.ondragover = e => {
+      e.preventDefault();
+      dz.classList.add('drag-hover');
+    };
+
+    dz.ondragleave = () => {
+      dz.classList.remove('drag-hover');
+    };
+
+    dz.ondrop = e => {
+      e.preventDefault();
+      dz.classList.remove('drag-hover');
+
+      const fromRaw = e.dataTransfer.getData(DATA_INDEX);
+      const type = e.dataTransfer.getData(DATA_TYPE);
+
+      if (fromRaw !== '') {
+        const from = Number(fromRaw);
+        let to = pos;
+        if (from < to) to--;
+        const blk = BlockManager.blocks.splice(from, 1)[0];
+        BlockManager.blocks.splice(to, 0, blk);
+      } else if (type) {
+        const label =
+          type === 'text' ? prompt('Text:', '') || 'Text'
+        : type === 'tab'  ? '\t'
+        :                   '\r';
+
+        BlockManager.add(type, label, pos);
+      }
+
+      BlockManager.rebuild();
+    };
+
+    return dz;
+  },
+
+  editBlock(idx, data) {
+    const isAdvanced = qrSettings.advancedToggle;
+    let { label, iterations = 1 } = data;
+
+    if (isAdvanced) {
+      const combined = prompt('Edit (label | iterations):', `${label} | ${iterations}`);
+      if (combined != null) {
+        const [newLabelRaw, iterRaw] = combined.split('|').map(s => s.trim());
+        const newLabel = newLabelRaw || label;
+        const newIterations = Math.max(1, parseInt(iterRaw)) || 1;
+        BlockManager.update(idx, newLabel, newIterations);
+      }
+    } else {
+      const newLabel = prompt('Edit label:', label);
+      if (newLabel != null) {
+        BlockManager.update(idx, newLabel, iterations);
+      }
+    }
+  }
+};
+
+
+// === Toolbox Drag Setup ===
+document.querySelectorAll('.toolbox-item').forEach(it =>
+  it.addEventListener('dragstart', e =>
+    e.dataTransfer.setData(DATA_TYPE, it.dataset.type)
+  )
+);
+
+
+// === Trash Drop Setup ===
+garbageDrop.ondragover = e => e.preventDefault();
+garbageDrop.ondrop = e => {
+  e.preventDefault();
+  const idx = e.dataTransfer.getData(DATA_INDEX);
+  if (idx !== '') {
+    BlockManager.blocks.splice(idx, 1);
+    BlockManager.rebuild();
+  }
+};
+
+
+/**
+ * PresetsManager handles all logic related to managing default and user-defined presets.
+ * - Default presets are bundled into the app (read-only)
+ * - User presets are stored in localStorage under the key 'qrbuilder_presets'
+ * - The manager supports CRUD operations, import/export, and integration with the dropdown UI
+ */
+const PresetsManager = {
+  key: 'qrbuilder_presets',
+
+  // === Built-in (read-only) presets ===
+  defaultPresets: {
+    "ESSYM - Dept, Line, Shift": {
+      label: "ESSYM - Dept, Line, Shift",
+      blocks: [
+        { type: "text", label: "052 - BSD", iterations: 1 },
+        { type: "tab", label: "\t", iterations: 1 },
+        { type: "return", label: "\r", iterations: 1 },
+        { type: "text", label: "BSD", iterations: 1 },
+        { type: "return", label: "\r", iterations: 1 },
+        { type: "tab", label: "\t", iterations: 1 },
+        { type: "return", label: "\r", iterations: 1 },
+        { type: "text", label: "1st", iterations: 1 }
+      ]
+    },
+    "Preset Example": {
+      label: "",
+      blocks: [
+        { type: "text", label: "Hello", iterations: 1 },
+        { type: "return", label: "\r", iterations: 1 },
+        { type: "text", label: "World", iterations: 1 }
+      ]
+    }
+  },
+
+  // === Helpers ===
+  isDefault(name) {
+    return Object.hasOwn(this.defaultPresets, name);
+  },
+
+  isValidPreset(preset) {
+    return (
+      preset &&
+      typeof preset.label === 'string' &&
+      Array.isArray(preset.blocks) &&
+      preset.blocks.every(b =>
+        typeof b.type === 'string' &&
+        typeof b.label === 'string' &&
+        typeof b.iterations === 'number'
+      )
+    );
+  },
+
+  // === Storage ===
+  getUserPresets() {
+    return JSON.parse(localStorage.getItem(this.key) || '{}');
+  },
+
+  saveUserPresets(presets) {
+    localStorage.setItem(this.key, JSON.stringify(presets));
+  },
+
+  getAllPresets() {
+    return { ...this.defaultPresets, ...this.getUserPresets() };
+  },
+
+  // === UI Integration ===
+  refreshDropdown() {
+    const allPresets = this.getAllPresets();
+    presetSelect.innerHTML = '<option value="">Select a Preset</option>';
+    for (const name in allPresets) {
+      const opt = createEl('option', {
+        text: this.isDefault(name) ? `⭐ ${name}` : name,
+        attrs: { value: name }
+      });
+      presetSelect.appendChild(opt);
+    }
+  },
+
+  exportPresetObject(name) {
+    const label = get('qrLabelInput')?.value.trim() || '';
+    return {
+      [name]: {
+        label,
+        blocks: JSON.parse(JSON.stringify(BlockManager.blocks))
+      }
+    };
+  },
+
+  saveCurrent() {
+    const name = prompt('Name this preset:');
+    if (!name) return;
+
+    if (this.isDefault(name)) {
+      alert('❌ Cannot overwrite a default preset. Use a new name.');
+      return;
+    }
+
+    const userPresets = this.getUserPresets();
+    userPresets[name] = this.exportPresetObject(name)[name];
+    this.saveUserPresets(userPresets);
+    this.refreshDropdown();
+    presetSelect.value = name;
+  },
+
+  deleteSelected() {
+    const name = presetSelect.value;
+    if (!name) return alert('Select a preset to delete.');
+    if (this.isDefault(name)) {
+      return alert('❌ Cannot delete a default preset.');
+    }
+
+    if (!confirm(`Delete user preset "${name}"?`)) return;
+
+    const presets = this.getUserPresets();
+    delete presets[name];
+    this.saveUserPresets(presets);
+    presetSelect.value = '';
+    this.refreshDropdown();
+    BlockManager.clear();
+  },
+
+  loadPreset(name, sourcePresets = null) {
+    const allPresets = sourcePresets || this.getAllPresets();
+    const preset = allPresets[name];
+
+    if (!this.isValidPreset(preset)) {
+      alert('❌ Invalid preset.');
+      return;
+    }
+
+    BlockManager.blocks = preset.blocks.map(b => ({
+      ...b,
+      iterations: b.iterations || 1
+    }));
+    BlockManager.rebuild();
+
+    const labelInput = get('qrLabelInput');
+    if (labelInput) labelInput.value = preset.label || '';
+  },
+
+  copyToClipboardAsJSON(name) {
+    const allPresets = this.getAllPresets();
+    const preset = allPresets[name];
+    if (!this.isValidPreset(preset)) {
+      alert('❌ No valid preset found.');
+      return;
+    }
+
+    const json = {
+      [name]: {
+        label: preset.label || '',
+        blocks: preset.blocks.map(b => ({
+          type: b.type,
+          label: b.label,
+          iterations: b.iterations || 1
+        }))
+      }
+    };
+
+    const formatted = JSON.stringify(json, null, 2);
+
+    navigator.clipboard.writeText(formatted).then(() => {
+      alert("✅ JSON copied to clipboard!");
+    }).catch(err => {
+      console.error("Clipboard error:", err);
+      alert("❌ Failed to copy.");
+    });
+  },
+
+  importJSON(jsonString) {
+    try {
+      const parsed = JSON.parse(jsonString);
+      const name = Object.keys(parsed)[0];
+      const preset = parsed[name];
+
+      if (!this.isValidPreset(preset)) {
+        alert("❌ Invalid preset format.");
+        return;
+      }
+
+      const userPresets = this.getUserPresets();
+      userPresets[name] = preset;
+      this.saveUserPresets(userPresets);
+      this.refreshDropdown();
+      presetSelect.value = name;
+      this.loadPreset(name);
+
+      alert(`✅ Imported and loaded: ${name}`);
+    } catch (err) {
+      console.error(err);
+      alert("❌ Failed to parse JSON.");
+    }
+  },
+
+  preloadDefaults() {
+    this.refreshDropdown();
+  }
+};
+
+
+// === App Initialization ===
+PresetsManager.preloadDefaults(); // Load default + user presets into the dropdown
+BlockManager.rebuild();  // Render current canvas state (likely empty on first load)
+
+// === Preset Controls ===
+get('savePresetBtn').onclick = () => PresetsManager.saveCurrent();
+get('loadPresetBtn').onclick = () => {
+  const name = presetSelect.value;
+  if (name) PresetsManager.loadPreset(name);
+};
+get('deletePresetBtn').onclick = () => PresetsManager.deleteSelected();
+
+// === Advanced Mode Toggle ===
+const advToggleInput = get('advancedToggleInput');
+advToggleInput.addEventListener('change', e => {
+  // write back into your persisted settings
+  qrSettings.advancedToggle = e.target.checked;
+  localStorage.setItem('qrSettings', JSON.stringify(qrSettings));
+
+  // immediately update your canvas
+  BlockManager.rebuild();
+});
+
+// === Build QR Code ===
+get('generateBtn').onclick = () => {
+  // Generate QR content from block list
+  const payload = BlockManager.blocks.map(b => {
+    const unit = b.type === 'tab' ? '\t'
+               : b.type === 'return' ? '\r'
+               : b.label;
+    return unit.repeat(b.iterations || 1);
+  }).join('');
+
+  const labelText = get('qrLabelInput')?.value.trim() || '';
+  const qrSize = 100;
+  const paddingAboveLabel = 10;
+  const labelFontSize = 14;
+  const labelAreaHeight = labelText ? labelFontSize + paddingAboveLabel : 0;
+
+  // Clear previous preview
+  qrPreview.innerHTML = '';
+
+  // Setup canvas (include label space)
+  const canvas = createEl('canvas');
+  canvas.width = qrSize;
+  canvas.height = qrSize + labelAreaHeight;
+  const ctx = canvas.getContext('2d');
+
+  // Generate QR code temporarily
+  const tmpDiv = createEl('div');
+  new QRCode(tmpDiv, {
+    text: payload,
+    width: qrSize,
+    height: qrSize,
+    typeNumber: qrSettings.typeNumber,
+    correctLevel: qrSettings.correctLevel,
+    colorDark: qrSettings.colorDark,
+    colorLight: qrSettings.colorLight
+  });
+
+  // Wait for QR to render, then draw it + optional label
+  setTimeout(() => {
+    const qrCanvas = tmpDiv.querySelector('canvas');
+    if (!qrCanvas) return;
+
+    // Draw QR image
+    ctx.drawImage(qrCanvas, 0, 0);
+
+    // Draw label below if present
+    if (labelText) {
+      ctx.font = `bold ${labelFontSize}px sans-serif`;
+      ctx.fillStyle = qrSettings.labelColor;
+      ctx.textAlign = 'center';
+      
+      // Auto-resize font if label is too wide
+      let fontSize = labelFontSize;
+      ctx.font = `bold ${fontSize}px sans-serif`;
+      let textWidth = ctx.measureText(labelText).width;
+      while (textWidth > canvas.width && fontSize > 8) {
+        fontSize--;
+        ctx.font = `bold ${fontSize}px sans-serif`;
+        textWidth = ctx.measureText(labelText).width;
+    }
+
+    ctx.fillText(labelText, canvas.width / 2, qrSize + paddingAboveLabel + fontSize / 1.2);
+    }
+
+    // Output final QR image
+    const img = new Image();
+    img.src = canvas.toDataURL();
+    qrPreview.appendChild(img);
+
+    // Optionally copy to clipboard
+    if (qrSettings.copyToggle) {
+      canvas.toBlob(blob => {
+        const item = new ClipboardItem({ 'image/png': blob });
+        navigator.clipboard.write([item])
+         /* .then(() => alert('✅ QR Code copied to clipboard!'))
+          .catch(err => alert('❌ Failed to copy QR Code.')); */
+      });
+    }
+  }, 100);
+};
+
+// === Canvas Controls ===
+get('clearBtn').onclick = () => {
+  if (confirm('Clear all blocks?')) BlockManager.clear();
+};
+
+
+// === JSON Debug/Experimental Tools ===
+function copySelectedPresetJSON() {
+  const name = presetSelect.value;
+  if (!name) {
+    alert("Select a preset first.");
+    return;
+  }
+  PresetsManager.copyToClipboardAsJSON(name);
+}
+
+
+function openJSONModal() {
+  get('jsonInput').value = '';
+  get('jsonModal').style.display = 'block';
+}
+
+function closeJSONModal() {
+  get('jsonModal').style.display = 'none';
+}
+
+function submitJSON() {
+  const input = get('jsonInput').value;
+  closeJSONModal();
+  if (input) loadPresetFromJSON(input);
+}
+
+function loadPresetFromJSON(jsonString) {
+  PresetsManager.importJSON(jsonString);
+}
+
+
+
+
+// copy to clipboard
+get('copyBtn').addEventListener('click', () => {
+  const img = document.querySelector('#qrPreview img');
+  if (!img) return alert('Generate a QR code first!');
+  
+  fetch(img.src)
+    .then(res => res.blob())
+    .then(blob => {
+      const item = new ClipboardItem({ 'image/png': blob });
+      return navigator.clipboard.write([item]);
+    })
+    .then(() => alert('✅ Copied to clipboard!'))
+    .catch(err => alert('❌ Copy failed.'));
+});
+
+// download as PNG with prompt for filename
+get('downloadBtn').addEventListener('click', () => {
+  const img = document.querySelector('#qrPreview img');
+  if (!img) return alert('Generate a QR code first!');
+
+  const filename = prompt("Enter filename for your QR code (without .png):", "qr-code");
+
+  // If user cancels, do nothing
+  if (filename === null) return;
+
+  const finalName = filename.trim() === "" ? "qr-code" : filename.trim();
+
+  const a = createEl('a', {
+    attrs: { href: img.src, download: `${finalName}.png` }
+  });
+
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+});
+
+
+/**
+ * Converts the current canvas build into a JavaScript object literal snippet,
+ *
+ * This uses a modal mult-line input field for creating and downloading batch QR codes
+ * The image filenames will be the contents of the lines, with each line being a new code
+ * This does not use the normal blocks, tabs, returns, just text lines
+ * Adding various modes for different use cases
+ */
+ 
+const openBatchBtn   = get('openBatchBtn');
+const batchModal     = get('batchModal');
+const batchBackdrop  = get('batchBackdrop');
+const closeBatchBtn  = get('closeBatchBtn');
+
+openBatchBtn.addEventListener('click', () => {
+  show('batchModal');
+  show('batchBackdrop');
+});
+
+closeBatchBtn.addEventListener('click', () => {
+  hide('batchModal');
+  hide('batchBackdrop');
+});
+
+// Helper: apply the chosen parsing mode to a raw line
+function parseLine(raw, mode) {
+  switch (mode) {
+    case 'hexescapes':
+      // \xNN → byte 0xNN
+      return raw.replace(/\\x([0-9A-Fa-f]{2})/g, (_, hex) =>
+        String.fromCharCode(parseInt(hex, 16))
+      );
+
+    case 'escapes':
+      // common C-style escapes
+      return raw
+        .replace(/\\t/g, '\t')
+        .replace(/\\n/g, '\n')
+        .replace(/\\r/g, '\r');
+
+    case 'unicode':
+      // \u{X…X} first (ES6), then \uXXXX
+      raw = raw.replace(/\\u\{([0-9A-Fa-f]+)\}/g, (_, code) =>
+        String.fromCodePoint(parseInt(code, 16))
+      );
+      return raw.replace(/\\u([0-9A-Fa-f]{4})/g, (_, hex) =>
+        String.fromCharCode(parseInt(hex, 16))
+      );
+
+    case 'rawhex':
+      // strip whitespace, split into pairs, convert each to a char
+      const pairs = raw.replace(/\s+/g, '').match(/.{1,2}/g) || [];
+      return pairs.map(h => String.fromCharCode(parseInt(h, 16))).join('');
+
+    case 'base64':
+      try {
+        // atob returns a binary-string; works up to Latin-1
+        return atob(raw.trim());
+      } catch (e) {
+        console.warn('Invalid Base64:', e);
+        return raw;
+      }
+
+    case 'standard':
+    default:
+      return raw;
+  }
+}
+
+// On “Build & Download”
+get('batchGenerateBtn').addEventListener('click', () => {
+  const mode  = get('batchModeSelect').value;
+  const lines = get('batchInput')
+    .value.split(/\r?\n/)
+    .map(l => l.trim())
+    .filter(Boolean);
+
+  if (!lines.length) return alert('Please paste at least one non-blank line.');
+
+  const {
+    width,
+    height,
+    typeNumber,
+    correctLevel,
+    colorDark,
+    colorLight
+  } = qrSettings;
+
+  lines.forEach((rawText, idx) => {
+    const text = parseLine(rawText, mode);
+    const tmp  = createEl('div');
+    
+    new QRCode(tmp, {
+      text, width, height, typeNumber,
+      correctLevel, colorDark, colorLight
+    });
+
+    setTimeout(() => {
+      const qrCanvas = tmp.querySelector('canvas');
+      if (!qrCanvas) return console.warn(`No QR generated for: ${rawText}`);
+
+      qrCanvas.toBlob(blob => {
+        const safeName = rawText.replace(/[<>:"/\\|?*\x00-\x1F]/g, '_').slice(0, 100) + '.png';
+        const a = createEl('a', {
+          attrs: {
+            href: URL.createObjectURL(blob),
+            download: safeName
+          }
+        });
+        document.body.appendChild(a);
+        a.click();
+        URL.revokeObjectURL(a.href);
+        if (a.parentNode) document.body.removeChild(a);
+      });
+    }, 50 * (idx + 1));
+  });
+
+  hide('batchModal');
+  hide('batchBackdrop');
+});
+
+
+/**
+ ********************************************
+ * === HIDDEN DEBUG & DEVELOPMENT TOOLS === *
+ ********************************************
+ */
+
+/**
+ * Converts the current canvas build to a JSON-formatted string.
+ * This is useful for exporting the current block layout for manual testing or integration.
+ *
+ * Call this from the browser console:
+ *     convertBuildToJSON("New Preset Name")
+ */
+function convertBuildToJSON(name = "Unnamed Build") {
+  if (!BlockManager.blocks.length) {
+    console.warn("⚠️ Build Area is empty. Nothing to convert.");
+    return;
+  }
+
+  const label = get('qrLabelInput')?.value.trim() || '';
+  const snippet = {
+    [name]: {
+      label,
+      blocks: BlockManager.blocks.map(b => ({
+        type: b.type,
+        label: b.label,
+        iterations: b.iterations || 1
+      }))
+    }
+  };
+
+  const formatted = JSON.stringify(snippet, null, 2);
+  console.log("🟢 JSON output based on current canvas build:\n\n" + formatted);
+  return formatted; // allows optional use like const json = convertBuildToJSON("My Example");
+}
+
+
+/**
+ * Converts the current canvas build into a JavaScript object literal snippet,
+ *
+ * This is intended for developer use when preparing new hardcoded presets.
+ * The output is printed to the console and can be manually copied.
+ *
+ * Call this from the browser console:
+ *     convertBuildToSnippet("New Preset Name")
+ */
+function convertBuildToSnippet(name = "Unnamed Preset") {
+  if (!BlockManager.blocks.length) {
+    console.warn("⚠️ Build Area is empty. Nothing to convert.");
+    return;
+  }
+
+  const label = get('qrLabelInput')?.value.trim() || '';
+
+  const snippet = `"${name}": {\n` +
+    `  label: ${JSON.stringify(label)},\n` +
+    `  blocks: [\n` +
+    BlockManager.blocks.map(b => {
+      return `    { type: ${JSON.stringify(b.type)}, label: ${JSON.stringify(b.label)}, iterations: ${b.iterations || 1} }`;
+    }).join(",\n") +
+    `\n  ]\n},`;
+
+  console.log("🟢 Script-ready preset snippet:\n\n" + snippet);
+  return snippet;
+}
+
+/**
+ * Fully resets all QR Code Builder data stored in the browser.
+ *
+ * ⚠️ Use with caution — this operation is irreversible and intended
+ * only for testing, development, or recovery scenarios.
+ *
+ * Can be called manually from the browser console:
+ *     resetAllQRCodeBuilderData()
+ */
+function resetAllQRCodeBuilderData() {
+  if (!confirm("This will delete all saved presets and reset the app. Continue?")) return;
+
+  // Clear presets
+  localStorage.removeItem('qrbuilder_presets');
+
+  // Clear canvas
+  BlockManager.clear();
+
+  // Reset dropdown
+  PresetsManager.refreshDropdown();
+  presetSelect.value = '';
+
+  alert("All QR Builder data has been reset.");
+}
+
+
+
+</script>
+</html>
