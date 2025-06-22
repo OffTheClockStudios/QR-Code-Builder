@@ -19,7 +19,10 @@
 * **Responsive Layout** – Optimized for modern desktop browsers (mobile support pending)
 * **Batch Generation** – Testing batch QR creation with different coding options (Standard, Escape Sequences, Hex Escapes, Unicode Escapes, Raw-Hex, & Base64)
 * **QR Settings** - Testing QR error levels, colors, dimensions, versions, etc.
-* **Additional Tools** - Adding other tools that help with data tracking and standardization (like my near-fuzzies.html)
+
+##Additional Tools - Adding other tools that help with data tracking and standardization (like my near-fuzzies.html)
+* **Fuzzies** - Used to help with data standardization for QR contents
+* **Print Pages/Cards** - Testing pages for printing QR codes in a repeatable format
 
 ---
 
@@ -67,11 +70,15 @@ You can install QR Code Builder as a Progressive Web App (PWA) for offline acces
 
 See the full [Changelog](./CHANGELOG.md) for details.
 
-### Recent Changes with v1.0.8 (5/12/25):
+### Recent Changes with v1.0.9 (6/22/25):
 
-* TESTING new interface layouts based on feedback
-* ADDED functions for batch generation and downloading QR codes
-* ADDED QR settings for error levels, versions, colors, etc.
+* Changelog popup so users can view recent updates
+* Filename prompt when using the Download button to save QR codes
+* Print Pages & Print Cards HTML: Testing different endgame formats for the QR codes
+* Fuzzies now opens in a new tab when clicked
+* Loading a preset will now automatically build the QR code
+* Presets are sorted A → Z, with defaults listed after your custom presets
+* The Download button now builds the QR code and prompts for a filename automatically
 
 ---
 
