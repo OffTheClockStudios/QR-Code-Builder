@@ -1,0 +1,325 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Card Print Layout</title>
+  <style>
+    /* Color palette */
+    :root {
+      --bg: #8bf2e5;
+      --white: #fff;
+      --text: #1e293b;
+      --primary: #F8FAFC;
+      --primary-hover: #cad7e4;
+      --danger: #ef8989;
+      --danger-hover: #ee6d6d;
+      --border: #006666;
+    }
+
+    /* Reset & base */
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+    }
+
+    /* Toolbar */
+    #toolbar {
+      position: fixed;
+      top: 0; left: 0;
+      width: 100%;
+      padding: 12px 20px;
+      background: var(--bg);
+      color: var(--white);
+      border-bottom: 1px solid var(--border);
+      box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+      z-index: 10;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      font-size: 14px;
+    }
+
+    .toolbar-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 16px;
+      align-items: center;
+    }
+
+    /* Labels & inputs */
+    label {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-weight: bold;
+      font-size: 14px;
+      color: var(--text);
+      line-height: 1;
+      text-shadow: 0 1px 1px rgba(0,0,0,0.05);
+    }
+
+    input[type="number"],
+    input[type="checkbox"] {
+      padding: 4px 6px;
+      font-size: 16px;
+      font-weight: bold;
+      border: none;
+      border-radius: 4px;
+      background: var(--white);
+      color: var(--text);
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+      transition: box-shadow 0.2s, border-color 0.2s;
+    }
+
+    input[type="number"]:hover,
+    input[type="checkbox"]:hover {
+      box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+    }
+
+    input:focus {
+      outline: none;
+      border-color: var(--primary);
+      box-shadow: 0 0 0 3px rgba(14,116,144,0.2);
+    }
+
+    /* Buttons & upload */
+    .btn,
+    .custom-upload {
+      padding: 6px 12px;
+      font-size: 16px;
+      font-weight: bold;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      transition: background-color 0.2s, box-shadow 0.2s;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+
+    .btn-primary,
+    .custom-upload {
+      background: var(--primary);
+      color: var(--text);
+    }
+
+    .btn-primary:hover,
+    .custom-upload:hover {
+      background: var(--primary-hover);
+      box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+    }
+
+    .btn-danger {
+      background: var(--danger);
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+      color: var(--text);
+    }
+    .btn-danger:hover {
+      background: var(--danger-hover);
+      box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+    }
+
+    .btn:focus,
+    .custom-upload:focus,
+    .btn-danger:focus {
+      outline: none;
+      box-shadow: 0 0 0 3px rgba(14,116,144,0.2), 0 2px 4px rgba(0,0,0,0.1);
+    }
+
+    /* Grid & cards */
+    #grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, 85.6mm);
+      gap: 10mm;
+      padding: 80px 10mm 10mm;
+      justify-items: center;
+    }
+
+    .card-box {
+      width: 85.6mm;
+      height: 53.98mm;
+      padding: 2mm;
+      background: var(--white);
+      border: 1px solid #000;
+      display: grid;
+      place-items: center;
+      overflow: hidden;
+    }
+
+    .card-box img {
+      max-width: 100%;
+      max-height: 100px;
+      object-fit: contain;
+    }
+
+    .label {
+      margin-top: 4px;
+      width: 100%;
+      text-align: center;
+      font-weight: bold;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      cursor: text;
+    }
+
+    /* Spacers */
+    .spacer { display: block; }
+    .spacer--small { height: 10px; }
+    .spacer--large { height: 80px; }
+
+    /* Print settings */
+    @page { size: auto; margin: 0; }
+    @media print {
+      body { margin: 0; }
+      #toolbar, #labelControls, .spacer { display: none; }
+      #grid { padding: 0; gap: 0; }
+      .card-box { break-inside: avoid; page-break-inside: avoid; }
+    }
+  </style>
+</head>
+<body>
+  <div id="toolbar">
+    <div class="toolbar-row">
+      <label class="custom-upload">
+        Upload Images
+        <input type="file" id="uploader" multiple accept="image/*" hidden />
+      </label>
+      <button class="btn btn-danger" id="clearButton">Clear All</button>
+      <label>
+        Generate Labels
+        <input type="checkbox" id="showLabels" checked />
+      </label>
+      <button class="btn btn-primary" id="printButton">Print</button>
+    </div>
+    <div class="spacer spacer--small"></div>
+    <div class="toolbar-row" id="labelControls">
+      <label>
+        Image Scale:
+        <input type="number" id="scale" min="0.1" max="5" step="0.1" value="1" />
+      </label>
+      <label>
+        Label Font Size (px):
+        <input type="number" id="fontSize" min="6" max="48" step="1" value="16" />
+      </label>
+      <label>
+        Image–Label Spacing (px):
+        <input type="number" id="spacing" value="4" step="1" />
+      </label>
+    </div>
+  </div>
+  <div class="spacer spacer--large"></div>
+  <div id="grid"></div>
+
+  <script>
+    const labelControls = document.getElementById('labelControls');
+    const uploader = document.getElementById('uploader');
+    const grid = document.getElementById('grid');
+    const scaleSlider = document.getElementById('scale');
+    const showLabelsCheckbox = document.getElementById('showLabels');
+    const fontSizeInput = document.getElementById('fontSize');
+    const spacingInput = document.getElementById('spacing');
+
+    let fileList = [];
+    let scale = parseFloat(scaleSlider.value);
+    let showLabels = showLabelsCheckbox.checked;
+    let fontSize = parseInt(fontSizeInput.value, 10);
+    let spacingY = parseInt(spacingInput.value, 10);
+
+    function updateScale() {
+      document.querySelectorAll('.card-box img').forEach(img => {
+        img.style.transform = `scale(${scale})`;
+      });
+    }
+
+    function updateFontSize() {
+      document.querySelectorAll('.label').forEach(label => {
+        label.style.fontSize = `${fontSize}px`;
+      });
+    }
+
+    function createCardBox(imageSrc, filename) {
+      const box = document.createElement('div');
+      box.className = 'card-box';
+
+      const img = document.createElement('img');
+      img.src = imageSrc;
+      img.style.transform = `scale(${scale})`;
+
+      box.appendChild(img);
+
+      if (showLabels) {
+        const label = document.createElement('div');
+        label.className = 'label';
+        label.contentEditable = true;
+        label.textContent = filename.replace(/\.[^/.]+$/, "");
+        label.style.fontSize = `${fontSize}px`;
+        label.style.marginTop = `${spacingY}px`;
+        box.appendChild(label);
+      }
+
+      grid.appendChild(box);
+    }
+
+    fontSizeInput.addEventListener('input', () => {
+      fontSize = parseInt(fontSizeInput.value, 10);
+      updateFontSize();
+    });
+
+    uploader.addEventListener('change', (e) => {
+      const files = Array.from(e.target.files);
+
+      files.forEach(file => {
+        const reader = new FileReader();
+        reader.onload = function (event) {
+          createCardBox(event.target.result, file.name);
+        };
+        reader.readAsDataURL(file);
+      });
+    });
+    
+    spacingInput.addEventListener('input', () => {
+      spacingY = parseInt(spacingInput.value, 10);
+      document.querySelectorAll('.label').forEach(label => {
+        label.style.marginTop = `${spacingY}px`;
+      });
+    });
+
+    scaleSlider.addEventListener('input', () => {
+      scale = parseFloat(scaleSlider.value);
+      updateScale();
+    });
+
+    showLabelsCheckbox.addEventListener('change', () => {
+      showLabels = showLabelsCheckbox.checked;
+      labelControls.style.display = showLabels ? 'flex' : 'none';
+
+      // rebuild from our fileList
+      grid.innerHTML = '';
+      fileList.forEach(file => {
+        const reader = new FileReader();
+        reader.onload = (event) => {
+          createCardBox(event.target.result, file.name);
+        };
+        reader.readAsDataURL(file);
+      });
+    });
+    
+    const printButton = document.getElementById('printButton');
+
+    printButton.addEventListener('click', () => {
+      window.print();
+    });
+    
+    document.getElementById('clearButton').addEventListener('click', () => {
+      if (!confirm("Are you sure you want to clear all images?")) return;
+      // empty the grid…
+      grid.innerHTML = '';
+      // …and reset your file list and the input itself
+      fileList = [];
+      uploader.value = '';
+    });
+
+  </script>
+</body>
+</html>
