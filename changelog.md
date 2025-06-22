@@ -6,18 +6,18 @@ All notable changes to this project will be documented in this file.
 ## \[v1.0.9] – 2025-06-22
 
 ### New Features
-* Filename prompt when using the Download button to save QR codes
-  * If a QR label is set, it will be used as the filename
-  * If the QR label is blank, the filename defaults to the current preset name
+- Filename prompt when using the Download button to save QR codes
+  - If a QR label is set, it will be used as the filename
+  - If the QR label is blank, the filename defaults to the current preset name
 
 ### Testing
-* Print Pages & Print Cards HTML: Testing different endgame formats for the QR codes
+- Print Pages & Print Cards HTML: Testing different endgame formats for the QR codes
 
 ### Enhancements
-* Fuzzies now opens in a new tab when clicked
-* Loading a preset will now automatically build the QR code
-* Presets are sorted A → Z, with defaults listed after your custom presets
-* The Download button now builds the QR code and prompts for a filename automatically
+- Fuzzies now opens in a new tab when clicked
+- Loading a preset will now automatically build the QR code
+- Presets are sorted A → Z, with defaults listed after your custom presets
+- The Download button now builds the QR code and prompts for a filename automatically
 
 ---
 
@@ -35,7 +35,8 @@ All notable changes to this project will be documented in this file.
 - Testing new interface layouts based on feedback
 - Removed debug/experimental options—they’re not a priority right now
 - Removed the outdated instructions after recent UI changes
-- Removed "Copy on Build" || * ADDED "Copy" & "Load" buttons
+- Removed "Copy on Build"
+- Added "Copy" & "Load" buttons
 - Changed section "Presets" -> "Build Area Presets"
 - Added changed-based survey link
 
@@ -75,23 +76,23 @@ All notable changes to this project will be documented in this file.
 
 ## \[v1.0.4] – 2025-05-05
 
-### UI and UX Improvements
-* Refined spacing and layout across the interface using new spacer classes (`.spacer-small`, `.spacer-extra-small`)
-* Moved **Advanced Mode** toggle to the bottom of the right panel for better separation from core controls
-* Moved **Github and Survey** buttons to the bottom of the right panel as links for better separation from core controls
-* Adjusted padding and alignment for more consistent vertical rhythm in sidebars
-* Improved clarity and grouping in the Trash and Debug sections
-* Enhanced visual hierarchy of toolbox and preset sections with tighter spacing and balanced headers
-* Added tooltips to all major controls to improve discoverability and reduce user confusion
-* Applied additional spacing control to checkbox containers and section headers
-* Ensured consistent block styling and coloring across both toolbox and canvas
-* Improved QR label input styling for visual balance with other controls
+### UI & UX Improvements
+- Refined spacing and layout across the interface using new spacer classes (`.spacer-small`, `.spacer-extra-small`)
+- Moved **Advanced Mode** toggle to the bottom of the right panel for better separation from core controls
+- Moved **Github and Survey** buttons to the bottom of the right panel as links for better separation from core controls
+- Adjusted padding and alignment for more consistent vertical rhythm in sidebars
+- Improved clarity and grouping in the Trash and Debug sections
+- Enhanced visual hierarchy of toolbox and preset sections with tighter spacing and balanced headers
+- Added tooltips to all major controls to improve discoverability and reduce user confusion
+- Applied additional spacing control to checkbox containers and section headers
+- Ensured consistent block styling and coloring across both toolbox and canvas
+- Improved QR label input styling for visual balance with other controls
 
 ### Under-the-Hood Changes
-* Cleaned up unused spacing elements and minor inline styling redundancies
-* Fine-tuned `BlockManager.rebuild()` to ensure consistent dropzone rendering in edge cases
-* Improved internal consistency for block color assignment and iteration display logic
-* Improved preset handling with JSON reliance instead of my previous custom methods
+- Cleaned up unused spacing elements and minor inline styling redundancies
+- Fine-tuned `BlockManager.rebuild()` to ensure consistent dropzone rendering in edge cases
+- Improved internal consistency for block color assignment and iteration display logic
+- Improved preset handling with JSON reliance instead of my previous custom methods
 
 ---
 
@@ -138,7 +139,7 @@ All notable changes to this project will be documented in this file.
   ```
 * Backward compatibility: Legacy array-based presets are automatically wrapped and converted
 
-### UI and UX Improvements
+### UI & UX Improvements
 * QR preview now uses a custom canvas to render both the code and its label in one image
 * Copy-to-clipboard now includes this labeled composite image
 * Minor UI polish: smaller spacing tweaks, consistent hover effects, and enhanced block visuals
@@ -152,25 +153,25 @@ All notable changes to this project will be documented in this file.
 ---
 
 ## \[v1.0.1] – 2025-05-02
-### UI and UX Improvements
-* Refactored sidebar panels into modular sections: Toolbox, Presets, Controls, and QR Preview
-* Right-side panel now includes dedicated Trash and Quick Tips sections
-* Introduced Export Preset Snippet button for sharing preset configurations
-* Added buttons to open GitHub and Feedback Form directly from the interface
-* New color palette and shadows for a cleaner, more polished look
-* Improved button styling (consistent `btn` class usage)
-* Color-coded tab and return blocks in both toolbox and canvas
-* Reintroduced tooltips that were lost during testing
-* Enlarged `presetSelect` font for better readability
-* Added version number display in header
+### UI & UX Improvements
+- Refactored sidebar panels into modular sections: Toolbox, Presets, Controls, and QR Preview
+- Right-side panel now includes dedicated Trash and Quick Tips sections
+- Introduced Export Preset Snippet button for sharing preset configurations
+- Added buttons to open GitHub and Feedback Form directly from the interface
+- New color palette and shadows for a cleaner, more polished look
+- Improved button styling (consistent `btn` class usage)
+- Color-coded tab and return blocks in both toolbox and canvas
+- Reintroduced tooltips that were lost during testing
+- Enlarged `presetSelect` font for better readability
+- Added version number display in header
 
 ### Code Improvements
-* Consolidated and cleaned up repetitive CSS styles
-* Defined new CSS variables: `--color-scarlet`, `--color-blue`, `--color-purple`, `--color-black`, `--color-grey`
-* Reorganized HTML layout for improved readability and maintainability
+- Consolidated and cleaned up repetitive CSS styles
+- Defined new CSS variables: `--color-scarlet`, `--color-blue`, `--color-purple`, `--color-black`, `--color-grey`
+- Reorganized HTML layout for improved readability and maintainability
 
 ### User Experience Notes
-* Exported preset snippets can be submitted via the [feedback form](https://forms.office.com/r/BQ31NpaecJ) for potential inclusion as default templates in future updates
+- Exported preset snippets can be submitted via the [feedback form](https://forms.office.com/r/BQ31NpaecJ) for potential inclusion as default templates in future updates
 
 ---
 
@@ -178,20 +179,20 @@ All notable changes to this project will be documented in this file.
 
 ### Initial Release
 #### Features
-* Drag-and-drop block canvas for visually structuring QR data
-* Block types supported:
-  * Text
-  * Tabs (`\t`)
-  * Returns (`\r`)
-* Live QR code preview
-* Preset manager: save, load, and delete layouts using browser storage
-* Option to copy QR code as PNG to clipboard
-* Trash dropzone for deleting blocks
-* Desktop-optimized responsive layout
+- Drag-and-drop block canvas for visually structuring QR data
+- Block types supported:
+  - Text
+  - Tabs (`\t`)
+  - Returns (`\r`)
+- Live QR code preview
+- Preset manager: save, load, and delete layouts using browser storage
+- Option to copy QR code as PNG to clipboard
+- Trash dropzone for deleting blocks
+- Desktop-optimized responsive layout
 
 #### Known Limitations
-* Touch input (mobile) support is limited; desktop interaction is required for full functionality
-* Clipboard image copy may not function on non-HTTPS sites or unsupported browsers
-* Mobile usability enhancements and long-press interaction support are planned for future versions
+- Touch input (mobile) support is limited; desktop interaction is required for full functionality
+- Clipboard image copy may not function on non-HTTPS sites or unsupported browsers
+- Mobile usability enhancements and long-press interaction support are planned for future versions
 
 ---
