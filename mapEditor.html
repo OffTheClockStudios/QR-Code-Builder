@@ -1,0 +1,2224 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Map Editor</title>
+  <style>
+    /* ================================================================
+       1. Design tokens and base styles
+       ================================================================ */
+    :root {
+      color-scheme: dark;
+      --brand: #7aa2ff;
+      --brand-strong: #9db8ff;
+      --brand-soft: rgba(122, 162, 255, 0.12);
+      --bg: #08101d;
+      --surface: #111a2b;
+      --surface-raised: #162138;
+      --surface-inset: #0b1425;
+      --border: rgba(255, 255, 255, 0.09);
+      --border-strong: rgba(255, 255, 255, 0.15);
+      --text: #edf3ff;
+      --muted: #a9b6d3;
+      --faint: #74819e;
+      --danger: #ff747d;
+      --status-ok: #22c55e;
+      --status-ng: #ef4444;
+      --marker-fill: #f9a8d4;
+      --marker-text: #ffffff;
+      --marker-stroke: #101318;
+      --radius-sm: 10px;
+      --radius-md: 14px;
+      --radius-lg: 18px;
+      --shadow-sm: 0 8px 24px rgba(0, 0, 0, 0.2);
+      --shadow-lg: 0 22px 60px rgba(0, 0, 0, 0.42);
+      --header-height: 76px;
+    }
+
+    * { box-sizing: border-box; }
+    html, body { height: 100%; }
+    body {
+      margin: 0;
+      overflow: hidden;
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+      color: var(--text);
+      background:
+        radial-gradient(circle at 18% 0%, rgba(122, 162, 255, 0.11), transparent 30%),
+        linear-gradient(160deg, var(--bg), #0d1526 52%, #070e1a);
+    }
+
+    button, input, select { font: inherit; }
+    button {
+      appearance: none;
+      min-height: 36px;
+      border: 1px solid var(--border-strong);
+      border-radius: var(--radius-sm);
+      padding: 8px 11px;
+      color: var(--text);
+      background: #1a2742;
+      cursor: pointer;
+      transition: border-color 0.16s ease, background 0.16s ease, transform 0.16s ease;
+    }
+    button:hover:not(:disabled) {
+      border-color: rgba(157, 184, 255, 0.48);
+      background: #223153;
+      transform: translateY(-1px);
+    }
+    button:active:not(:disabled) { transform: translateY(0); }
+    button:focus-visible, input:focus-visible, select:focus-visible {
+      outline: 3px solid rgba(122, 162, 255, 0.42);
+      outline-offset: 2px;
+    }
+    button.primary {
+      border-color: transparent;
+      color: #07162f;
+      background: var(--brand);
+      font-weight: 800;
+    }
+    button.primary:hover:not(:disabled) { background: var(--brand-strong); }
+    button.danger {
+      color: #ffd9dc;
+      border-color: rgba(255, 116, 125, 0.4);
+      background: rgba(255, 116, 125, 0.1);
+    }
+    button:disabled { opacity: 0.42; cursor: not-allowed; }
+
+    input[type="file"] { display: none; }
+    input[type="text"], input[type="search"], input[type="number"], select {
+      width: 100%;
+      min-height: 38px;
+      border: 1px solid var(--border-strong);
+      border-radius: var(--radius-sm);
+      padding: 9px 10px;
+      color: var(--text);
+      background: var(--surface-inset);
+    }
+    input::placeholder { color: var(--faint); }
+    input[type="range"] { width: 100%; accent-color: var(--brand); }
+    input[type="checkbox"] { accent-color: var(--brand); }
+
+    .visually-hidden {
+      position: absolute !important;
+      width: 1px;
+      height: 1px;
+      padding: 0;
+      margin: -1px;
+      overflow: hidden;
+      clip: rect(0, 0, 0, 0);
+      white-space: nowrap;
+      border: 0;
+    }
+
+    /* ================================================================
+       2. App shell and header
+       ================================================================ */
+    .app-shell {
+      height: 100%;
+      display: grid;
+      grid-template-rows: auto minmax(0, 1fr);
+    }
+
+    .app-header {
+      min-height: var(--header-height);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 18px;
+      padding: 12px 16px;
+      border-bottom: 1px solid var(--border);
+      background: rgba(8, 16, 29, 0.9);
+      backdrop-filter: blur(16px);
+      position: relative;
+      z-index: 20;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 11px;
+      min-width: max-content;
+    }
+    .brand-mark {
+      width: 34px;
+      height: 34px;
+      display: grid;
+      place-items: center;
+      border: 1px solid rgba(157, 184, 255, 0.35);
+      border-radius: 11px;
+      color: var(--brand-strong);
+      background: var(--brand-soft);
+      font-weight: 900;
+    }
+    .brand-copy { display: flex; flex-direction: column; gap: 2px; }
+    .brand-copy h1 { margin: 0; font-size: 16px; line-height: 1.1; letter-spacing: 0.01em; }
+    .brand-copy p { margin: 0; color: var(--muted); font-size: 11px; }
+
+    .toolbar {
+      min-width: 0;
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+    .toolbar-group {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 5px;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      background: rgba(255, 255, 255, 0.025);
+    }
+    .toolbar-label {
+      padding: 0 5px;
+      color: var(--faint);
+      font-size: 10px;
+      font-weight: 800;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+    .toolbar button { min-height: 34px; padding: 7px 10px; }
+    .zoom-value {
+      width: 48px;
+      text-align: center;
+      color: var(--muted);
+      font-size: 12px;
+      font-variant-numeric: tabular-nums;
+    }
+
+    /* ================================================================
+       3. Workspace layout
+       ================================================================ */
+    .workspace-layout {
+      min-height: 0;
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) minmax(340px, 390px);
+      gap: 14px;
+      padding: 14px;
+    }
+
+    .canvas-panel, .panel {
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      background: rgba(17, 26, 43, 0.94);
+      box-shadow: var(--shadow-sm);
+    }
+
+    .canvas-panel {
+      min-width: 0;
+      min-height: 0;
+      display: grid;
+      grid-template-rows: auto minmax(0, 1fr);
+      overflow: hidden;
+    }
+
+    .canvas-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      padding: 14px 16px;
+      border-bottom: 1px solid var(--border);
+    }
+    .eyebrow {
+      display: block;
+      margin-bottom: 3px;
+      color: var(--brand-strong);
+      font-size: 10px;
+      font-weight: 850;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+    }
+    .canvas-header h2 { margin: 0; font-size: 15px; }
+    .canvas-meta { display: flex; align-items: center; justify-content: flex-end; gap: 8px; flex-wrap: wrap; }
+    .meta-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      min-height: 28px;
+      padding: 5px 9px;
+      border: 1px solid var(--border);
+      border-radius: 999px;
+      color: var(--muted);
+      background: rgba(255, 255, 255, 0.025);
+      font-size: 11px;
+    }
+    .meta-chip::before {
+      content: "";
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: var(--brand);
+      box-shadow: 0 0 0 4px rgba(122, 162, 255, 0.13);
+    }
+
+    .board-shell { min-width: 0; min-height: 0; position: relative; overflow: hidden; }
+    .board {
+      width: 100%;
+      height: 100%;
+      overflow: auto;
+      padding: 34px;
+      background:
+        linear-gradient(45deg, rgba(255, 255, 255, 0.024) 25%, transparent 25%) 0 0 / 24px 24px,
+        linear-gradient(45deg, transparent 75%, rgba(255, 255, 255, 0.024) 75%) 0 0 / 24px 24px,
+        linear-gradient(45deg, transparent 75%, rgba(255, 255, 255, 0.024) 75%) 12px -12px / 24px 24px,
+        linear-gradient(45deg, rgba(255, 255, 255, 0.024) 25%, transparent 25%) 12px 12px / 24px 24px;
+      overscroll-behavior: contain;
+    }
+
+    .empty-state {
+      width: min(460px, calc(100% - 32px));
+      min-height: 260px;
+      margin: max(40px, 9vh) auto 0;
+      display: grid;
+      place-items: center;
+      padding: 32px;
+      border: 1px dashed rgba(157, 184, 255, 0.32);
+      border-radius: var(--radius-lg);
+      text-align: center;
+      background: rgba(10, 19, 35, 0.72);
+    }
+    .empty-state-icon {
+      width: 54px;
+      height: 54px;
+      margin: 0 auto 15px;
+      display: grid;
+      place-items: center;
+      border-radius: 16px;
+      color: var(--brand-strong);
+      background: var(--brand-soft);
+      font-size: 24px;
+      font-weight: 900;
+    }
+    .empty-state h3 { margin: 0 0 8px; font-size: 18px; }
+    .empty-state p { max-width: 360px; margin: 0 0 18px; color: var(--muted); font-size: 13px; line-height: 1.55; }
+    .stage.ready ~ .empty-state { display: none; }
+
+    .stage {
+      position: relative;
+      display: none;
+      width: 100px;
+      margin: 0 auto;
+      background: #fff;
+      box-shadow: var(--shadow-lg);
+      line-height: 0;
+      user-select: none;
+      -webkit-user-select: none;
+      touch-action: none;
+    }
+    .stage.ready { display: block; }
+    .map-image { display: block; width: 100%; height: auto; pointer-events: none; -webkit-user-drag: none; }
+    .marker-svg {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      overflow: visible;
+      cursor: grab;
+      touch-action: none;
+    }
+    .marker-svg.panning { cursor: grabbing; }
+    .pan-surface { fill: transparent; pointer-events: all; }
+
+    /* ================================================================
+       4. Sidebar and control panels
+       ================================================================ */
+    .sidebar {
+      min-width: 0;
+      min-height: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      overflow-y: auto;
+      overflow-x: hidden;
+      overscroll-behavior: contain;
+      scrollbar-gutter: stable;
+      padding-right: 2px;
+    }
+
+    /* Keep the right column as one continuous scroll surface. This removes
+       the hard visual cutoff between Review settings and the panels below. */
+    .sidebar-settings {
+      flex: 0 0 auto;
+      min-height: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      overflow: visible;
+      padding-right: 0;
+    }
+
+    .panel { padding: 14px; }
+    .panel-header {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 12px;
+    }
+    .panel-heading { display: flex; align-items: flex-start; gap: 10px; }
+    .step-number {
+      width: 26px;
+      height: 26px;
+      flex: 0 0 26px;
+      display: grid;
+      place-items: center;
+      border: 1px solid rgba(157, 184, 255, 0.3);
+      border-radius: 9px;
+      color: var(--brand-strong);
+      background: var(--brand-soft);
+      font-size: 11px;
+      font-weight: 900;
+    }
+    .panel h2 { margin: 1px 0 2px; font-size: 14px; }
+    .panel-description { margin: 0; color: var(--muted); font-size: 11px; line-height: 1.4; }
+
+    .summary-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 8px;
+      margin-bottom: 10px;
+    }
+    .summary-card {
+      min-width: 0;
+      padding: 10px;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      background: rgba(255, 255, 255, 0.025);
+    }
+    .summary-card span { display: block; color: var(--faint); font-size: 10px; text-transform: uppercase; letter-spacing: 0.07em; }
+    .summary-card strong {
+      display: block;
+      margin-top: 5px;
+      overflow: hidden;
+      color: var(--text);
+      font-size: 12px;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .control-card {
+      padding: 11px;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      background: rgba(255, 255, 255, 0.025);
+    }
+    .control-card + .control-card { margin-top: 9px; }
+    .control-card-header { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 8px; }
+    .control-label { color: var(--muted); font-size: 11px; font-weight: 700; }
+    .range-value { color: var(--text); font-size: 12px; font-variant-numeric: tabular-nums; }
+    .setting-note { margin: 8px 0 0; color: var(--faint); font-size: 11px; line-height: 1.45; }
+
+    .mode-toggle {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 11px;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      background: rgba(255, 255, 255, 0.025);
+    }
+    .mode-toggle-copy { display: flex; flex-direction: column; gap: 2px; }
+    .mode-toggle-copy strong { font-size: 12px; }
+    .mode-toggle-copy small { color: var(--muted); font-size: 10px; line-height: 1.35; }
+    .switch { position: relative; width: 46px; height: 26px; flex: 0 0 46px; }
+    .switch input { position: absolute; opacity: 0; width: 1px; height: 1px; }
+    .switch-track {
+      position: absolute;
+      inset: 0;
+      border: 1px solid var(--border-strong);
+      border-radius: 999px;
+      background: #27324e;
+      cursor: pointer;
+      transition: 0.16s ease;
+    }
+    .switch-track::after {
+      content: "";
+      position: absolute;
+      left: 3px;
+      top: 3px;
+      width: 18px;
+      height: 18px;
+      border-radius: 50%;
+      background: #dce6ff;
+      box-shadow: 0 2px 5px rgba(0, 0, 0, 0.35);
+      transition: 0.16s ease;
+    }
+    .switch input:checked + .switch-track { background: var(--brand); }
+    .switch input:checked + .switch-track::after { transform: translateX(20px); background: #07162f; }
+    .switch input:focus-visible + .switch-track { outline: 3px solid rgba(122, 162, 255, 0.42); outline-offset: 2px; }
+
+    .checkbox-line {
+      display: flex;
+      align-items: flex-start;
+      gap: 8px;
+      margin-top: 9px;
+      color: var(--muted);
+      font-size: 11px;
+      line-height: 1.45;
+    }
+    .checkbox-line input { margin-top: 2px; }
+
+    .color-legend {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 8px;
+      margin-top: 9px;
+    }
+    .legend-choice {
+      position: relative;
+      min-width: 0;
+      display: flex;
+      align-items: center;
+      gap: 9px;
+      padding: 9px;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      background: rgba(255, 255, 255, 0.02);
+      cursor: pointer;
+    }
+    .legend-choice:hover { background: rgba(255, 255, 255, 0.05); }
+    .legend-choice:has(input:checked) {
+      border-color: var(--brand);
+      background: var(--brand-soft);
+      box-shadow: 0 0 0 2px rgba(122, 162, 255, 0.14);
+    }
+    .legend-choice input { position: absolute; opacity: 0; pointer-events: none; }
+    .legend-swatch {
+      width: 25px;
+      height: 25px;
+      flex: 0 0 25px;
+      border: 2px solid #101318;
+      border-radius: 50%;
+      box-shadow: 0 2px 5px rgba(0, 0, 0, 0.28);
+    }
+    .legend-copy { min-width: 0; display: flex; flex-direction: column; line-height: 1.12; }
+    .legend-copy strong { font-size: 12px; }
+    .legend-copy small { margin-top: 3px; color: var(--muted); font-size: 10px; }
+
+    /* ================================================================
+       5. Selection and tool list
+       ================================================================ */
+    .list-empty {
+      padding: 12px;
+      border: 1px dashed var(--border-strong);
+      border-radius: var(--radius-sm);
+      color: var(--muted);
+      background: rgba(255, 255, 255, 0.018);
+      font-size: 12px;
+      line-height: 1.45;
+    }
+
+    .selection-title { display: flex; align-items: center; gap: 10px; }
+    .selection-copy { min-width: 0; flex: 1; }
+    .selection-headline { display: flex; align-items: center; gap: 7px; flex-wrap: wrap; }
+    .selection-name { min-width: 0; font-weight: 800; overflow-wrap: anywhere; }
+    .tool-coords { margin-top: 3px; color: var(--muted); font-size: 10px; line-height: 1.4; }
+    .selection-actions { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 7px; margin-top: 12px; }
+    .selection-actions button { width: 100%; }
+
+    .status-chip, .status-button {
+      border-radius: 999px;
+      font-weight: 900;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+    }
+    .status-chip {
+      display: inline-grid;
+      min-width: 38px;
+      place-items: center;
+      padding: 3px 7px;
+      border: 1px solid currentColor;
+      font-size: 9px;
+    }
+    .status-button { min-width: 40px; min-height: 28px; padding: 4px 7px; font-size: 9px; }
+    .status-ok { color: #baf7c8; border-color: rgba(34, 197, 94, 0.55); background: rgba(22, 163, 74, 0.16); }
+    .status-ng { color: #ffd0d0; border-color: rgba(239, 68, 68, 0.6); background: rgba(220, 38, 38, 0.16); }
+
+    .list-panel {
+      flex: 0 0 auto;
+      min-height: 390px;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+    .list-toolbar { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 7px; }
+    .filter-wide { grid-column: 1 / -1; }
+    .filter-actions {
+      grid-column: 1 / -1;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      margin-top: 1px;
+    }
+    .filter-summary { color: var(--muted); font-size: 10px; line-height: 1.35; }
+    .clear-filters { min-height: 30px; padding: 5px 8px; font-size: 10px; white-space: nowrap; }
+    .list {
+      min-height: 0;
+      flex: 1 1 auto;
+      display: flex;
+      flex-direction: column;
+      gap: 7px;
+      overflow-y: auto;
+      overflow-x: hidden;
+      overscroll-behavior: contain;
+      scrollbar-gutter: stable;
+      padding: 0 4px 4px 0;
+      margin-top: 10px;
+    }
+    .tool-row {
+      display: grid;
+      grid-template-columns: 42px minmax(0, 1fr) auto;
+      align-items: center;
+      gap: 9px;
+      padding: 8px;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      background: rgba(255, 255, 255, 0.022);
+      cursor: pointer;
+    }
+    .tool-row:hover, .tool-row.active {
+      border-color: rgba(122, 162, 255, 0.4);
+      background: rgba(122, 162, 255, 0.1);
+    }
+    .number-chip {
+      width: 34px;
+      height: 34px;
+      display: grid;
+      place-items: center;
+      border: 2px solid var(--marker-stroke);
+      border-radius: 50%;
+      color: var(--tool-text, var(--marker-text));
+      background: var(--tool-fill, var(--marker-fill));
+      font-size: 12px;
+      font-weight: 900;
+    }
+    .tool-name { overflow: hidden; font-size: 12px; font-weight: 780; text-overflow: ellipsis; white-space: nowrap; }
+    .row-actions { display: flex; align-items: center; gap: 5px; }
+    .mini-button { min-height: 28px; padding: 4px 7px; font-size: 10px; }
+
+    /* ================================================================
+       6. SVG marker states
+       ================================================================ */
+    .tool-marker { cursor: grab; outline: none; }
+    .tool-marker.dragging { cursor: grabbing; }
+    .tool-marker .dot {
+      fill: var(--tool-fill, var(--marker-fill));
+      stroke: var(--marker-stroke);
+      stroke-width: 1.7px;
+      vector-effect: non-scaling-stroke;
+      filter: drop-shadow(0 2px 2px rgba(0, 0, 0, 0.32));
+    }
+    .tool-marker .number {
+      fill: var(--tool-text, var(--marker-text));
+      font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+      font-weight: 900;
+      text-anchor: middle;
+      dominant-baseline: central;
+      pointer-events: none;
+      user-select: none;
+    }
+    .tool-marker .selection-ring {
+      fill: none;
+      stroke: var(--brand);
+      stroke-width: 3px;
+      opacity: 0;
+      vector-effect: non-scaling-stroke;
+    }
+    .tool-marker:hover .selection-ring, .tool-marker.selected .selection-ring { opacity: 1; }
+    .tool-marker.search-muted { opacity: 0.18; }
+    .tool-marker.search-match .selection-ring { opacity: 1; stroke: #ff8a4c; }
+    .tool-marker .ng-ring, .tool-marker .ok-badge { display: none; pointer-events: none; }
+    body.markup-mode .tool-marker.status-ng .ng-ring { display: block; }
+    body.markup-mode .tool-marker.status-ok .ok-badge { display: block; }
+    .tool-marker .ng-ring { fill: none; stroke: var(--status-ng); }
+    .tool-marker .ok-badge .ok-halo { fill: none; stroke: #fff; stroke-linecap: round; stroke-linejoin: round; opacity: 0.95; }
+    .tool-marker .ok-badge .ok-check { fill: none; stroke: var(--status-ok); stroke-linecap: round; stroke-linejoin: round; }
+
+    /* ================================================================
+       7. Feedback and dialogs
+       ================================================================ */
+    .toast {
+      position: fixed;
+      left: 50%;
+      bottom: 20px;
+      z-index: 100;
+      padding: 9px 13px;
+      border-radius: var(--radius-sm);
+      color: #08142a;
+      background: #eaf0ff;
+      box-shadow: 0 12px 30px rgba(0, 0, 0, 0.32);
+      font-size: 12px;
+      font-weight: 750;
+      opacity: 0;
+      pointer-events: none;
+      transform: translate(-50%, 18px);
+      transition: 0.18s ease;
+    }
+    .toast.show { opacity: 1; transform: translate(-50%, 0); }
+
+    .modal {
+      position: fixed;
+      inset: 0;
+      z-index: 80;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+      background: rgba(3, 8, 20, 0.68);
+      backdrop-filter: blur(5px);
+    }
+    .modal.open { display: flex; }
+    #renumberModal { background: rgba(3, 8, 20, 0.1); backdrop-filter: none; -webkit-backdrop-filter: none; }
+    .dialog {
+      width: min(460px, 96vw);
+      padding: 18px;
+      border: 1px solid var(--border-strong);
+      border-radius: var(--radius-lg);
+      background: #0c1529;
+      box-shadow: var(--shadow-lg);
+    }
+    .dialog h2 { margin: 0 0 14px; font-size: 18px; }
+    .dialog label { display: block; margin: 10px 0 6px; color: var(--muted); font-size: 11px; }
+    .dialog-grid { display: grid; grid-template-columns: 110px minmax(0, 1fr); gap: 10px; }
+    .dialog-full { grid-column: 1 / -1; }
+    .dialog-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 15px; }
+    .dialog-actions .push-left { margin-right: auto; }
+    .renumber-note { margin: 10px 0 0; color: var(--muted); font-size: 11px; line-height: 1.5; }
+
+    .print-area { display: none; }
+
+    /* ================================================================
+       8. Responsive and print layouts
+       ================================================================ */
+    @media (max-width: 1100px) {
+      :root { --header-height: 108px; }
+      .app-header { align-items: flex-start; }
+      .toolbar { justify-content: flex-start; }
+      .workspace-layout { grid-template-columns: minmax(0, 1fr) 350px; }
+    }
+
+    @media (max-width: 900px) {
+      body { overflow: auto; }
+      .app-shell { height: auto; min-height: 100%; }
+      .app-header { position: sticky; top: 0; flex-direction: column; }
+      .toolbar { width: 100%; }
+      .workspace-layout { grid-template-columns: 1fr; }
+      .canvas-panel { min-height: 68vh; }
+      .sidebar {
+        overflow: visible;
+        padding-right: 0;
+      }
+      .sidebar-settings { overflow: visible; padding-right: 0; }
+      .list-panel { height: min(70vh, 720px); min-height: 420px; }
+    }
+
+    @media (max-width: 600px) {
+      .app-header { padding: 10px; }
+      .toolbar-group { width: 100%; flex-wrap: wrap; }
+      .toolbar-label { width: 100%; padding: 2px 4px; }
+      .toolbar-group button { flex: 1 1 auto; }
+      .workspace-layout { padding: 9px; gap: 9px; }
+      .canvas-header { align-items: flex-start; flex-direction: column; }
+      .canvas-meta { justify-content: flex-start; }
+      .board { padding: 16px; }
+      .color-legend, .summary-grid, .selection-actions, .list-toolbar { grid-template-columns: 1fr; }
+      .filter-wide, .filter-actions { grid-column: 1; }
+      .filter-actions { align-items: flex-start; flex-direction: column; }
+      .tool-row { grid-template-columns: 38px minmax(0, 1fr); }
+      .row-actions { grid-column: 1 / -1; justify-content: flex-end; }
+      .dialog-grid { grid-template-columns: 1fr; }
+      .dialog-full { grid-column: 1; }
+    }
+
+    @media print {
+      @page { size: landscape; margin: 8mm; }
+      html, body { height: auto; overflow: visible !important; background: #fff !important; }
+      body { color: #000; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+      .app-header, .canvas-header, .sidebar, .toast, .modal, .empty-state { display: none !important; }
+      .app-shell, .workspace-layout, .canvas-panel, .board-shell, .board {
+        display: block !important;
+        width: 100% !important;
+        height: auto !important;
+        min-height: 0 !important;
+        padding: 0 !important;
+        border: 0 !important;
+        border-radius: 0 !important;
+        background: #fff !important;
+        box-shadow: none !important;
+        overflow: visible !important;
+      }
+      .stage {
+        display: block !important;
+        width: 100% !important;
+        margin: 0 !important;
+        box-shadow: none !important;
+        break-after: page;
+        page-break-after: always;
+      }
+      .marker-svg { cursor: default; }
+      .tool-marker .dot { stroke: #000; stroke-width: 1.25px; filter: none; }
+      .tool-marker .selection-ring { display: none; }
+      .tool-marker.search-muted { opacity: 1; }
+      .print-area { display: block; color: #000; font-family: Arial, sans-serif; }
+      .print-title { margin: 0 0 4mm; font-size: 18pt; font-weight: 700; }
+      .print-subtitle { margin: 0 0 4mm; color: #444; font-size: 9pt; }
+      .print-legend { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 2.2mm 5mm; }
+      .legend-item { display: flex; align-items: flex-start; gap: 2mm; font-size: 9pt; break-inside: avoid; }
+      .legend-number { flex: 0 0 7mm; height: 7mm; display: grid; place-items: center; border: 1.2px solid #000; border-radius: 50%; font-size: 8pt; font-weight: 700; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+      .legend-name { padding-top: 0.3mm; overflow-wrap: anywhere; }
+      .legend-length { display: block; margin-top: 0.5mm; color: #555; font-size: 7.5pt; }
+      .legend-status { display: inline-block; margin-left: 1.5mm; font-weight: 700; }
+      .legend-status.ok { color: #15803d; }
+      .legend-status.ng { color: #b91c1c; }
+      body.hide-print-legend .print-area { display: none !important; }
+      body.hide-print-legend .stage { break-after: auto; page-break-after: auto; }
+    }
+  </style>
+</head>
+<body>
+  <div class="app-shell">
+    <header class="app-header">
+      <div class="brand">
+        <div class="brand-mark" aria-hidden="true">HT</div>
+        <div class="brand-copy">
+          <h1>Map Editor</h1>
+          <p>Place, review, and document markings on a map</p>
+        </div>
+      </div>
+
+      <nav class="toolbar" aria-label="Editor controls">
+        <div class="toolbar-group" aria-label="Map file actions">
+          <span class="toolbar-label">Map</span>
+          <button class="primary" id="uploadBtn">Upload map</button>
+          <input type="file" id="imageFile" accept="image/*" />
+          <button id="importBtn">Import JSON</button>
+          <input type="file" id="importFile" accept="application/json,.json" />
+          <button id="exportBtn" disabled>Export JSON</button>
+          <button id="printBtn" disabled>Print</button>
+        </div>
+
+        <div class="toolbar-group" aria-label="Tool actions">
+          <span class="toolbar-label">Tools</span>
+          <button id="renumberBtn" disabled>Renumber</button>
+          <button id="clearBtn" class="danger" disabled>Clear</button>
+        </div>
+
+        <div class="toolbar-group" aria-label="Zoom controls">
+          <span class="toolbar-label">View</span>
+          <button id="zoomOutBtn" title="Zoom out" aria-label="Zoom out" disabled>−</button>
+          <span class="zoom-value" id="zoomValue">100%</span>
+          <button id="zoomInBtn" title="Zoom in" aria-label="Zoom in" disabled>+</button>
+          <button id="fitBtn" title="Fit map to window" disabled>Fit</button>
+          <button id="actualBtn" title="Show image at actual pixel size" disabled>1:1</button>
+        </div>
+      </nav>
+    </header>
+
+    <main class="workspace-layout">
+      <section class="canvas-panel" aria-labelledby="workspaceTitle">
+        <div class="canvas-header">
+          <div>
+            <span class="eyebrow">Workspace</span>
+            <h2 id="workspaceTitle">Production line map</h2>
+          </div>
+          <div class="canvas-meta" aria-live="polite">
+            <span class="meta-chip" id="mapStatus">No map loaded</span>
+            <span class="meta-chip" id="toolCount">0 tools</span>
+          </div>
+        </div>
+
+        <div class="board-shell">
+          <div class="board" id="board">
+            <div class="stage" id="stage">
+              <img class="map-image" id="mapImage" alt="Production line map" />
+              <svg class="marker-svg" id="markerSvg" aria-label="Hand tool marker layer"></svg>
+            </div>
+
+            <div class="empty-state">
+              <div>
+                <div class="empty-state-icon" aria-hidden="true">＋</div>
+                <h3>Start with a production map</h3>
+                <p>Upload a floor plan or line image. Then double-click the map to place numbered hand-tool markers.</p>
+                <button class="primary" type="button" onclick="document.getElementById('uploadBtn').click()">Upload your first map</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <aside class="sidebar" aria-label="Map editor controls">
+        <div class="sidebar-settings" aria-label="Map and marker settings">
+        <section class="panel" aria-labelledby="mapSetupTitle">
+          <div class="panel-header">
+            <div class="panel-heading">
+              <span class="step-number" aria-hidden="true">1</span>
+              <div>
+                <h2 id="mapSetupTitle">Review settings</h2>
+                <p class="panel-description">Choose what appears during approval and printing.</p>
+              </div>
+            </div>
+          </div>
+
+          <div class="mode-toggle">
+            <span class="mode-toggle-copy">
+              <strong>Markup mode</strong>
+              <small>Show OK checks and NG outlines on screen and print.</small>
+            </span>
+            <label class="switch" title="Toggle Markup Mode">
+              <input type="checkbox" id="markupMode" />
+              <span class="switch-track" aria-hidden="true"></span>
+            </label>
+          </div>
+
+          <label class="checkbox-line">
+            <input type="checkbox" id="printLegend" checked />
+            <span>Include a numbered tool legend when printing.</span>
+          </label>
+
+          <div class="control-card">
+            <div class="control-card-header">
+              <label class="control-label" for="printTitleInput">Custom print title</label>
+            </div>
+            <input
+              type="text"
+              id="printTitleInput"
+              value="Hand Tool List"
+              maxlength="100"
+              placeholder="Enter a title for the printed tool list"
+            />
+            <p class="setting-note">This title is saved locally and included in exported JSON files.</p>
+          </div>
+        </section>
+
+        <section class="panel" aria-labelledby="markerSetupTitle">
+          <div class="panel-header">
+            <div class="panel-heading">
+              <span class="step-number" aria-hidden="true">2</span>
+              <div>
+                <h2 id="markerSetupTitle">Add markers</h2>
+                <p class="panel-description">Set the marker size and default tool length before placing tools.</p>
+              </div>
+            </div>
+          </div>
+
+          <div class="control-card">
+            <div class="control-card-header">
+              <span class="control-label">Marker diameter</span>
+              <span class="range-value" id="markerSizeValue">1.8%</span>
+            </div>
+            <input type="range" id="markerSizeSlider" min="0.6" max="4" step="0.1" value="1.8" aria-label="Marker diameter as a percentage of map width" />
+          </div>
+
+          <div class="control-card">
+            <div class="control-card-header">
+              <span class="control-label">Default hand-tool length</span>
+            </div>
+            <div class="color-legend" role="radiogroup" aria-label="Length for newly added hand tools">
+              <label class="legend-choice">
+                <input type="radio" name="activeLength" value="12" checked />
+                <span class="legend-swatch" style="background:#f9a8d4"></span>
+                <span class="legend-copy"><strong>12&quot;</strong><small>Pink</small></span>
+              </label>
+              <label class="legend-choice">
+                <input type="radio" name="activeLength" value="18" />
+                <span class="legend-swatch" style="background:#22c55e"></span>
+                <span class="legend-copy"><strong>18&quot;</strong><small>Green</small></span>
+              </label>
+              <label class="legend-choice">
+                <input type="radio" name="activeLength" value="24" />
+                <span class="legend-swatch" style="background:#7dd3fc"></span>
+                <span class="legend-copy"><strong>24&quot;</strong><small>Blue</small></span>
+              </label>
+              <label class="legend-choice">
+                <input type="radio" name="activeLength" value="36" />
+                <span class="legend-swatch" style="background:#c4b5fd"></span>
+                <span class="legend-copy"><strong>36&quot;</strong><small>Purple</small></span>
+              </label>
+              <label class="legend-choice">
+                <input type="radio" name="activeLength" value="48" />
+                <span class="legend-swatch" style="background:#ffffe0"></span>
+                <span class="legend-copy"><strong>48&quot;</strong><small>Yellow</small></span>
+              </label>
+              <label class="legend-choice">
+                <input type="radio" name="activeLength" value="72" />
+                <span class="legend-swatch" style="background:#f3a72f"></span>
+                <span class="legend-copy"><strong>72&quot;</strong><small>Orange</small></span>
+              </label>
+            </div>
+            <p class="setting-note">Double-click an open point on the map to add a tool. Drag a marker to reposition it.</p>
+          </div>
+        </section>
+
+        <section class="panel" aria-labelledby="selectedToolTitle">
+          <div class="panel-header">
+            <div class="panel-heading">
+              <span class="step-number" aria-hidden="true">3</span>
+              <div>
+                <h2 id="selectedToolTitle">Selected tool</h2>
+                <p class="panel-description">Review or update the active marker.</p>
+              </div>
+            </div>
+          </div>
+
+          <div id="selectionEmpty" class="list-empty">Select a numbered marker on the map or in the tool list.</div>
+          <div id="selectionPanel" hidden>
+            <div class="selection-title">
+              <span class="number-chip" id="selectedNumber"></span>
+              <div class="selection-copy">
+                <div class="selection-headline">
+                  <div class="selection-name" id="selectedName"></div>
+                  <span class="status-chip status-ng" id="selectedStatus">NG</span>
+                </div>
+                <div class="tool-coords" id="selectedCoords"></div>
+              </div>
+            </div>
+            <div class="selection-actions">
+              <button id="statusBtn">Mark OK</button>
+              <button id="editBtn">Edit details</button>
+              <button id="centerBtn">Center in view</button>
+              <button id="deleteBtn" class="danger">Delete</button>
+            </div>
+          </div>
+        </section>
+
+        </div>
+
+        <section class="panel list-panel" aria-labelledby="toolLibraryTitle">
+          <div class="panel-header">
+            <div class="panel-heading">
+              <span class="step-number" aria-hidden="true">4</span>
+              <div>
+                <h2 id="toolLibraryTitle">Tool library</h2>
+                <p class="panel-description">Search, sort, and navigate every marker on the map.</p>
+              </div>
+            </div>
+          </div>
+
+          <div class="list-toolbar">
+            <input type="search" id="searchInput" placeholder="Search tool name" aria-label="Filter hand tools by name" />
+            <input type="text" id="numberFilter" inputmode="numeric" placeholder="Numbers: 12, 1,4,8, 20-30" aria-label="Filter hand tools by number" title="Examples: 12, 1,4,8, or 20-30" />
+            <select id="statusFilter" aria-label="Filter hand tools by status">
+              <option value="all">All statuses</option>
+              <option value="ok">OK only</option>
+              <option value="ng">NG only</option>
+            </select>
+            <select id="sortSelect" aria-label="Sort hand tools">
+              <option value="number">Sort by number</option>
+              <option value="name">Sort by name</option>
+              <option value="position">Sort top to bottom</option>
+            </select>
+            <div class="filter-actions">
+              <span class="filter-summary" id="filterSummary">Showing all tools</span>
+              <button type="button" class="clear-filters" id="clearFiltersBtn">Clear filters</button>
+            </div>
+          </div>
+          <div class="list" id="toolList"></div>
+        </section>
+      </aside>
+    </main>
+  </div>
+
+  <section class="print-area" id="printArea" aria-hidden="true">
+    <h2 class="print-title" id="printTitle">Hand Tool Map</h2>
+    <p class="print-subtitle" id="printSubtitle"></p>
+    <div class="print-legend" id="printLegendList"></div>
+  </section>
+
+  <div class="modal" id="editModal" role="dialog" aria-modal="true" aria-labelledby="editTitle">
+    <div class="dialog">
+      <h2 id="editTitle">Edit hand tool</h2>
+      <form id="editForm">
+        <div class="dialog-grid">
+          <div>
+            <label for="numberInput">Number</label>
+            <input type="number" id="numberInput" min="1" step="1" required />
+          </div>
+          <div>
+            <label for="nameInput">Tool name</label>
+            <input type="text" id="nameInput" maxlength="100" autocomplete="off" required />
+          </div>
+          <div class="dialog-full">
+            <label for="lengthInput">Hand-tool length</label>
+            <select id="lengthInput" required>
+              <option value="12">12&quot; — Pink</option>
+              <option value="18">18&quot; — Green</option>
+              <option value="24">24&quot; — Blue</option>
+              <option value="36">36&quot; — Purple</option>
+              <option value="48">48&quot; — Yellow</option>
+              <option value="72">72&quot; — Orange</option>
+            </select>
+          </div>
+          <div class="dialog-full">
+            <label for="statusInput">Markup status</label>
+            <select id="statusInput" required>
+              <option value="ng">NG — not yet approved</option>
+              <option value="ok">OK — approved</option>
+            </select>
+          </div>
+        </div>
+        <div class="dialog-actions">
+          <button type="button" id="cancelEditBtn">Cancel</button>
+          <button type="submit" class="primary">Save changes</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <div class="modal" id="renumberModal" role="dialog" aria-modal="true" aria-labelledby="renumberTitle">
+    <div class="dialog">
+      <h2 id="renumberTitle">Renumber all tools</h2>
+      <div class="dialog-grid">
+        <div class="dialog-full">
+          <label for="renumberMethod">Numbering direction</label>
+          <select id="renumberMethod">
+            <option value="top-bottom">Top to bottom</option>
+            <option value="left-right">Left to right</option>
+            <option value="bottom-top">Bottom to top</option>
+            <option value="right-left">Right to left</option>
+            <option value="clockwise">Clockwise</option>
+            <option value="counterclockwise">Counterclockwise</option>
+          </select>
+        </div>
+        <div class="dialog-full" id="clockStartWrap" hidden>
+          <label for="clockStart">Starting position</label>
+          <select id="clockStart">
+            <option value="12">12 o'clock</option>
+            <option value="1">1 o'clock</option>
+            <option value="2">2 o'clock</option>
+            <option value="3">3 o'clock</option>
+            <option value="4">4 o'clock</option>
+            <option value="5">5 o'clock</option>
+            <option value="6">6 o'clock</option>
+            <option value="7">7 o'clock</option>
+            <option value="8">8 o'clock</option>
+            <option value="9">9 o'clock</option>
+            <option value="10">10 o'clock</option>
+            <option value="11">11 o'clock</option>
+          </select>
+        </div>
+      </div>
+      <p class="renumber-note">Tools will be numbered from 1. Names such as “Tool 14” or “14 — Wrench” are updated to match; custom names without a linked leading number are preserved.</p>
+      <div class="dialog-actions">
+        <button type="button" class="push-left" id="revertRenumberBtn" disabled>Revert</button>
+        <button type="button" id="closeRenumberBtn">Done</button>
+        <button type="button" class="primary" id="applyRenumberBtn">Apply</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+  <div class="visually-hidden" id="srStatus" aria-live="polite"></div>
+
+  <script>
+(() => {
+    'use strict';
+
+    const STORAGE_KEY = 'hand_tool_map_editor_v5';
+    const LEGACY_STORAGE_KEYS = ['hand_tool_map_editor_v4','hand_tool_map_editor_v3','hand_tool_map_editor_v2'];
+    const MIN_ZOOM = 0.2;
+    const MAX_ZOOM = 10;
+    const SVG_NS = 'http://www.w3.org/2000/svg';
+    const TOOL_LENGTHS = Object.freeze({
+      '12': {label:'12\"', color:'#f9a8d4', text:'#211018'},
+      '18': {label:'18\"', color:'#22c55e', text:'#07140b'},
+      '24': {label:'24\"', color:'#7dd3fc', text:'#07131a'},
+      '36': {label:'36\"', color:'#c4b5fd', text:'#130c20'},
+      '48': {label:'48\"', color:'#FFFFE0', text:'#000000'},
+      '72': {label:'72\"', color:'#f3a72f', text:'#000000'}
+    });
+
+    const els = {
+      board: document.getElementById('board'),
+      stage: document.getElementById('stage'),
+      markerSvg: document.getElementById('markerSvg'),
+      mapImage: document.getElementById('mapImage'),
+      uploadBtn: document.getElementById('uploadBtn'),
+      imageFile: document.getElementById('imageFile'),
+      printBtn: document.getElementById('printBtn'),
+      exportBtn: document.getElementById('exportBtn'),
+      importBtn: document.getElementById('importBtn'),
+      importFile: document.getElementById('importFile'),
+      renumberBtn: document.getElementById('renumberBtn'),
+      clearBtn: document.getElementById('clearBtn'),
+      zoomOutBtn: document.getElementById('zoomOutBtn'),
+      zoomInBtn: document.getElementById('zoomInBtn'),
+      fitBtn: document.getElementById('fitBtn'),
+      actualBtn: document.getElementById('actualBtn'),
+      zoomValue: document.getElementById('zoomValue'),
+      mapStatus: document.getElementById('mapStatus'),
+      toolCount: document.getElementById('toolCount'),
+      markerSizeSlider: document.getElementById('markerSizeSlider'),
+      markerSizeValue: document.getElementById('markerSizeValue'),
+      activeLengthChoices: [...document.querySelectorAll('input[name="activeLength"]')],
+      markupMode: document.getElementById('markupMode'),
+      printLegend: document.getElementById('printLegend'),
+      printTitleInput: document.getElementById('printTitleInput'),
+      toolList: document.getElementById('toolList'),
+      searchInput: document.getElementById('searchInput'),
+      numberFilter: document.getElementById('numberFilter'),
+      statusFilter: document.getElementById('statusFilter'),
+      sortSelect: document.getElementById('sortSelect'),
+      filterSummary: document.getElementById('filterSummary'),
+      clearFiltersBtn: document.getElementById('clearFiltersBtn'),
+      selectionEmpty: document.getElementById('selectionEmpty'),
+      selectionPanel: document.getElementById('selectionPanel'),
+      selectedNumber: document.getElementById('selectedNumber'),
+      selectedName: document.getElementById('selectedName'),
+      selectedStatus: document.getElementById('selectedStatus'),
+      selectedCoords: document.getElementById('selectedCoords'),
+      statusBtn: document.getElementById('statusBtn'),
+      editBtn: document.getElementById('editBtn'),
+      centerBtn: document.getElementById('centerBtn'),
+      deleteBtn: document.getElementById('deleteBtn'),
+      editModal: document.getElementById('editModal'),
+      editForm: document.getElementById('editForm'),
+      numberInput: document.getElementById('numberInput'),
+      nameInput: document.getElementById('nameInput'),
+      lengthInput: document.getElementById('lengthInput'),
+      statusInput: document.getElementById('statusInput'),
+      cancelEditBtn: document.getElementById('cancelEditBtn'),
+      renumberModal: document.getElementById('renumberModal'),
+      renumberMethod: document.getElementById('renumberMethod'),
+      clockStartWrap: document.getElementById('clockStartWrap'),
+      clockStart: document.getElementById('clockStart'),
+      revertRenumberBtn: document.getElementById('revertRenumberBtn'),
+      closeRenumberBtn: document.getElementById('closeRenumberBtn'),
+      applyRenumberBtn: document.getElementById('applyRenumberBtn'),
+      printArea: document.getElementById('printArea'),
+      printTitle: document.getElementById('printTitle'),
+      printSubtitle: document.getElementById('printSubtitle'),
+      printLegendList: document.getElementById('printLegendList'),
+      toast: document.getElementById('toast'),
+      srStatus: document.getElementById('srStatus')
+    };
+
+    const state = {
+      imageData: null,
+      imageName: '',
+      naturalWidth: 0,
+      naturalHeight: 0,
+      fitScale: 1,
+      zoom: 1,
+      markerSizePct: 1.8,
+      activeLength: '12',
+      markupMode: false,
+      printLegend: true,
+      printTitle: 'Hand Tool List',
+      markers: [],
+      selectedId: null,
+      editingId: null,
+      pointerMode: null,
+      pointerId: null,
+      pointerStartX: 0,
+      pointerStartY: 0,
+      startScrollLeft: 0,
+      startScrollTop: 0,
+      draggingId: null,
+      moved: false,
+      suppressDoubleClickUntil: 0,
+      lastFocus: null,
+      renumberSnapshot: null,
+      renumberLastFocus: null,
+      saveWarningShown: false
+    };
+
+    const clamp = (value, min, max) => Math.min(max, Math.max(min, value));
+    const uid = () => (crypto.randomUUID ? crypto.randomUUID() : Math.random().toString(36).slice(2) + Date.now().toString(36));
+    const escapeHtml = value => String(value ?? '').replace(/[&<>"']/g, char => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[char]));
+
+    function announce(message){
+      els.srStatus.textContent = message;
+      els.toast.textContent = message;
+      els.toast.classList.add('show');
+      clearTimeout(announce.timer);
+      announce.timer = setTimeout(() => els.toast.classList.remove('show'), 1600);
+    }
+
+    function serializeState(){
+      return {
+        version: 5,
+        imageData: state.imageData,
+        imageName: state.imageName,
+        naturalWidth: state.naturalWidth,
+        naturalHeight: state.naturalHeight,
+        zoom: state.zoom,
+        markerSizePct: state.markerSizePct,
+        activeLength: state.activeLength,
+        markupMode: state.markupMode,
+        printLegend: state.printLegend,
+        printTitle: state.printTitle,
+        markers: state.markers
+      };
+    }
+
+    function save(){
+      try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(serializeState()));
+      } catch (error) {
+        console.warn('Could not save map locally:', error);
+        if (!state.saveWarningShown) {
+          state.saveWarningShown = true;
+          announce('Browser auto-save is full. Use Export JSON for backup.');
+        }
+      }
+    }
+
+    function scheduleSave(){
+      clearTimeout(scheduleSave.timer);
+      scheduleSave.timer = setTimeout(save, 220);
+    }
+
+    function normalizeMarker(marker){
+      const number = Number(marker?.number);
+      const x = Number(marker?.x);
+      const y = Number(marker?.y);
+      if (!Number.isInteger(number) || number < 1 || !Number.isFinite(x) || !Number.isFinite(y)) return null;
+      return {
+        id: String(marker.id || uid()),
+        number,
+        name: String(marker.name || marker.label || `Tool ${number}`).trim() || `Tool ${number}`,
+        length: TOOL_LENGTHS[String(marker.length)] ? String(marker.length) : '12',
+        status: String(marker.status).toLowerCase() === 'ok' ? 'ok' : 'ng',
+        x: clamp(x, 0, 1),
+        y: clamp(y, 0, 1)
+      };
+    }
+
+    function loadSaved(){
+      try {
+        const savedText = localStorage.getItem(STORAGE_KEY) || LEGACY_STORAGE_KEYS.map(key => localStorage.getItem(key)).find(Boolean) || 'null';
+        const parsed = JSON.parse(savedText);
+        if (!parsed || !parsed.imageData || !Array.isArray(parsed.markers)) return;
+        state.imageData = parsed.imageData;
+        state.imageName = parsed.imageName || 'Saved map';
+        state.zoom = clamp(Number(parsed.zoom) || 1, MIN_ZOOM, MAX_ZOOM);
+        state.markerSizePct = clamp(Number(parsed.markerSizePct) || 1.8, .6, 4);
+        state.activeLength = TOOL_LENGTHS[String(parsed.activeLength)] ? String(parsed.activeLength) : '12';
+        state.markupMode = parsed.markupMode === true;
+        state.printLegend = parsed.printLegend !== false;
+        state.printTitle = typeof parsed.printTitle === 'string'
+          ? parsed.printTitle.slice(0, 100)
+          : (parsed.imageName || 'Hand Tool List').replace(/\.[^.]+$/, '');
+        state.markers = parsed.markers.map(normalizeMarker).filter(Boolean);
+        syncControlsFromState();
+        loadImageIntoStage(state.imageData, false, false);
+      } catch (error) {
+        console.warn('Could not restore saved map:', error);
+      }
+    }
+
+    function syncControlsFromState(){
+      els.markerSizeSlider.value = String(state.markerSizePct);
+      els.markerSizeValue.textContent = `${state.markerSizePct.toFixed(1)}%`;
+      els.activeLengthChoices.forEach(choice => { choice.checked = choice.value === state.activeLength; });
+      els.markupMode.checked = state.markupMode;
+      document.body.classList.toggle('markup-mode', state.markupMode);
+      els.printLegend.checked = state.printLegend;
+      els.printTitleInput.value = state.printTitle;
+    }
+
+    function nextToolNumber(){
+      return state.markers.reduce((highest, marker) => Math.max(highest, marker.number), 0) + 1;
+    }
+
+    function selectedMarker(){
+      return state.markers.find(marker => marker.id === state.selectedId) || null;
+    }
+
+    function mapPointFromEvent(event){
+      const rect = els.markerSvg.getBoundingClientRect();
+      return {
+        x: clamp((event.clientX - rect.left) / rect.width, 0, 1),
+        y: clamp((event.clientY - rect.top) / rect.height, 0, 1)
+      };
+    }
+
+    function addMarker(x, y){
+      const number = nextToolNumber();
+      const marker = {id:uid(), number, name:`Tool ${number}`, length:state.activeLength, status:'ng', x, y};
+      state.markers.push(marker);
+      state.selectedId = marker.id;
+      save();
+      renderAll();
+      announce(`Marker ${number} added.`);
+    }
+
+    function selectMarker(id, scrollList = false){
+      state.selectedId = state.markers.some(marker => marker.id === id) ? id : null;
+      renderMarkers();
+      renderSelection();
+      renderList();
+      if (scrollList && state.selectedId) {
+        document.querySelector(`.tool-row[data-id="${CSS.escape(state.selectedId)}"]`)?.scrollIntoView({block:'nearest'});
+      }
+    }
+
+    function deleteMarker(id){
+      const marker = state.markers.find(item => item.id === id);
+      if (!marker) return;
+      state.markers = state.markers.filter(item => item.id !== id);
+      if (state.selectedId === id) state.selectedId = null;
+      save();
+      renderAll();
+      announce(`Marker ${marker.number} deleted.`);
+    }
+
+    function openEdit(id){
+      const marker = state.markers.find(item => item.id === id);
+      if (!marker) return;
+      state.editingId = id;
+      state.lastFocus = document.activeElement;
+      els.numberInput.value = String(marker.number);
+      els.nameInput.value = marker.name;
+      els.lengthInput.value = marker.length;
+      els.statusInput.value = marker.status;
+      els.editModal.classList.add('open');
+      setTimeout(() => {
+        els.nameInput.focus();
+        els.nameInput.select();
+      }, 20);
+    }
+
+    function closeEdit(){
+      els.editModal.classList.remove('open');
+      state.editingId = null;
+      state.lastFocus?.focus?.();
+    }
+
+    function renumberUsesClock(method = els.renumberMethod.value){
+      return method === 'clockwise' || method === 'counterclockwise';
+    }
+
+    function updateRenumberControls(){
+      els.clockStartWrap.hidden = !renumberUsesClock();
+    }
+
+    function openRenumber(){
+      if (!state.markers.length) return;
+      state.renumberSnapshot = state.markers.map(marker => ({
+        id: marker.id,
+        number: marker.number,
+        name: marker.name
+      }));
+      state.renumberLastFocus = document.activeElement;
+      els.revertRenumberBtn.disabled = true;
+      updateRenumberControls();
+      els.renumberModal.classList.add('open');
+      setTimeout(() => els.renumberMethod.focus(), 20);
+    }
+
+    function closeRenumber(){
+      els.renumberModal.classList.remove('open');
+      state.renumberSnapshot = null;
+      state.renumberLastFocus?.focus?.();
+      state.renumberLastFocus = null;
+    }
+
+    function updateLinkedToolName(name, oldNumber, newNumber){
+      const value = String(name ?? '');
+      const escapedNumber = String(oldNumber).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      const toolPrefix = new RegExp(`^(\\s*Tool\\s+)${escapedNumber}\\b`, 'i');
+      if (toolPrefix.test(value)) return value.replace(toolPrefix, `$1${newNumber}`);
+
+      const leadingNumber = new RegExp(`^(\\s*#?)${escapedNumber}(?=\\s*(?:$|[-–—:.)]))`);
+      if (leadingNumber.test(value)) return value.replace(leadingNumber, `$1${newNumber}`);
+      return value;
+    }
+
+    function clockwiseAngle(marker, centerX, centerY){
+      const angle = Math.atan2(marker.x - centerX, -(marker.y - centerY));
+      return (angle + Math.PI * 2) % (Math.PI * 2);
+    }
+
+    function markersInRenumberOrder(method, startHour){
+      const markers = [...state.markers];
+      if (method === 'top-bottom') {
+        return markers.sort((a,b) => a.y - b.y || a.x - b.x || compareMarkerNumbers(a,b));
+      }
+      if (method === 'bottom-top') {
+        return markers.sort((a,b) => b.y - a.y || a.x - b.x || compareMarkerNumbers(a,b));
+      }
+      if (method === 'left-right') {
+        return markers.sort((a,b) => a.x - b.x || a.y - b.y || compareMarkerNumbers(a,b));
+      }
+      if (method === 'right-left') {
+        return markers.sort((a,b) => b.x - a.x || a.y - b.y || compareMarkerNumbers(a,b));
+      }
+
+      const centerX = markers.reduce((sum, marker) => sum + marker.x, 0) / markers.length;
+      const centerY = markers.reduce((sum, marker) => sum + marker.y, 0) / markers.length;
+      const startAngle = ((Number(startHour) % 12) / 12) * Math.PI * 2;
+      const fullTurn = Math.PI * 2;
+      const direction = method === 'counterclockwise' ? -1 : 1;
+
+      return markers.sort((a,b) => {
+        const aAngle = clockwiseAngle(a, centerX, centerY);
+        const bAngle = clockwiseAngle(b, centerX, centerY);
+        const aFromStart = (direction * (aAngle - startAngle) + fullTurn) % fullTurn;
+        const bFromStart = (direction * (bAngle - startAngle) + fullTurn) % fullTurn;
+        const angleDifference = aFromStart - bFromStart;
+        if (Math.abs(angleDifference) > 1e-10) return angleDifference;
+        const aRadius = Math.hypot(a.x - centerX, a.y - centerY);
+        const bRadius = Math.hypot(b.x - centerX, b.y - centerY);
+        return aRadius - bRadius || compareMarkerNumbers(a,b);
+      });
+    }
+
+    function applyRenumbering(){
+      if (!state.renumberSnapshot?.length || !state.markers.length) return;
+      const method = els.renumberMethod.value;
+      const ordered = markersInRenumberOrder(method, els.clockStart.value);
+
+      // Build all changes before mutating marker data. This guarantees an exact
+      // contiguous sequence of 1 through N, including marker number 1.
+      const assignments = ordered.map((marker, index) => ({
+        marker,
+        oldNumber: marker.number,
+        oldName: marker.name,
+        newNumber: index + 1
+      }));
+
+      assignments.forEach(({marker, oldNumber, oldName, newNumber}) => {
+        marker.number = newNumber;
+        marker.name = updateLinkedToolName(oldName, oldNumber, newNumber);
+      });
+
+      els.revertRenumberBtn.disabled = false;
+      save();
+      renderAll();
+      announce(`Tools renumbered 1–${assignments.length}.`);
+    }
+
+    function revertRenumbering(){
+      if (!state.renumberSnapshot) return;
+      const snapshotById = new Map(state.renumberSnapshot.map(item => [item.id, item]));
+      state.markers.forEach(marker => {
+        const original = snapshotById.get(marker.id);
+        if (!original) return;
+        marker.number = original.number;
+        marker.name = original.name;
+      });
+      els.revertRenumberBtn.disabled = true;
+      save();
+      renderAll();
+      announce('Original numbers and names restored.');
+    }
+
+    function markerGeometry(){
+      const diameter = state.naturalWidth * (state.markerSizePct / 100);
+      const radius = diameter / 2;
+      return {
+        radius,
+        ringRadius: radius * 1.28,
+        fontSize: diameter * .54
+      };
+    }
+
+    function svgElement(name, attributes = {}){
+      const element = document.createElementNS(SVG_NS, name);
+      for (const [key, value] of Object.entries(attributes)) element.setAttribute(key, String(value));
+      return element;
+    }
+
+    const NAME_COLLATOR = new Intl.Collator(undefined, {numeric:true, sensitivity:'base'});
+
+    function compareMarkerNumbers(a, b){
+      const aNumber = Number(a.number);
+      const bNumber = Number(b.number);
+      const aSafe = Number.isFinite(aNumber) ? aNumber : Number.MAX_SAFE_INTEGER;
+      const bSafe = Number.isFinite(bNumber) ? bNumber : Number.MAX_SAFE_INTEGER;
+      return aSafe - bSafe || NAME_COLLATOR.compare(String(a.id || ''), String(b.id || ''));
+    }
+
+    function numberFilterMatches(number){
+      const raw = els.numberFilter.value.trim();
+      if (!raw) return true;
+      const value = Number(number);
+      if (!Number.isFinite(value)) return false;
+      const tokens = raw.replace(/#/g, '').split(/[\s,;]+/).filter(Boolean);
+      if (!tokens.length) return true;
+      return tokens.some(token => {
+        const range = token.match(/^(\d+)\s*-\s*(\d+)$/);
+        if (range) {
+          const start = Number(range[1]);
+          const end = Number(range[2]);
+          const low = Math.min(start, end);
+          const high = Math.max(start, end);
+          return value >= low && value <= high;
+        }
+        return /^\d+$/.test(token) && value === Number(token);
+      });
+    }
+
+    function filtersActive(){
+      return Boolean(
+        els.searchInput.value.trim() ||
+        els.numberFilter.value.trim() ||
+        els.statusFilter.value !== 'all'
+      );
+    }
+
+    function markerMatchesQuery(marker){
+      const nameQuery = els.searchInput.value.trim().toLowerCase();
+      const status = els.statusFilter.value;
+      if (nameQuery && !marker.name.toLowerCase().includes(nameQuery)) return false;
+      if (!numberFilterMatches(marker.number)) return false;
+      if (status !== 'all' && marker.status !== status) return false;
+      return true;
+    }
+
+    function setMarkerStatus(id, status, message = true){
+      const marker = state.markers.find(item => item.id === id);
+      if (!marker) return;
+      marker.status = status === 'ok' ? 'ok' : 'ng';
+      save();
+      renderAll();
+      if (message) announce(`Marker ${marker.number} marked ${marker.status.toUpperCase()}.`);
+    }
+
+    function toggleMarkerStatus(id){
+      const marker = state.markers.find(item => item.id === id);
+      if (!marker) return;
+      setMarkerStatus(id, marker.status === 'ok' ? 'ng' : 'ok');
+    }
+
+    function createMarkerNode(marker){
+      const {radius, ringRadius, fontSize} = markerGeometry();
+      const digitCount = String(marker.number).length;
+      const adjustedFontSize = fontSize * (digitCount <= 2 ? 1 : digitCount === 3 ? .78 : .62);
+      const category = TOOL_LENGTHS[marker.length] || TOOL_LENGTHS['12'];
+      const group = svgElement('g', {
+        class: `tool-marker status-${marker.status}${marker.id === state.selectedId ? ' selected' : ''}`,
+        transform: `translate(${marker.x * state.naturalWidth} ${marker.y * state.naturalHeight})`,
+        tabindex: '0',
+        role: 'button',
+        'aria-label': `Marker ${marker.number}, ${marker.name}, ${category.label}, ${marker.status.toUpperCase()}. Drag to move, double-click to edit, or right-click in Markup Mode to change status.`
+      });
+      group.dataset.id = marker.id;
+      group.style.setProperty('--tool-fill', category.color);
+      group.style.setProperty('--tool-text', category.text);
+      if (filtersActive()) group.classList.add(markerMatchesQuery(marker) ? 'search-match' : 'search-muted');
+
+      const title = svgElement('title');
+      title.textContent = `${marker.number} — ${marker.name} — ${category.label} — ${marker.status.toUpperCase()}`;
+      const ring = svgElement('circle', {class:'selection-ring', r:ringRadius});
+      const ngRing = svgElement('circle', {
+        class:'ng-ring', r:radius * 1.12, 'stroke-width':Math.max(3, radius * .24)
+      });
+      const dot = svgElement('circle', {class:'dot', r:radius});
+      const number = svgElement('text', {class:'number', 'font-size':adjustedFontSize, y:adjustedFontSize * .03});
+      number.textContent = String(marker.number);
+
+      const badge = svgElement('g', {class:'ok-badge', transform:`translate(${radius * .5} ${-radius * .5})`});
+      const checkPath = `M ${-radius*.28} 0 L ${-radius*.06} ${radius*.22} L ${radius*.34} ${-radius*.3}`;
+      const halo = svgElement('path', {class:'ok-halo', d:checkPath, 'stroke-width':Math.max(4, radius * .28)});
+      const check = svgElement('path', {class:'ok-check', d:checkPath, 'stroke-width':Math.max(2.3, radius * .15)});
+      badge.append(halo, check);
+
+      group.append(title, ring, ngRing, dot, number, badge);
+      return group;
+    }
+
+    function renderMarkers(){
+      els.markerSvg.replaceChildren();
+      if (!state.naturalWidth || !state.naturalHeight) return;
+      els.markerSvg.setAttribute('viewBox', `0 0 ${state.naturalWidth} ${state.naturalHeight}`);
+      els.markerSvg.setAttribute('preserveAspectRatio', 'none');
+      const surface = svgElement('rect', {
+        class:'pan-surface', x:0, y:0, width:state.naturalWidth, height:state.naturalHeight
+      });
+      els.markerSvg.appendChild(surface);
+
+      const sorted = [...state.markers].sort(compareMarkerNumbers);
+      const selected = sorted.find(marker => marker.id === state.selectedId);
+      for (const marker of sorted) {
+        if (marker.id !== state.selectedId) els.markerSvg.appendChild(createMarkerNode(marker));
+      }
+      if (selected) els.markerSvg.appendChild(createMarkerNode(selected));
+    }
+
+    function sortedMarkers(){
+      const markers = state.markers.filter(markerMatchesQuery);
+      const sort = els.sortSelect.value;
+      markers.sort((a,b) => {
+        if (sort === 'name') return NAME_COLLATOR.compare(a.name, b.name) || compareMarkerNumbers(a, b);
+        if (sort === 'position') return a.y - b.y || a.x - b.x || compareMarkerNumbers(a, b);
+        return compareMarkerNumbers(a, b);
+      });
+      return markers;
+    }
+
+    function renderList(){
+      const markers = sortedMarkers();
+      const filtering = filtersActive();
+      els.filterSummary.textContent = filtering
+        ? `Showing ${markers.length} of ${state.markers.length} tools`
+        : `${state.markers.length} tool${state.markers.length === 1 ? '' : 's'} total`;
+      els.clearFiltersBtn.disabled = !filtering;
+      if (!markers.length) {
+        els.toolList.innerHTML = `<div class="list-empty">${filtering ? 'No tools match these filters.' : 'No hand tools placed yet.'}</div>`;
+        return;
+      }
+      els.toolList.innerHTML = markers.map(marker => {
+        const category = TOOL_LENGTHS[marker.length] || TOOL_LENGTHS['12'];
+        return `
+        <div class="tool-row${marker.id === state.selectedId ? ' active' : ''}" data-id="${escapeHtml(marker.id)}" tabindex="0" role="button">
+          <div class="number-chip" style="--tool-fill:${category.color};--tool-text:${category.text}">${marker.number}</div>
+          <div>
+            <div class="tool-name">${escapeHtml(marker.name)}</div>
+            <div class="tool-coords">${category.label} · ${marker.status.toUpperCase()} · X ${(marker.x * 100).toFixed(1)}% · Y ${(marker.y * 100).toFixed(1)}%</div>
+          </div>
+          <div class="row-actions">
+            <button class="status-button status-${marker.status}" data-action="status" data-id="${escapeHtml(marker.id)}" title="Change status">${marker.status.toUpperCase()}</button>
+            <button class="mini-button" data-action="edit" data-id="${escapeHtml(marker.id)}">Edit</button>
+          </div>
+        </div>`;
+      }).join('');
+    }
+
+    function renderSelection(){
+      const marker = selectedMarker();
+      els.selectionEmpty.hidden = Boolean(marker);
+      els.selectionPanel.hidden = !marker;
+      if (!marker) return;
+      const category = TOOL_LENGTHS[marker.length] || TOOL_LENGTHS['12'];
+      els.selectedNumber.textContent = String(marker.number);
+      els.selectedNumber.style.setProperty('--tool-fill', category.color);
+      els.selectedNumber.style.setProperty('--tool-text', category.text);
+      els.selectedName.textContent = marker.name;
+      els.selectedStatus.textContent = marker.status.toUpperCase();
+      els.selectedStatus.className = `status-chip status-${marker.status}`;
+      els.statusBtn.textContent = marker.status === 'ok' ? 'Mark NG' : 'Mark OK';
+      els.statusBtn.className = marker.status === 'ok' ? 'status-ng' : 'status-ok';
+      els.selectedCoords.textContent = `${category.label} hand tool · ${marker.status.toUpperCase()} · X ${(marker.x * 100).toFixed(1)}% · Y ${(marker.y * 100).toFixed(1)}%`;
+    }
+
+    function updateStatus(){
+      const hasMap = Boolean(state.imageData);
+      els.printBtn.disabled = !hasMap;
+      els.exportBtn.disabled = !hasMap;
+      els.clearBtn.disabled = !hasMap;
+      els.renumberBtn.disabled = !hasMap || state.markers.length === 0;
+      els.zoomOutBtn.disabled = !hasMap || state.zoom <= MIN_ZOOM;
+      els.zoomInBtn.disabled = !hasMap || state.zoom >= MAX_ZOOM;
+      els.fitBtn.disabled = !hasMap;
+      els.actualBtn.disabled = !hasMap;
+      els.zoomValue.textContent = `${Math.round(state.zoom * 100)}%`;
+      els.mapStatus.textContent = hasMap ? (state.imageName || 'Map loaded') : 'No map loaded';
+      const okCount = state.markers.filter(marker => marker.status === 'ok').length;
+      const ngCount = state.markers.length - okCount;
+      els.toolCount.textContent = state.markupMode
+        ? `${state.markers.length} tools · ${okCount} OK · ${ngCount} NG`
+        : `${state.markers.length} tool${state.markers.length === 1 ? '' : 's'}`;
+    }
+
+    function renderAll(){
+      renderMarkers();
+      renderList();
+      renderSelection();
+      updateStatus();
+    }
+
+    function calculateFitScale(){
+      if (!state.naturalWidth || !state.naturalHeight) return 1;
+      const availableWidth = Math.max(180, els.board.clientWidth - 64);
+      const availableHeight = Math.max(180, els.board.clientHeight - 64);
+      return Math.min(1, availableWidth / state.naturalWidth, availableHeight / state.naturalHeight);
+    }
+
+    function applyZoom(anchorClientX = null, anchorClientY = null){
+      if (!state.imageData) return;
+      const before = els.stage.getBoundingClientRect();
+      const fallbackX = els.board.getBoundingClientRect().left + els.board.clientWidth / 2;
+      const fallbackY = els.board.getBoundingClientRect().top + els.board.clientHeight / 2;
+      const clientX = anchorClientX ?? fallbackX;
+      const clientY = anchorClientY ?? fallbackY;
+      const ratioX = before.width ? clamp((clientX - before.left) / before.width, 0, 1) : .5;
+      const ratioY = before.height ? clamp((clientY - before.top) / before.height, 0, 1) : .5;
+
+      state.fitScale = calculateFitScale();
+      const width = Math.max(40, state.naturalWidth * state.fitScale * state.zoom);
+      els.stage.style.width = `${width}px`;
+
+      requestAnimationFrame(() => {
+        const after = els.stage.getBoundingClientRect();
+        const shiftedX = after.left + ratioX * after.width - clientX;
+        const shiftedY = after.top + ratioY * after.height - clientY;
+        els.board.scrollLeft += shiftedX;
+        els.board.scrollTop += shiftedY;
+      });
+      updateStatus();
+      scheduleSave();
+    }
+
+    function setZoom(nextZoom, anchorClientX = null, anchorClientY = null){
+      state.zoom = clamp(Math.round(nextZoom * 100) / 100, MIN_ZOOM, MAX_ZOOM);
+      applyZoom(anchorClientX, anchorClientY);
+    }
+
+    function fitMap(){
+      state.zoom = 1;
+      state.fitScale = calculateFitScale();
+      els.stage.style.width = `${Math.max(40, state.naturalWidth * state.fitScale)}px`;
+      requestAnimationFrame(() => {
+        els.board.scrollLeft = 0;
+        els.board.scrollTop = 0;
+      });
+      updateStatus();
+      save();
+      announce('Map fit to window.');
+    }
+
+    function actualSize(){
+      const fitScale = calculateFitScale();
+      setZoom(1 / fitScale);
+      announce('Map shown at actual pixel size.');
+    }
+
+    function centerMarker(id){
+      const marker = state.markers.find(item => item.id === id);
+      if (!marker) return;
+      const stageRect = els.stage.getBoundingClientRect();
+      const boardRect = els.board.getBoundingClientRect();
+      const clientX = stageRect.left + marker.x * stageRect.width;
+      const clientY = stageRect.top + marker.y * stageRect.height;
+      els.board.scrollLeft += clientX - (boardRect.left + els.board.clientWidth / 2);
+      els.board.scrollTop += clientY - (boardRect.top + els.board.clientHeight / 2);
+      announce(`Centered marker ${marker.number}.`);
+    }
+
+    async function imageFileToDataUrl(file, maxDimension = 5000){
+      if (!file?.type?.startsWith('image/')) throw new Error('Please choose an image file.');
+      const objectUrl = URL.createObjectURL(file);
+      try {
+        const image = new Image();
+        image.src = objectUrl;
+        await image.decode();
+        const scale = Math.min(1, maxDimension / Math.max(image.naturalWidth, image.naturalHeight));
+        if (scale === 1 && file.size < 2_800_000) {
+          return await new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onload = () => resolve(reader.result);
+            reader.onerror = reject;
+            reader.readAsDataURL(file);
+          });
+        }
+        const canvas = document.createElement('canvas');
+        canvas.width = Math.max(1, Math.round(image.naturalWidth * scale));
+        canvas.height = Math.max(1, Math.round(image.naturalHeight * scale));
+        const context = canvas.getContext('2d', {alpha:false});
+        context.fillStyle = '#fff';
+        context.fillRect(0,0,canvas.width,canvas.height);
+        context.drawImage(image,0,0,canvas.width,canvas.height);
+        return canvas.toDataURL('image/jpeg', .93);
+      } finally {
+        URL.revokeObjectURL(objectUrl);
+      }
+    }
+
+    function loadImageIntoStage(dataUrl, resetMarkers, resetZoom = true){
+      els.mapImage.onload = () => {
+        state.naturalWidth = els.mapImage.naturalWidth;
+        state.naturalHeight = els.mapImage.naturalHeight;
+        if (resetMarkers) state.markers = [];
+        state.selectedId = null;
+        if (resetZoom) state.zoom = 1;
+        els.stage.classList.add('ready');
+        state.fitScale = calculateFitScale();
+        els.stage.style.width = `${Math.max(40, state.naturalWidth * state.fitScale * state.zoom)}px`;
+        renderAll();
+        save();
+      };
+      els.mapImage.onerror = () => announce('The map image could not be loaded.');
+      els.mapImage.src = dataUrl;
+    }
+
+    async function handleImageUpload(file){
+      if (!file) return;
+      try {
+        if (state.markers.length && !confirm('Loading a new map will remove the current markers. Continue?')) return;
+        const dataUrl = await imageFileToDataUrl(file);
+        state.imageData = dataUrl;
+        state.imageName = file.name;
+        loadImageIntoStage(dataUrl, true, true);
+        announce('Line map loaded.');
+      } catch (error) {
+        alert(error.message || 'Could not load that image.');
+      } finally {
+        els.imageFile.value = '';
+      }
+    }
+
+    function exportJson(){
+      const blob = new Blob([JSON.stringify(serializeState(), null, 2)], {type:'application/json'});
+      const link = document.createElement('a');
+      const safeName = (state.printTitle.trim() || state.imageName || 'hand-tool-map')
+        .replace(/\.[^.]+$/, '')
+        .replace(/[^a-z0-9_-]+/gi, '-')
+        .replace(/^-+|-+$/g, '') || 'hand-tool-map';
+      link.href = URL.createObjectURL(blob);
+      link.download = `${safeName}-markers.json`;
+      link.click();
+      setTimeout(() => URL.revokeObjectURL(link.href), 0);
+      announce('Map data exported.');
+    }
+
+    async function importJson(file){
+      if (!file) return;
+      try {
+        const parsed = JSON.parse(await file.text());
+        if (!parsed.imageData || !Array.isArray(parsed.markers)) throw new Error('This does not look like a hand-tool map export.');
+        state.imageData = parsed.imageData;
+        state.imageName = parsed.imageName || file.name.replace(/\.json$/i, '');
+        state.zoom = clamp(Number(parsed.zoom) || 1, MIN_ZOOM, MAX_ZOOM);
+        state.markerSizePct = clamp(Number(parsed.markerSizePct) || 1.8, .6, 4);
+        state.activeLength = TOOL_LENGTHS[String(parsed.activeLength)] ? String(parsed.activeLength) : '12';
+        state.markupMode = parsed.markupMode === true;
+        state.printLegend = parsed.printLegend !== false;
+        state.printTitle = typeof parsed.printTitle === 'string'
+          ? parsed.printTitle.slice(0, 100)
+          : (parsed.imageName || 'Hand Tool List').replace(/\.[^.]+$/, '');
+        state.markers = parsed.markers.map(normalizeMarker).filter(Boolean);
+        syncControlsFromState();
+        loadImageIntoStage(state.imageData, false, false);
+        announce('Map data imported.');
+      } catch (error) {
+        alert(error.message || 'Import failed.');
+      } finally {
+        els.importFile.value = '';
+      }
+    }
+
+    function clearAll(){
+      if (!state.imageData) return;
+      if (!confirm('Clear the map and all hand-tool markers?')) return;
+      localStorage.removeItem(STORAGE_KEY);
+      LEGACY_STORAGE_KEYS.forEach(key => localStorage.removeItem(key));
+      Object.assign(state, {
+        imageData:null,imageName:'',naturalWidth:0,naturalHeight:0,fitScale:1,zoom:1,
+        markupMode:false,printLegend:true,printTitle:'Hand Tool List',markers:[],selectedId:null,editingId:null,renumberSnapshot:null
+      });
+      els.mapImage.removeAttribute('src');
+      els.stage.classList.remove('ready');
+      els.stage.style.width = '';
+      renderAll();
+      announce('Map cleared.');
+    }
+
+
+    function buildPrintLegend(){
+      const sorted = [...state.markers].sort(compareMarkerNumbers);
+      const customTitle = state.printTitle.trim();
+      els.printTitle.textContent = customTitle || (state.imageName || 'Hand Tool Map').replace(/\.[^.]+$/, '');
+      const okCount = sorted.filter(marker => marker.status === 'ok').length;
+      const ngCount = sorted.length - okCount;
+      els.printSubtitle.textContent = `${sorted.length} hand-tool location${sorted.length === 1 ? '' : 's'} · Marker diameter ${state.markerSizePct.toFixed(1)}% of map width${state.markupMode ? ` · ${okCount} OK · ${ngCount} NG` : ''}`;
+      els.printLegendList.innerHTML = sorted.map(marker => {
+        const category = TOOL_LENGTHS[marker.length] || TOOL_LENGTHS['12'];
+        return `
+        <div class="legend-item">
+          <span class="legend-number" style="background:${category.color};color:${category.text}">${marker.number}</span>
+          <span class="legend-name">${escapeHtml(marker.name)}<span class="legend-length">${category.label} hand tool${state.markupMode ? ` · <span class="legend-status ${marker.status}">${marker.status.toUpperCase()}</span>` : ''}</span></span>
+        </div>`;
+      }).join('');
+      document.body.classList.toggle('hide-print-legend', !state.printLegend);
+    }
+
+    function printMap(){
+      buildPrintLegend();
+      window.print();
+    }
+
+    function startPointerInteraction(event){
+      if (event.button !== 0 || !state.imageData) return;
+      const markerNode = event.target.closest('.tool-marker');
+      state.pointerId = event.pointerId;
+      state.pointerStartX = event.clientX;
+      state.pointerStartY = event.clientY;
+      state.moved = false;
+      els.markerSvg.setPointerCapture(event.pointerId);
+
+      if (markerNode) {
+        event.preventDefault();
+        state.pointerMode = 'marker';
+        state.draggingId = markerNode.dataset.id;
+        markerNode.classList.add('dragging');
+        selectMarker(state.draggingId);
+      } else {
+        state.pointerMode = 'pan';
+        state.startScrollLeft = els.board.scrollLeft;
+        state.startScrollTop = els.board.scrollTop;
+        els.markerSvg.classList.add('panning');
+      }
+    }
+
+    function movePointerInteraction(event){
+      if (event.pointerId !== state.pointerId || !state.pointerMode) return;
+      const dx = event.clientX - state.pointerStartX;
+      const dy = event.clientY - state.pointerStartY;
+      if (Math.hypot(dx,dy) > 3) state.moved = true;
+
+      if (state.pointerMode === 'pan') {
+        event.preventDefault();
+        els.board.scrollLeft = state.startScrollLeft - dx;
+        els.board.scrollTop = state.startScrollTop - dy;
+        return;
+      }
+
+      if (state.pointerMode === 'marker') {
+        event.preventDefault();
+        const marker = state.markers.find(item => item.id === state.draggingId);
+        if (!marker) return;
+        const point = mapPointFromEvent(event);
+        marker.x = point.x;
+        marker.y = point.y;
+        const group = els.markerSvg.querySelector(`.tool-marker[data-id="${CSS.escape(marker.id)}"]`);
+        group?.setAttribute('transform', `translate(${marker.x * state.naturalWidth} ${marker.y * state.naturalHeight})`);
+        renderSelection();
+      }
+    }
+
+    function finishPointerInteraction(event){
+      if (event.pointerId !== state.pointerId || !state.pointerMode) return;
+      const wasMoved = state.moved;
+      const mode = state.pointerMode;
+      const draggedId = state.draggingId;
+      try { els.markerSvg.releasePointerCapture(event.pointerId); } catch (_) {}
+      els.markerSvg.classList.remove('panning');
+      if (draggedId) els.markerSvg.querySelector(`.tool-marker[data-id="${CSS.escape(draggedId)}"]`)?.classList.remove('dragging');
+      state.pointerMode = null;
+      state.pointerId = null;
+      state.draggingId = null;
+      if (wasMoved) state.suppressDoubleClickUntil = performance.now() + 300;
+      if (mode === 'marker' && wasMoved) {
+        save();
+        renderList();
+        announce('Tool position updated.');
+      }
+    }
+
+    els.uploadBtn.addEventListener('click', () => els.imageFile.click());
+    els.imageFile.addEventListener('change', () => handleImageUpload(els.imageFile.files?.[0]));
+    els.printBtn.addEventListener('click', printMap);
+    els.exportBtn.addEventListener('click', exportJson);
+    els.importBtn.addEventListener('click', () => els.importFile.click());
+    els.importFile.addEventListener('change', () => importJson(els.importFile.files?.[0]));
+    els.renumberBtn.addEventListener('click', openRenumber);
+    els.clearBtn.addEventListener('click', clearAll);
+    els.zoomOutBtn.addEventListener('click', () => setZoom(state.zoom / 1.25));
+    els.zoomInBtn.addEventListener('click', () => setZoom(state.zoom * 1.25));
+    els.fitBtn.addEventListener('click', fitMap);
+    els.actualBtn.addEventListener('click', actualSize);
+
+    els.markerSizeSlider.addEventListener('input', () => {
+      state.markerSizePct = Number(els.markerSizeSlider.value);
+      els.markerSizeValue.textContent = `${state.markerSizePct.toFixed(1)}%`;
+      renderMarkers();
+      scheduleSave();
+    });
+    els.activeLengthChoices.forEach(choice => {
+      choice.addEventListener('change', () => {
+        if (!choice.checked) return;
+        state.activeLength = choice.value;
+        save();
+        announce(`${TOOL_LENGTHS[state.activeLength].label} marker selected.`);
+      });
+    });
+    els.markupMode.addEventListener('change', () => {
+      state.markupMode = els.markupMode.checked;
+      document.body.classList.toggle('markup-mode', state.markupMode);
+      save();
+      updateStatus();
+      announce(`Markup Mode ${state.markupMode ? 'on' : 'off'}.`);
+    });
+    els.printLegend.addEventListener('change', () => {
+      state.printLegend = els.printLegend.checked;
+      save();
+    });
+    els.printTitleInput.addEventListener('input', () => {
+      state.printTitle = els.printTitleInput.value.slice(0, 100);
+      scheduleSave();
+    });
+    els.printTitleInput.addEventListener('change', save);
+
+    els.markerSvg.addEventListener('wheel', event => {
+      if (!state.imageData) return;
+      event.preventDefault();
+      const factor = Math.exp(-event.deltaY * .0015);
+      setZoom(state.zoom * factor, event.clientX, event.clientY);
+    }, {passive:false});
+
+    els.markerSvg.addEventListener('contextmenu', event => {
+      const markerNode = event.target.closest('.tool-marker');
+      if (!state.markupMode || !markerNode) return;
+      event.preventDefault();
+      selectMarker(markerNode.dataset.id);
+      toggleMarkerStatus(markerNode.dataset.id);
+    });
+
+    els.markerSvg.addEventListener('dblclick', event => {
+      event.preventDefault();
+      if (performance.now() < state.suppressDoubleClickUntil) return;
+      const markerNode = event.target.closest('.tool-marker');
+      if (markerNode) {
+        selectMarker(markerNode.dataset.id);
+        openEdit(markerNode.dataset.id);
+        return;
+      }
+      const point = mapPointFromEvent(event);
+      addMarker(point.x, point.y);
+    });
+
+    els.markerSvg.addEventListener('pointerdown', startPointerInteraction);
+    els.markerSvg.addEventListener('pointermove', movePointerInteraction);
+    els.markerSvg.addEventListener('pointerup', finishPointerInteraction);
+    els.markerSvg.addEventListener('pointercancel', finishPointerInteraction);
+
+    els.markerSvg.addEventListener('click', event => {
+      if (state.moved) return;
+      const markerNode = event.target.closest('.tool-marker');
+      selectMarker(markerNode ? markerNode.dataset.id : null, Boolean(markerNode));
+    });
+
+    els.markerSvg.addEventListener('keydown', event => {
+      const markerNode = event.target.closest('.tool-marker');
+      if (!markerNode) return;
+      if (event.key === 'Enter' || event.key === ' ') {
+        event.preventDefault();
+        selectMarker(markerNode.dataset.id, true);
+        openEdit(markerNode.dataset.id);
+      }
+    });
+
+    els.toolList.addEventListener('click', event => {
+      const statusButton = event.target.closest('[data-action="status"]');
+      if (statusButton) {
+        event.stopPropagation();
+        selectMarker(statusButton.dataset.id);
+        toggleMarkerStatus(statusButton.dataset.id);
+        return;
+      }
+      const editButton = event.target.closest('[data-action="edit"]');
+      if (editButton) {
+        event.stopPropagation();
+        selectMarker(editButton.dataset.id);
+        openEdit(editButton.dataset.id);
+        return;
+      }
+      const row = event.target.closest('.tool-row');
+      if (row) {
+        selectMarker(row.dataset.id);
+        centerMarker(row.dataset.id);
+      }
+    });
+    els.toolList.addEventListener('dblclick', event => {
+      const row = event.target.closest('.tool-row');
+      if (row) openEdit(row.dataset.id);
+    });
+    els.toolList.addEventListener('keydown', event => {
+      const row = event.target.closest('.tool-row');
+      if (row && (event.key === 'Enter' || event.key === ' ')) {
+        event.preventDefault();
+        selectMarker(row.dataset.id);
+        centerMarker(row.dataset.id);
+      }
+    });
+
+    function refreshFilters(){
+      renderMarkers();
+      renderList();
+    }
+    els.searchInput.addEventListener('input', refreshFilters);
+    els.numberFilter.addEventListener('input', refreshFilters);
+    els.statusFilter.addEventListener('change', refreshFilters);
+    els.sortSelect.addEventListener('change', renderList);
+    els.clearFiltersBtn.addEventListener('click', () => {
+      els.searchInput.value = '';
+      els.numberFilter.value = '';
+      els.statusFilter.value = 'all';
+      refreshFilters();
+      els.searchInput.focus();
+    });
+
+    els.statusBtn.addEventListener('click', () => state.selectedId && toggleMarkerStatus(state.selectedId));
+    els.editBtn.addEventListener('click', () => state.selectedId && openEdit(state.selectedId));
+    els.centerBtn.addEventListener('click', () => state.selectedId && centerMarker(state.selectedId));
+    els.deleteBtn.addEventListener('click', () => state.selectedId && deleteMarker(state.selectedId));
+    els.cancelEditBtn.addEventListener('click', closeEdit);
+    els.editModal.addEventListener('click', event => { if (event.target === els.editModal) closeEdit(); });
+    els.editForm.addEventListener('submit', event => {
+      event.preventDefault();
+      const marker = state.markers.find(item => item.id === state.editingId);
+      const number = Number(els.numberInput.value);
+      const name = els.nameInput.value.trim();
+      const length = els.lengthInput.value;
+      const status = els.statusInput.value;
+      if (!marker || !Number.isInteger(number) || number < 1 || !name || !TOOL_LENGTHS[length] || !['ok','ng'].includes(status)) return;
+      const duplicate = state.markers.find(item => item.id !== marker.id && item.number === number);
+      if (duplicate) {
+        els.numberInput.setCustomValidity(`Number ${number} is already in use.`);
+        els.numberInput.reportValidity();
+        return;
+      }
+      els.numberInput.setCustomValidity('');
+      marker.number = number;
+      marker.name = name;
+      marker.length = length;
+      marker.status = status;
+      state.selectedId = marker.id;
+      save();
+      closeEdit();
+      renderAll();
+      announce('Tool updated.');
+    });
+    els.numberInput.addEventListener('input', () => els.numberInput.setCustomValidity(''));
+
+    els.renumberMethod.addEventListener('change', updateRenumberControls);
+    els.applyRenumberBtn.addEventListener('click', applyRenumbering);
+    els.revertRenumberBtn.addEventListener('click', revertRenumbering);
+    els.closeRenumberBtn.addEventListener('click', closeRenumber);
+    els.renumberModal.addEventListener('click', event => { if (event.target === els.renumberModal) closeRenumber(); });
+
+    document.addEventListener('keydown', event => {
+      if (event.key === 'Escape' && els.renumberModal.classList.contains('open')) {
+        closeRenumber();
+        return;
+      }
+      if (event.key === 'Escape' && els.editModal.classList.contains('open')) {
+        closeEdit();
+        return;
+      }
+      const typing = /INPUT|TEXTAREA|SELECT/.test(document.activeElement?.tagName || '');
+      if (!typing && (event.key === 'Delete' || event.key === 'Backspace') && state.selectedId) {
+        event.preventDefault();
+        deleteMarker(state.selectedId);
+      }
+      if (!typing && (event.key === '+' || event.key === '=')) setZoom(state.zoom * 1.25);
+      if (!typing && event.key === '-') setZoom(state.zoom / 1.25);
+      if (!typing && event.key === '0') fitMap();
+    });
+
+    let resizeTimer;
+    window.addEventListener('resize', () => {
+      clearTimeout(resizeTimer);
+      resizeTimer = setTimeout(() => {
+        if (!state.imageData) return;
+        state.fitScale = calculateFitScale();
+        els.stage.style.width = `${Math.max(40, state.naturalWidth * state.fitScale * state.zoom)}px`;
+      }, 120);
+    });
+
+    window.addEventListener('beforeprint', buildPrintLegend);
+
+    syncControlsFromState();
+    renderAll();
+    loadSaved();
+  })();
+  </script>
+</body>
+</html>
