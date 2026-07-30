@@ -70,7 +70,7 @@ You can install QR Code Builder as a Progressive Web App (PWA) for offline acces
 
 See the full [Changelog](./CHANGELOG.md) for details.
 
-### Recent Changes with v1.1.0 (6/22/25):
+### Recent Changes with v1.1.0 (7/30/26):
 
 * Added new tool "Numerical Map Editor" to the other tools section
 
