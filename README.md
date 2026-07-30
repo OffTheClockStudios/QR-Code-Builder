@@ -70,15 +70,9 @@ You can install QR Code Builder as a Progressive Web App (PWA) for offline acces
 
 See the full [Changelog](./CHANGELOG.md) for details.
 
-### Recent Changes with v1.0.9 (6/22/25):
+### Recent Changes with v1.1.0 (6/22/25):
 
-* Changelog popup so users can view recent updates
-* Filename prompt when using the Download button to save QR codes
-* Print Pages & Print Cards HTML: Testing different endgame formats for the QR codes
-* Fuzzies now opens in a new tab when clicked
-* Loading a preset will now automatically build the QR code
-* Presets are sorted A → Z, with defaults listed after your custom presets
-* The Download button now builds the QR code and prompts for a filename automatically
+* Added new tool "Numerical Map Editor" to the other tools section
 
 ---
 
