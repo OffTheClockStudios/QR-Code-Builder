@@ -1,0 +1,1492 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Defect Counter</title>
+  <style>
+    :root {
+      --bg: #f4f6f8;
+      --panel: #ffffff;
+      --text: #17202a;
+      --muted: #6b7280;
+      --line: #d9dee5;
+      --accent: #2563eb;
+      --accent-soft: #eff6ff;
+      --danger: #dc2626;
+      --radius: 14px;
+      --shadow: 0 12px 32px rgba(0, 0, 0, 0.10);
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background: var(--bg);
+      color: var(--text);
+    }
+
+    .app {
+      max-width: 980px;
+      margin: 0 auto;
+      padding: 28px 18px 60px;
+    }
+
+    .topbar {
+      display: flex;
+      gap: 12px;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      margin-bottom: 22px;
+    }
+
+    h1 {
+      margin: 0;
+      font-size: clamp(1.6rem, 3vw, 2.2rem);
+    }
+
+    .subtitle {
+      margin: 6px 0 0;
+      color: var(--muted);
+      font-size: 0.95rem;
+    }
+
+    .top-actions {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+      justify-content: flex-end;
+      flex-wrap: wrap;
+    }
+
+    .save-status {
+      width: 100%;
+      text-align: right;
+      color: var(--muted);
+      font-size: 0.82rem;
+      min-height: 1.1em;
+    }
+
+    button,
+    select {
+      font: inherit;
+    }
+
+    .btn {
+      border: 0;
+      border-radius: 10px;
+      padding: 10px 14px;
+      cursor: pointer;
+      font-weight: 700;
+    }
+
+    .btn-primary {
+      background: var(--accent);
+      color: white;
+    }
+
+    .btn-secondary {
+      background: white;
+      color: var(--text);
+      border: 1px solid var(--line);
+    }
+
+    .controls {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      padding: 18px;
+      margin-bottom: 18px;
+    }
+
+    label {
+      display: block;
+      font-weight: 700;
+      margin-bottom: 8px;
+    }
+
+    select {
+      width: 100%;
+      padding: 12px 14px;
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      background: white;
+      color: var(--text);
+      outline: none;
+    }
+
+    select:focus,
+    textarea:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.13);
+    }
+
+    .empty {
+      text-align: center;
+      padding: 42px 16px;
+      background: var(--panel);
+      border: 1px dashed var(--line);
+      border-radius: var(--radius);
+      color: var(--muted);
+    }
+
+    .defect2-card {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      overflow: hidden;
+      margin-bottom: 14px;
+    }
+
+    .defect2-header {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      align-items: center;
+      gap: 12px;
+      padding: 15px 16px;
+      background: #fafbfc;
+      border-bottom: 1px solid var(--line);
+    }
+
+    .defect2-title {
+      min-width: 0;
+      font-weight: 800;
+      font-size: 1.02rem;
+      word-break: break-word;
+    }
+
+    .defect3-list {
+      padding: 6px 16px;
+    }
+
+    .defect3-row {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      align-items: center;
+      gap: 10px 12px;
+      padding: 12px 0;
+      border-bottom: 1px solid #edf0f3;
+    }
+
+    .defect3-row:last-child {
+      border-bottom: 0;
+    }
+
+    .defect3-name {
+      min-width: 0;
+      padding-left: 18px;
+      color: #374151;
+      word-break: break-word;
+      position: relative;
+    }
+
+    .defect3-name::before {
+      content: "↳";
+      position: absolute;
+      left: 0;
+      color: #9ca3af;
+    }
+
+    .defect3-actions {
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .note-btn {
+      border: 1px solid var(--line);
+      background: white;
+      color: #374151;
+      border-radius: 9px;
+      padding: 8px 10px;
+      cursor: pointer;
+      font-size: 0.82rem;
+      font-weight: 750;
+    }
+
+    .note-btn:hover {
+      background: var(--accent-soft);
+      color: var(--accent);
+      border-color: #bfdbfe;
+    }
+
+    .note-area {
+      grid-column: 1 / -1;
+      margin-left: 18px;
+    }
+
+    .note-preview {
+      padding: 8px 10px;
+      border-left: 3px solid #cbd5e1;
+      background: #f8fafc;
+      border-radius: 6px;
+      color: #475569;
+      font-size: 0.88rem;
+      word-break: break-word;
+    }
+
+    .note-editor {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+
+    .note-input {
+      flex: 1 1 320px;
+      min-width: 180px;
+      border: 1px solid var(--line);
+      border-radius: 9px;
+      padding: 9px 10px;
+      font: inherit;
+      outline: none;
+    }
+
+    .note-input:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.13);
+    }
+
+    .note-editor-actions {
+      display: flex;
+      gap: 6px;
+      align-items: center;
+    }
+
+    .note-action {
+      border: 1px solid var(--line);
+      background: white;
+      border-radius: 8px;
+      padding: 7px 9px;
+      cursor: pointer;
+      font-size: 0.8rem;
+      font-weight: 750;
+    }
+
+    .note-action.save {
+      background: var(--accent);
+      border-color: var(--accent);
+      color: white;
+    }
+
+    .note-action.remove {
+      color: var(--danger);
+    }
+
+    .no-defect3 {
+      padding: 12px 0;
+      color: var(--muted);
+      font-style: italic;
+      font-size: 0.92rem;
+    }
+
+    .counter {
+      display: inline-grid;
+      grid-template-columns: 38px 52px 38px;
+      align-items: center;
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      overflow: hidden;
+      background: white;
+      flex-shrink: 0;
+    }
+
+    .counter button {
+      width: 38px;
+      height: 38px;
+      border: 0;
+      background: white;
+      cursor: pointer;
+      font-size: 1.25rem;
+      font-weight: 800;
+      color: var(--text);
+    }
+
+    .counter button:hover {
+      background: var(--accent-soft);
+      color: var(--accent);
+    }
+
+    .counter .count {
+      min-width: 52px;
+      text-align: center;
+      font-variant-numeric: tabular-nums;
+      font-weight: 800;
+      border-left: 1px solid var(--line);
+      border-right: 1px solid var(--line);
+      line-height: 38px;
+    }
+
+    .summary {
+      display: flex;
+      justify-content: space-between;
+      gap: 10px;
+      align-items: center;
+      margin: 0 0 12px;
+      color: var(--muted);
+      font-size: 0.92rem;
+    }
+
+    .summary strong {
+      color: var(--text);
+    }
+
+    dialog {
+      width: min(760px, calc(100vw - 28px));
+      border: 0;
+      border-radius: 18px;
+      padding: 0;
+      box-shadow: var(--shadow);
+    }
+
+    dialog::backdrop {
+      background: rgba(15, 23, 42, 0.58);
+    }
+
+    .modal-head {
+      padding: 18px 20px 12px;
+      border-bottom: 1px solid var(--line);
+    }
+
+    .modal-head h2 {
+      margin: 0;
+      font-size: 1.25rem;
+    }
+
+    .modal-head p {
+      margin: 7px 0 0;
+      color: var(--muted);
+      font-size: 0.92rem;
+    }
+
+    .modal-body {
+      padding: 18px 20px;
+    }
+
+    textarea {
+      width: 100%;
+      min-height: 330px;
+      resize: vertical;
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      padding: 12px;
+      outline: none;
+      font: 13px/1.45 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      white-space: pre;
+    }
+
+    .modal-actions {
+      display: flex;
+      justify-content: flex-end;
+      gap: 10px;
+      padding: 0 20px 20px;
+    }
+
+    .error {
+      display: none;
+      margin-top: 10px;
+      padding: 10px 12px;
+      border-radius: 10px;
+      background: #fef2f2;
+      color: var(--danger);
+      font-size: 0.9rem;
+      font-weight: 650;
+    }
+
+    @media (max-width: 560px) {
+      .defect2-header,
+      .defect3-row {
+        grid-template-columns: 1fr;
+      }
+
+      .counter {
+        justify-self: start;
+      }
+
+      .defect3-actions {
+        justify-content: flex-start;
+      }
+
+      .defect3-name {
+        padding-left: 18px;
+      }
+
+      .note-area {
+        margin-left: 18px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main class="app">
+    <div class="topbar">
+      <div>
+        <h1>Defect Counter</h1>
+        <p class="subtitle">Count defects, add notes, merge Excel data, and automatically preserve your shift between reloads.</p>
+      </div>
+      <div class="top-actions">
+        <button class="btn btn-secondary" id="resetCountsBtn" type="button">Reset Counts</button>
+        <button class="btn btn-secondary" id="copySummaryBtn" type="button">Copy Defect Summary</button>
+        <button class="btn btn-secondary" id="importJsonBtn" type="button">Import JSON</button>
+        <button class="btn btn-secondary" id="exportJsonBtn" type="button">Export JSON</button>
+        <button class="btn btn-primary" id="pasteDataBtn" type="button">Paste Excel Data</button>
+        <input id="jsonFileInput" type="file" accept=".json,application/json" hidden />
+        <div class="save-status" id="saveStatus">Auto-save ready</div>
+      </div>
+    </div>
+
+    <section class="controls">
+      <label for="defect1Select">Defect1</label>
+      <select id="defect1Select" disabled>
+        <option value="">Paste data first</option>
+      </select>
+    </section>
+
+    <div class="summary" id="summary" hidden>
+      <span>Selected total: <strong id="selectedTotal">0</strong></span>
+      <span id="structureSummary"></span>
+    </div>
+
+    <section id="counterArea">
+      <div class="empty">Paste your Excel data to build the defect list.</div>
+    </section>
+  </main>
+
+  <dialog id="dataDialog">
+    <form method="dialog" id="dataForm">
+      <div class="modal-head">
+        <h2>Paste Excel Data</h2>
+        <p>Copy the three columns from Excel and paste them below. New rows are merged into the current list, duplicates are ignored, and existing counts are preserved.</p>
+      </div>
+
+      <div class="modal-body">
+        <textarea id="dataInput" spellcheck="false" placeholder="Defect1&#9;Defect2&#9;Defect3
+Connector Soldering&#9;Human&#9;No corresponding serial
+Samples&#9;Maintenance samples&#9;null"></textarea>
+        <div class="error" id="errorBox"></div>
+      </div>
+
+      <div class="modal-actions">
+        <button class="btn btn-secondary" type="button" id="importJsonFromDialogBtn">Import JSON Backup</button>
+        <button class="btn btn-secondary" value="cancel" type="button" id="cancelBtn">Cancel</button>
+        <button class="btn btn-primary" value="default" type="submit">Confirm Data</button>
+      </div>
+    </form>
+  </dialog>
+
+  <script>
+    const dialog = document.getElementById("dataDialog");
+    const dataForm = document.getElementById("dataForm");
+    const dataInput = document.getElementById("dataInput");
+    const errorBox = document.getElementById("errorBox");
+    const pasteDataBtn = document.getElementById("pasteDataBtn");
+    const cancelBtn = document.getElementById("cancelBtn");
+    const resetCountsBtn = document.getElementById("resetCountsBtn");
+    const copySummaryBtn = document.getElementById("copySummaryBtn");
+    const importJsonBtn = document.getElementById("importJsonBtn");
+    const importJsonFromDialogBtn = document.getElementById("importJsonFromDialogBtn");
+    const exportJsonBtn = document.getElementById("exportJsonBtn");
+    const jsonFileInput = document.getElementById("jsonFileInput");
+    const saveStatus = document.getElementById("saveStatus");
+    const defect1Select = document.getElementById("defect1Select");
+    const counterArea = document.getElementById("counterArea");
+    const summary = document.getElementById("summary");
+    const selectedTotal = document.getElementById("selectedTotal");
+    const structureSummary = document.getElementById("structureSummary");
+
+    // hierarchy[defect1][defect2] = Set(defect3...)
+    let hierarchy = {};
+    // Counts are keyed separately so Defect2 and Defect3 each have their own count.
+    let counts = {
+      defect2: {},
+      defect3: {}
+    };
+
+    // Notes can be attached to Defect2 items with no Defect3 children,
+    // or to an exact Defect1 -> Defect2 -> Defect3 path.
+    // They survive Excel merges, auto-save, and JSON backup/restore.
+    let notes = {
+      defect2: {},
+      defect3: {}
+    };
+
+    // IMPORTANT: Keep this key unchanged in future versions.
+    // That lets a replacement script at the same browser origin/file URL
+    // find the previous shift automatically.
+    const STORAGE_KEY = "defect-counter-state-v1";
+    let saveTimer = null;
+    let isRestoringState = false;
+
+    function setSaveStatus(text) {
+      if (saveStatus) saveStatus.textContent = text;
+    }
+
+    function saveStateToBrowser() {
+      if (isRestoringState) return;
+
+      try {
+        const state = createExportState();
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+        setSaveStatus("Saved automatically");
+      } catch (err) {
+        console.warn("Auto-save failed:", err);
+        setSaveStatus("Auto-save unavailable — use Export JSON");
+      }
+    }
+
+    function scheduleAutoSave() {
+      if (isRestoringState) return;
+
+      clearTimeout(saveTimer);
+      setSaveStatus("Saving…");
+      saveTimer = setTimeout(saveStateToBrowser, 100);
+    }
+
+    function loadStateFromBrowser() {
+      let raw;
+
+      try {
+        raw = localStorage.getItem(STORAGE_KEY);
+      } catch (err) {
+        console.warn("Browser storage unavailable:", err);
+        setSaveStatus("Auto-save unavailable — use Export JSON");
+        return false;
+      }
+
+      if (!raw) {
+        setSaveStatus("No saved shift found");
+        return false;
+      }
+
+      try {
+        isRestoringState = true;
+        restoreFromJsonState(JSON.parse(raw));
+        setSaveStatus("Restored saved shift");
+        return true;
+      } catch (err) {
+        console.warn("Saved shift could not be restored:", err);
+        setSaveStatus("Saved shift could not be restored");
+        return false;
+      } finally {
+        isRestoringState = false;
+      }
+    }
+
+    function clean(value) {
+      return String(value ?? "").trim();
+    }
+
+    function isNullValue(value) {
+      const v = clean(value).toLowerCase();
+      return v === "" || v === "null";
+    }
+
+    function showError(message) {
+      errorBox.textContent = message;
+      errorBox.style.display = "block";
+    }
+
+    function clearError() {
+      errorBox.textContent = "";
+      errorBox.style.display = "none";
+    }
+
+    function parseExcelData(text) {
+      const lines = text
+        .replace(/\r\n/g, "\n")
+        .replace(/\r/g, "\n")
+        .split("\n")
+        .filter(line => line.trim() !== "");
+
+      if (lines.length < 2) {
+        throw new Error("Paste a header row plus at least one data row.");
+      }
+
+      const header = lines[0].split("\t").map(clean);
+      const normalizedHeader = header.map(x => x.toLowerCase());
+
+      const d1Index = normalizedHeader.indexOf("defect1");
+      const d2Index = normalizedHeader.indexOf("defect2");
+      const d3Index = normalizedHeader.indexOf("defect3");
+
+      if (d1Index === -1 || d2Index === -1 || d3Index === -1) {
+        throw new Error("Could not find Defect1, Defect2, and Defect3 in the header row.");
+      }
+
+      const result = {};
+      let validRows = 0;
+
+      for (let i = 1; i < lines.length; i++) {
+        const cols = lines[i].split("\t");
+
+        const d1 = clean(cols[d1Index]);
+        const d2 = clean(cols[d2Index]);
+        const d3 = clean(cols[d3Index]);
+
+        // A row needs Defect1 and Defect2 to be useful.
+        if (!d1 || !d2 || d1.toLowerCase() === "null" || d2.toLowerCase() === "null") {
+          continue;
+        }
+
+        if (!result[d1]) result[d1] = {};
+        if (!result[d1][d2]) result[d1][d2] = new Set();
+
+        if (!isNullValue(d3)) {
+          result[d1][d2].add(d3);
+        }
+
+        validRows++;
+      }
+
+      if (!validRows || Object.keys(result).length === 0) {
+        throw new Error("No usable rows were found.");
+      }
+
+      return result;
+    }
+
+    function makeD2Key(d1, d2) {
+      return JSON.stringify([d1, d2]);
+    }
+
+    function makeD3Key(d1, d2, d3) {
+      return JSON.stringify([d1, d2, d3]);
+    }
+
+    function getCount(type, key) {
+      return counts[type][key] ?? 0;
+    }
+
+    function setCount(type, key, value) {
+      counts[type][key] = Math.max(0, value);
+      scheduleAutoSave();
+    }
+
+    function getNote(type, key) {
+      return notes[type]?.[key] || "";
+    }
+
+    function setNote(type, key, value) {
+      const text = clean(value);
+      if (!notes[type]) notes[type] = {};
+
+      if (text) {
+        notes[type][key] = text;
+      } else {
+        delete notes[type][key];
+      }
+
+      scheduleAutoSave();
+    }
+
+    function removeNote(type, key) {
+      if (notes[type]) {
+        delete notes[type][key];
+      }
+      scheduleAutoSave();
+    }
+
+    function buildCounter(type, key) {
+      const wrapper = document.createElement("div");
+      wrapper.className = "counter";
+
+      const minus = document.createElement("button");
+      minus.type = "button";
+      minus.textContent = "−";
+      minus.setAttribute("aria-label", "Decrease count");
+
+      const display = document.createElement("div");
+      display.className = "count";
+      display.textContent = getCount(type, key);
+
+      const plus = document.createElement("button");
+      plus.type = "button";
+      plus.textContent = "+";
+      plus.setAttribute("aria-label", "Increase count");
+
+      minus.addEventListener("click", () => {
+        setCount(type, key, getCount(type, key) - 1);
+        display.textContent = getCount(type, key);
+        updateSelectedTotal();
+      });
+
+      plus.addEventListener("click", () => {
+        setCount(type, key, getCount(type, key) + 1);
+        display.textContent = getCount(type, key);
+        updateSelectedTotal();
+      });
+
+      wrapper.append(minus, display, plus);
+      return wrapper;
+    }
+
+    function mergeHierarchy(incoming) {
+      let addedDefect1 = 0;
+      let addedDefect2 = 0;
+      let addedDefect3 = 0;
+
+      for (const [d1, d2Map] of Object.entries(incoming)) {
+        if (!hierarchy[d1]) {
+          hierarchy[d1] = {};
+          addedDefect1++;
+        }
+
+        for (const [d2, d3Set] of Object.entries(d2Map)) {
+          if (!hierarchy[d1][d2]) {
+            hierarchy[d1][d2] = new Set();
+            addedDefect2++;
+          }
+
+          for (const d3 of d3Set) {
+            if (!hierarchy[d1][d2].has(d3)) {
+              hierarchy[d1][d2].add(d3);
+              addedDefect3++;
+            }
+          }
+        }
+      }
+
+      return { addedDefect1, addedDefect2, addedDefect3 };
+    }
+
+    function rebuildDefect1Dropdown(preferredSelection = "") {
+      const defect1Names = Object.keys(hierarchy).sort((a, b) => a.localeCompare(b));
+
+      defect1Select.innerHTML = "";
+
+      for (const d1 of defect1Names) {
+        const option = document.createElement("option");
+        option.value = d1;
+        option.textContent = d1;
+        defect1Select.appendChild(option);
+      }
+
+      defect1Select.disabled = defect1Names.length === 0;
+      if (defect1Names.length) {
+        defect1Select.value = hierarchy[preferredSelection]
+          ? preferredSelection
+          : defect1Names[0];
+      }
+    }
+
+    function renderSelectedDefect1() {
+      const d1 = defect1Select.value;
+      counterArea.innerHTML = "";
+
+      if (!d1 || !hierarchy[d1]) {
+        counterArea.innerHTML = '<div class="empty">Select a Defect1.</div>';
+        summary.hidden = true;
+        return;
+      }
+
+      const d2Names = Object.keys(hierarchy[d1]).sort((a, b) => a.localeCompare(b));
+      let defect3Count = 0;
+
+      for (const d2 of d2Names) {
+        const card = document.createElement("article");
+        card.className = "defect2-card";
+
+        const header = document.createElement("div");
+        header.className = "defect2-header";
+
+        const title = document.createElement("div");
+        title.className = "defect2-title";
+        title.textContent = d2;
+
+        header.append(title, buildCounter("defect2", makeD2Key(d1, d2)));
+        card.appendChild(header);
+
+        const d3List = document.createElement("div");
+        d3List.className = "defect3-list";
+
+        const d3Names = [...hierarchy[d1][d2]].sort((a, b) => a.localeCompare(b));
+        defect3Count += d3Names.length;
+
+        if (d3Names.length === 0) {
+          const d2Key = makeD2Key(d1, d2);
+          const noteRow = document.createElement("div");
+          noteRow.className = "defect3-row";
+
+          const name = document.createElement("div");
+          name.className = "defect3-name";
+          name.textContent = "Defect2 note";
+
+          const actions = document.createElement("div");
+          actions.className = "defect3-actions";
+
+          const noteBtn = document.createElement("button");
+          noteBtn.type = "button";
+          noteBtn.className = "note-btn";
+
+          const noteArea = document.createElement("div");
+          noteArea.className = "note-area";
+
+          function showSavedD2Note() {
+            noteArea.innerHTML = "";
+            const note = getNote("defect2", d2Key);
+            noteBtn.textContent = note ? "Edit Note" : "Add Note";
+
+            if (!note) {
+              noteArea.hidden = true;
+              return;
+            }
+
+            noteArea.hidden = false;
+            const preview = document.createElement("div");
+            preview.className = "note-preview";
+            preview.textContent = `Note: ${note}`;
+            noteArea.appendChild(preview);
+          }
+
+          function openD2NoteEditor() {
+            noteArea.innerHTML = "";
+            noteArea.hidden = false;
+
+            const editor = document.createElement("div");
+            editor.className = "note-editor";
+
+            const input = document.createElement("input");
+            input.type = "text";
+            input.className = "note-input";
+            input.value = getNote("defect2", d2Key);
+            input.placeholder = "Add a note for this Defect2";
+            input.maxLength = 500;
+
+            const editorActions = document.createElement("div");
+            editorActions.className = "note-editor-actions";
+
+            const saveBtn = document.createElement("button");
+            saveBtn.type = "button";
+            saveBtn.className = "note-action save";
+            saveBtn.textContent = "Save";
+
+            const cancelNoteBtn = document.createElement("button");
+            cancelNoteBtn.type = "button";
+            cancelNoteBtn.className = "note-action";
+            cancelNoteBtn.textContent = "Cancel";
+
+            saveBtn.addEventListener("click", () => {
+              setNote("defect2", d2Key, input.value);
+              showSavedD2Note();
+            });
+
+            cancelNoteBtn.addEventListener("click", showSavedD2Note);
+
+            input.addEventListener("keydown", event => {
+              if (event.key === "Enter") {
+                event.preventDefault();
+                saveBtn.click();
+              } else if (event.key === "Escape") {
+                event.preventDefault();
+                cancelNoteBtn.click();
+              }
+            });
+
+            editorActions.append(saveBtn, cancelNoteBtn);
+
+            if (getNote("defect2", d2Key)) {
+              const removeBtn = document.createElement("button");
+              removeBtn.type = "button";
+              removeBtn.className = "note-action remove";
+              removeBtn.textContent = "Remove";
+              removeBtn.addEventListener("click", () => {
+                removeNote("defect2", d2Key);
+                showSavedD2Note();
+              });
+              editorActions.appendChild(removeBtn);
+            }
+
+            editor.append(input, editorActions);
+            noteArea.appendChild(editor);
+            setTimeout(() => input.focus(), 0);
+          }
+
+          noteBtn.addEventListener("click", openD2NoteEditor);
+          actions.appendChild(noteBtn);
+          noteRow.append(name, actions, noteArea);
+          showSavedD2Note();
+          d3List.appendChild(noteRow);
+        } else {
+          for (const d3 of d3Names) {
+            const row = document.createElement("div");
+            row.className = "defect3-row";
+
+            const name = document.createElement("div");
+            name.className = "defect3-name";
+            name.textContent = d3;
+
+            const key = makeD3Key(d1, d2, d3);
+            const actions = document.createElement("div");
+            actions.className = "defect3-actions";
+
+            const noteBtn = document.createElement("button");
+            noteBtn.type = "button";
+            noteBtn.className = "note-btn";
+
+            const noteArea = document.createElement("div");
+            noteArea.className = "note-area";
+
+            function showSavedNote() {
+              noteArea.innerHTML = "";
+              const note = getNote("defect3", key);
+              noteBtn.textContent = note ? "Edit Note" : "Add Note";
+
+              if (!note) {
+                noteArea.hidden = true;
+                return;
+              }
+
+              noteArea.hidden = false;
+              const preview = document.createElement("div");
+              preview.className = "note-preview";
+              preview.textContent = `Note: ${note}`;
+              noteArea.appendChild(preview);
+            }
+
+            function openNoteEditor() {
+              noteArea.innerHTML = "";
+              noteArea.hidden = false;
+
+              const editor = document.createElement("div");
+              editor.className = "note-editor";
+
+              const input = document.createElement("input");
+              input.type = "text";
+              input.className = "note-input";
+              input.value = getNote("defect3", key);
+              input.placeholder = "Add a note for this Defect3";
+              input.maxLength = 500;
+
+              const editorActions = document.createElement("div");
+              editorActions.className = "note-editor-actions";
+
+              const saveBtn = document.createElement("button");
+              saveBtn.type = "button";
+              saveBtn.className = "note-action save";
+              saveBtn.textContent = "Save";
+
+              const cancelNoteBtn = document.createElement("button");
+              cancelNoteBtn.type = "button";
+              cancelNoteBtn.className = "note-action";
+              cancelNoteBtn.textContent = "Cancel";
+
+              saveBtn.addEventListener("click", () => {
+                setNote("defect3", key, input.value);
+                showSavedNote();
+              });
+
+              cancelNoteBtn.addEventListener("click", showSavedNote);
+
+              input.addEventListener("keydown", event => {
+                if (event.key === "Enter") {
+                  event.preventDefault();
+                  saveBtn.click();
+                } else if (event.key === "Escape") {
+                  event.preventDefault();
+                  cancelNoteBtn.click();
+                }
+              });
+
+              editorActions.append(saveBtn, cancelNoteBtn);
+
+              if (getNote("defect3", key)) {
+                const removeBtn = document.createElement("button");
+                removeBtn.type = "button";
+                removeBtn.className = "note-action remove";
+                removeBtn.textContent = "Remove";
+                removeBtn.addEventListener("click", () => {
+                  removeNote("defect3", key);
+                  showSavedNote();
+                });
+                editorActions.appendChild(removeBtn);
+              }
+
+              editor.append(input, editorActions);
+              noteArea.appendChild(editor);
+              setTimeout(() => input.focus(), 0);
+            }
+
+            noteBtn.addEventListener("click", openNoteEditor);
+            actions.append(noteBtn, buildCounter("defect3", key));
+            row.append(name, actions, noteArea);
+            showSavedNote();
+            d3List.appendChild(row);
+          }
+        }
+
+        card.appendChild(d3List);
+        counterArea.appendChild(card);
+      }
+
+      structureSummary.textContent =
+        `${d2Names.length} Defect2 item${d2Names.length === 1 ? "" : "s"} • ` +
+        `${defect3Count} Defect3 item${defect3Count === 1 ? "" : "s"}`;
+
+      summary.hidden = false;
+      updateSelectedTotal();
+    }
+
+    function getDefect1Summary(d1) {
+      const items = new Map();
+      let total = 0;
+
+      function addSummaryItem(name, count, note = "") {
+        if (!items.has(name)) {
+          items.set(name, { count: 0, notes: [] });
+        }
+
+        const item = items.get(name);
+        item.count += count;
+
+        const cleanNote = clean(note);
+        if (cleanNote && !item.notes.includes(cleanNote)) {
+          item.notes.push(cleanNote);
+        }
+      }
+
+      for (const d2 of Object.keys(hierarchy[d1] || {})) {
+        const d3Values = [...hierarchy[d1][d2]];
+        const d2Count = getCount("defect2", makeD2Key(d1, d2));
+
+        // If Defect2 itself was counted, keep it in the summary. This is
+        // especially useful when Defect3 was null and there are no child items.
+        if (d2Count > 0) {
+          addSummaryItem(
+            d2,
+            d2Count,
+            d3Values.length === 0 ? getNote("defect2", makeD2Key(d1, d2)) : ""
+          );
+          total += d2Count;
+        }
+
+        for (const d3 of d3Values) {
+          const key = makeD3Key(d1, d2, d3);
+          const d3Count = getCount("defect3", key);
+          if (d3Count > 0) {
+            // Aggregate matching Defect3 names even if they appeared under
+            // different Defect2 values for the same Defect1. Any unique notes
+            // from those counted paths are printed beneath the combined item.
+            addSummaryItem(d3, d3Count, getNote("defect3", key));
+            total += d3Count;
+          }
+        }
+      }
+
+      return { total, items };
+    }
+
+    function updateSelectedTotal() {
+      const d1 = defect1Select.value;
+      if (!d1 || !hierarchy[d1]) {
+        selectedTotal.textContent = "0";
+        return;
+      }
+
+      selectedTotal.textContent = getDefect1Summary(d1).total;
+    }
+
+    function buildDefectSummaryText() {
+      const sections = [];
+      let grandTotal = 0;
+
+      for (const d1 of Object.keys(hierarchy)) {
+        const { total, items } = getDefect1Summary(d1);
+        if (total <= 0) continue;
+
+        grandTotal += total;
+        const lines = [`${d1} — Total: ${total}`];
+
+        for (const [name, item] of items) {
+          if (item.count <= 0) continue;
+
+          lines.push(`  • ${name}: ${item.count}`);
+          for (const note of item.notes) {
+            lines.push(`    Note: ${note}`);
+          }
+        }
+
+        sections.push({ name: d1, total, text: lines.join("\n") });
+      }
+
+      // Highest-count Defect1 items first; ties stay alphabetical.
+      sections.sort((a, b) => b.total - a.total || a.name.localeCompare(b.name));
+
+      if (!sections.length) {
+        return "DEFECT SUMMARY\n\nGrand Total: 0";
+      }
+
+      return `DEFECT SUMMARY\n\n${sections.map(s => s.text).join("\n\n")}\n\nGrand Total: ${grandTotal}`;
+    }
+
+    async function copyTextToClipboard(text) {
+      if (navigator.clipboard && window.isSecureContext) {
+        await navigator.clipboard.writeText(text);
+        return;
+      }
+
+      // Fallback for local file:// use or browsers without Clipboard API access.
+      const temp = document.createElement("textarea");
+      temp.value = text;
+      temp.setAttribute("readonly", "");
+      temp.style.position = "fixed";
+      temp.style.opacity = "0";
+      document.body.appendChild(temp);
+      temp.select();
+      const ok = document.execCommand("copy");
+      document.body.removeChild(temp);
+      if (!ok) throw new Error("Clipboard copy failed");
+    }
+
+    function hierarchyToPlainObject() {
+      const plain = {};
+
+      for (const [d1, d2Map] of Object.entries(hierarchy)) {
+        plain[d1] = {};
+
+        for (const [d2, d3Set] of Object.entries(d2Map)) {
+          plain[d1][d2] = [...d3Set];
+        }
+      }
+
+      return plain;
+    }
+
+    function createExportState() {
+      return {
+        app: "Defect Counter",
+        version: 2,
+        exportedAt: new Date().toISOString(),
+        selectedDefect1: defect1Select.value || "",
+        hierarchy: hierarchyToPlainObject(),
+        counts: {
+          defect2: { ...counts.defect2 },
+          defect3: { ...counts.defect3 }
+        },
+        notes: {
+          defect2: { ...notes.defect2 },
+          defect3: { ...notes.defect3 }
+        }
+      };
+    }
+
+    function normalizeImportedHierarchy(rawHierarchy) {
+      if (!rawHierarchy || typeof rawHierarchy !== "object" || Array.isArray(rawHierarchy)) {
+        throw new Error("JSON does not contain a valid defect hierarchy.");
+      }
+
+      const result = {};
+
+      for (const [rawD1, rawD2Map] of Object.entries(rawHierarchy)) {
+        const d1 = clean(rawD1);
+        if (!d1 || !rawD2Map || typeof rawD2Map !== "object" || Array.isArray(rawD2Map)) {
+          continue;
+        }
+
+        for (const [rawD2, rawD3Values] of Object.entries(rawD2Map)) {
+          const d2 = clean(rawD2);
+          if (!d2) continue;
+
+          if (!result[d1]) result[d1] = {};
+          if (!result[d1][d2]) result[d1][d2] = new Set();
+
+          if (Array.isArray(rawD3Values)) {
+            for (const rawD3 of rawD3Values) {
+              const d3 = clean(rawD3);
+              if (!isNullValue(d3)) {
+                result[d1][d2].add(d3);
+              }
+            }
+          }
+        }
+      }
+
+      if (Object.keys(result).length === 0) {
+        throw new Error("The JSON file does not contain any usable defects.");
+      }
+
+      return result;
+    }
+
+    function d2KeyExistsInHierarchy(key, targetHierarchy) {
+      try {
+        const parts = JSON.parse(key);
+        return Array.isArray(parts) &&
+          parts.length === 2 &&
+          !!targetHierarchy[parts[0]] &&
+          !!targetHierarchy[parts[0]][parts[1]];
+      } catch {
+        return false;
+      }
+    }
+
+    function d3KeyExistsInHierarchy(key, targetHierarchy) {
+      try {
+        const parts = JSON.parse(key);
+        return Array.isArray(parts) &&
+          parts.length === 3 &&
+          !!targetHierarchy[parts[0]] &&
+          !!targetHierarchy[parts[0]][parts[1]] &&
+          targetHierarchy[parts[0]][parts[1]].has(parts[2]);
+      } catch {
+        return false;
+      }
+    }
+
+    function normalizeCountMap(rawMap, keyValidator, targetHierarchy) {
+      const result = {};
+      if (!rawMap || typeof rawMap !== "object" || Array.isArray(rawMap)) {
+        return result;
+      }
+
+      for (const [key, rawValue] of Object.entries(rawMap)) {
+        if (!keyValidator(key, targetHierarchy)) continue;
+
+        const numeric = Number(rawValue);
+        if (!Number.isFinite(numeric) || numeric < 0) continue;
+
+        result[key] = Math.floor(numeric);
+      }
+
+      return result;
+    }
+
+    function normalizeDefect2NoteMap(rawMap, targetHierarchy) {
+      const result = {};
+      if (!rawMap || typeof rawMap !== "object" || Array.isArray(rawMap)) {
+        return result;
+      }
+
+      for (const [key, rawValue] of Object.entries(rawMap)) {
+        if (!d2KeyExistsInHierarchy(key, targetHierarchy)) continue;
+
+        const text = clean(rawValue);
+        if (text) {
+          result[key] = text.slice(0, 500);
+        }
+      }
+
+      return result;
+    }
+
+    function normalizeNoteMap(rawMap, targetHierarchy) {
+      const result = {};
+      if (!rawMap || typeof rawMap !== "object" || Array.isArray(rawMap)) {
+        return result;
+      }
+
+      for (const [key, rawValue] of Object.entries(rawMap)) {
+        if (!d3KeyExistsInHierarchy(key, targetHierarchy)) continue;
+
+        const text = clean(rawValue);
+        if (text) {
+          result[key] = text.slice(0, 500);
+        }
+      }
+
+      return result;
+    }
+
+    function restoreFromJsonState(rawState) {
+      if (!rawState || typeof rawState !== "object" || Array.isArray(rawState)) {
+        throw new Error("That file is not a valid Defect Counter JSON backup.");
+      }
+
+      if (rawState.app && rawState.app !== "Defect Counter") {
+        throw new Error("That JSON file was not created by this Defect Counter.");
+      }
+
+      const importedHierarchy = normalizeImportedHierarchy(rawState.hierarchy);
+
+      hierarchy = importedHierarchy;
+      counts = {
+        defect2: normalizeCountMap(
+          rawState.counts?.defect2,
+          d2KeyExistsInHierarchy,
+          importedHierarchy
+        ),
+        defect3: normalizeCountMap(
+          rawState.counts?.defect3,
+          d3KeyExistsInHierarchy,
+          importedHierarchy
+        )
+      };
+      notes = {
+        defect2: normalizeDefect2NoteMap(rawState.notes?.defect2, importedHierarchy),
+        defect3: normalizeNoteMap(rawState.notes?.defect3, importedHierarchy)
+      };
+
+      const preferredSelection = clean(rawState.selectedDefect1);
+      rebuildDefect1Dropdown(preferredSelection);
+      renderSelectedDefect1();
+    }
+
+    function makeExportFileName() {
+      const now = new Date();
+      const pad = value => String(value).padStart(2, "0");
+
+      const date =
+        `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`;
+      const time =
+        `${pad(now.getHours())}${pad(now.getMinutes())}${pad(now.getSeconds())}`;
+
+      return `defect-counter-${date}_${time}.json`;
+    }
+
+    function exportJsonState() {
+      if (Object.keys(hierarchy).length === 0) {
+        throw new Error("There is no defect data to export yet.");
+      }
+
+      const json = JSON.stringify(createExportState(), null, 2);
+      const blob = new Blob([json], { type: "application/json" });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+
+      link.href = url;
+      link.download = makeExportFileName();
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
+    }
+
+    async function importJsonFile(file) {
+      if (!file) return;
+
+      const text = await file.text();
+      let parsed;
+
+      try {
+        parsed = JSON.parse(text);
+      } catch {
+        throw new Error("The selected file is not valid JSON.");
+      }
+
+      restoreFromJsonState(parsed);
+    }
+
+    function importData() {
+      clearError();
+
+      try {
+        const incoming = parseExcelData(dataInput.value);
+        const currentSelection = defect1Select.value;
+
+        // Merge new values into the existing hierarchy. Sets prevent duplicate
+        // Defect3 items, while existing count keys remain untouched.
+        mergeHierarchy(incoming);
+
+        rebuildDefect1Dropdown(currentSelection);
+        renderSelectedDefect1();
+        scheduleAutoSave();
+        dataInput.value = "";
+        dialog.close();
+      } catch (err) {
+        showError(err.message || "Could not parse the pasted data.");
+      }
+    }
+
+    pasteDataBtn.addEventListener("click", () => {
+      clearError();
+      dialog.showModal();
+      setTimeout(() => dataInput.focus(), 0);
+    });
+
+    cancelBtn.addEventListener("click", () => dialog.close());
+
+    dataForm.addEventListener("submit", event => {
+      event.preventDefault();
+      importData();
+    });
+
+    defect1Select.addEventListener("change", () => {
+      renderSelectedDefect1();
+      scheduleAutoSave();
+    });
+
+    resetCountsBtn.addEventListener("click", () => {
+      counts = { defect2: {}, defect3: {} };
+      renderSelectedDefect1();
+      scheduleAutoSave();
+    });
+
+    copySummaryBtn.addEventListener("click", async () => {
+      const originalText = copySummaryBtn.textContent;
+      try {
+        await copyTextToClipboard(buildDefectSummaryText());
+        copySummaryBtn.textContent = "Copied!";
+      } catch (err) {
+        copySummaryBtn.textContent = "Copy Failed";
+      }
+
+      setTimeout(() => {
+        copySummaryBtn.textContent = originalText;
+      }, 1400);
+    });
+
+    exportJsonBtn.addEventListener("click", () => {
+      const originalText = exportJsonBtn.textContent;
+
+      try {
+        exportJsonState();
+        exportJsonBtn.textContent = "Exported!";
+      } catch (err) {
+        alert(err.message || "Could not export the JSON backup.");
+        exportJsonBtn.textContent = "Export Failed";
+      }
+
+      setTimeout(() => {
+        exportJsonBtn.textContent = originalText;
+      }, 1400);
+    });
+
+    function openJsonFilePicker() {
+      jsonFileInput.value = "";
+      jsonFileInput.click();
+    }
+
+    importJsonBtn.addEventListener("click", openJsonFilePicker);
+    importJsonFromDialogBtn.addEventListener("click", openJsonFilePicker);
+
+    jsonFileInput.addEventListener("change", async () => {
+      const file = jsonFileInput.files?.[0];
+      if (!file) return;
+
+      const originalText = importJsonBtn.textContent;
+
+      try {
+        await importJsonFile(file);
+        saveStateToBrowser();
+        importJsonBtn.textContent = "Imported!";
+        dialog.close();
+      } catch (err) {
+        alert(err.message || "Could not import the JSON backup.");
+        importJsonBtn.textContent = "Import Failed";
+      }
+
+      setTimeout(() => {
+        importJsonBtn.textContent = originalText;
+      }, 1600);
+    });
+
+    // Restore the last saved shift automatically.
+    // If nothing has ever been saved, open the Excel paste popup.
+    window.addEventListener("DOMContentLoaded", () => {
+      const restored = loadStateFromBrowser();
+
+      if (!restored) {
+        dialog.showModal();
+        setTimeout(() => dataInput.focus(), 0);
+      }
+    });
+
+    // Last-chance save if the tab/window closes right after a change.
+    window.addEventListener("pagehide", saveStateToBrowser);
+  </script>
+</body>
+</html>
