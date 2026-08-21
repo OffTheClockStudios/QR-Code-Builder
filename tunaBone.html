@@ -1,0 +1,900 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Interactive Fishbone Diagram</title>
+  <style>
+    :root {
+      color-scheme: light dark;
+      --bg: #f4f6f8;
+      --panel: #ffffff;
+      --text: #1f2937;
+      --muted: #6b7280;
+      --line: #475569;
+      --unknown: #e5e7eb;
+      --good: #86efac;
+      --bad: #fca5a5;
+      --suspect: #fde68a;
+      --accent: #2563eb;
+      --danger: #dc2626;
+      --app-font: Arial, Helvetica, sans-serif;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      background: var(--bg);
+      color: var(--text);
+      font-family: var(--app-font);
+    }
+
+    header {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      align-items: center;
+      padding: 14px 18px;
+      background: var(--panel);
+      border-bottom: 1px solid #d1d5db;
+      position: sticky;
+      top: 0;
+      z-index: 10;
+    }
+
+    h1 {
+      margin: 0 auto 0 0;
+      font-size: 1.15rem;
+    }
+
+    button, input, select {
+      font: inherit;
+      font-family: var(--app-font);
+    }
+
+    button {
+      border: 1px solid #cbd5e1;
+      border-radius: 8px;
+      background: #fff;
+      color: #111827;
+      padding: 8px 11px;
+      cursor: pointer;
+      font-size: .10rem;
+    }
+
+    button:hover { background: #f1f5f9; }
+    button.primary { background: var(--accent); color: white; border-color: var(--accent); }
+    button.danger { color: var(--danger); }
+
+    .toolbar-group {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      align-items: center;
+    }
+
+    .range-control {
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      padding: 5px 9px;
+      border: 1px solid #cbd5e1;
+      border-radius: 8px;
+      font-size: .10rem;
+      white-space: nowrap;
+    }
+
+    .range-control input[type="range"] { width: 120px; }
+    .range-control select {
+      min-width: 145px;
+      border: 1px solid #cbd5e1;
+      border-radius: 6px;
+      padding: 4px 6px;
+      background: var(--panel);
+      color: var(--text);
+    }
+    .range-control output { min-width: 44px; color: var(--muted); }
+
+    main {
+      padding: 16px;
+    }
+
+    .help {
+      margin: 0 0 12px;
+      color: var(--muted);
+      font-size: .10rem;
+    }
+
+    .legend {
+      display: inline-flex;
+      gap: 12px;
+      flex-wrap: wrap;
+      margin-left: 8px;
+    }
+
+    .legend span { display: inline-flex; align-items: center; gap: 5px; }
+    .swatch { width: 14px; height: 14px; border-radius: 50%; border: 1px solid #64748b; }
+
+    #canvasWrap {
+      width: 100%;
+      min-height: 650px;
+      overflow: auto;
+      background: var(--panel);
+      border: 1px solid #cbd5e1;
+      border-radius: 12px;
+      box-shadow: 0 8px 25px rgba(15, 23, 42, .07);
+    }
+
+    svg {
+      display: block;
+      min-width: 100%;
+      user-select: none;
+      font-family: var(--app-font);
+    }
+
+    svg text, #printTitle { font-family: var(--app-font); }
+
+    .bone-line { stroke: var(--line); stroke-width: 3; }
+    .sub-line { stroke: #64748b; stroke-width: 2; }
+    .branch-add-target { stroke: transparent; stroke-width: 22; cursor: copy; }
+    .item-anchor-marker { fill: var(--accent); stroke: var(--panel); stroke-width: 2; pointer-events: none; }
+
+    .node circle, .node rect {
+      stroke: #475569;
+      stroke-width: 1.5;
+      transition: filter .12s ease, transform .12s ease;
+    }
+
+    .node:hover circle, .node:hover rect { filter: brightness(.97); }
+    .node text { pointer-events: none; fill: #111827; font-size: 13px; font-weight: 600; }
+    .branch-label text { font-size: 14px; }
+
+    .status-unknown { fill: var(--unknown); }
+    .status-good { fill: var(--good); }
+    .status-bad { fill: var(--bad); }
+    .status-suspect { fill: var(--suspect); }
+
+    .clickable { cursor: pointer; }
+    .draggable { cursor: grab; touch-action: none; }
+    .draggable:active { cursor: grabbing; }
+    .dragging circle, .dragging rect { filter: drop-shadow(0 4px 6px rgba(15, 23, 42, .25)); }
+    .delete-handle { cursor: pointer; fill: #fff; stroke: #ef4444; stroke-width: 1.5; }
+    .delete-handle:hover { fill: #fee2e2; }
+    .delete-symbol { pointer-events: none; fill: #dc2626; font-size: 13px; font-weight: 800; }
+
+    #printTitle {
+      display: none;
+      margin: 0 0 18px;
+      text-align: center;
+      color: #111827;
+      font-size: 24pt;
+      line-height: 1.2;
+    }
+
+    @media print {
+      @page {
+        size: landscape;
+        margin: 0.45in;
+      }
+
+      :root {
+        color-scheme: light;
+        --bg: #ffffff;
+        --panel: #ffffff;
+        --text: #111827;
+        --line: #334155;
+        --unknown: #e5e7eb;
+        --good: #86efac;
+        --bad: #fca5a5;
+        --suspect: #fde68a;
+      }
+
+      body {
+        min-height: auto;
+        background: #ffffff;
+        color: #111827;
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+      }
+
+      header,
+      .help,
+      dialog {
+        display: none !important;
+      }
+
+      main {
+        padding: 0;
+      }
+
+      #printTitle {
+        display: block;
+      }
+
+      #canvasWrap {
+        min-height: 0;
+        overflow: visible;
+        border: 0;
+        border-radius: 0;
+        box-shadow: none;
+        background: #ffffff;
+      }
+
+      #diagram {
+        width: 100% !important;
+        height: auto !important;
+        min-width: 0;
+        max-height: 7in;
+      }
+
+      .print-hide,
+      .item-anchor-marker,
+      [data-action="delete-branch"],
+      [data-action="delete-item"] {
+        display: none !important;
+      }
+    }
+
+    dialog {
+      border: 0;
+      border-radius: 12px;
+      padding: 0;
+      width: min(430px, calc(100vw - 32px));
+      box-shadow: 0 20px 60px rgba(15, 23, 42, .3);
+    }
+
+    dialog::backdrop { background: rgba(15, 23, 42, .45); }
+
+    .dialog-body { padding: 20px; background: var(--panel); }
+    .dialog-body h2 { margin: 0 0 14px; font-size: 1.05rem; }
+    .dialog-body label { display: block; font-size: .9rem; margin-bottom: 6px; }
+    .dialog-body input {
+      width: 100%;
+      border: 1px solid #cbd5e1;
+      border-radius: 8px;
+      padding: 10px;
+      background: #fff;
+      color: #111827;
+    }
+
+    .dialog-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 16px; }
+
+    @media screen and (prefers-color-scheme: dark) {
+      :root {
+        --bg: #0f172a;
+        --panel: #111827;
+        --text: #e5e7eb;
+        --muted: #94a3b8;
+        --line: #cbd5e1;
+        --unknown: #475569;
+      }
+      header, #canvasWrap { border-color: #334155; }
+      button { background: #1e293b; color: #e5e7eb; border-color: #475569; }
+      button:hover { background: #334155; }
+      .node text { fill: #111827; }
+      .dialog-body input { background: #1e293b; color: #e5e7eb; border-color: #475569; }
+      .range-control select { background: #1e293b; color: #e5e7eb; border-color: #475569; }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>TunaBone Diagram</h1>
+    <div class="toolbar-group">
+      <label class="range-control" for="fontFamily">
+        Font
+        <select id="fontFamily" aria-label="Diagram font family">
+          <option value="Arial">Arial</option>
+          <option value="Calibri">Calibri</option>
+          <option value="Verdana">Verdana</option>
+          <option value="Trebuchet MS">Trebuchet MS</option>
+          <option value="Georgia">Georgia</option>
+          <option value="Times New Roman">Times New Roman</option>
+          <option value="Courier New">Courier New</option>
+        </select>
+      </label>
+      <label class="range-control" for="globalFontSize">
+        Font size
+        <input id="globalFontSize" type="range" min="70" max="160" step="5" />
+        <output id="globalFontSizeValue" for="globalFontSize"></output>
+      </label>
+      <label class="range-control" for="branchLength">
+        Branch length
+        <input id="branchLength" type="range" min="80" max="260" step="5" />
+        <output id="branchLengthValue" for="branchLength"></output>
+      </label>
+      <label class="range-control" for="mainBubbleSize">
+        Main bubble size
+        <input id="mainBubbleSize" type="range" min="60" max="180" step="5" />
+        <output id="mainBubbleSizeValue" for="mainBubbleSize"></output>
+      </label>
+      <label class="range-control" for="itemBubbleSize">
+        Item bubble size
+        <input id="itemBubbleSize" type="range" min="60" max="180" step="5" />
+        <output id="itemBubbleSizeValue" for="itemBubbleSize"></output>
+      </label>
+      <button id="printBtn">Print diagram</button>
+      <button id="editEffectBtn">Edit effect</button>
+      <button id="addBranchBtn" class="primary">+ Add branch</button>
+      <button id="resetBtn" class="danger">Reset</button>
+      <button id="exportBtn">Export JSON</button>
+      <button id="importBtn">Import JSON</button>
+      <input id="importFile" type="file" accept="application/json" hidden />
+    </div>
+  </header>
+
+  <main>
+    <h2 id="printTitle" aria-hidden="true"></h2>
+    <p class="help">
+      Use the font menu and font-size slider to apply one adjustable font across the entire page and diagram. The other sliders adjust branch length, main bubble size (branches and effect), and child-item bubble size; diagram text also scales with each bubble setting.
+      Click a branch or item bubble to edit it. Drag any bubble to reposition it; positions are saved automatically.
+      Click directly on a branch line to add a child item at that point. The new bubble appears to the left, and its connector remains anchored to the exact point you clicked. Right-click any bubble to cycle: Unknown → Good → Bad → Suspect. Use Print diagram to print only the title and diagram.
+      <span class="legend">
+        <span><i class="swatch" style="background:var(--unknown)"></i>Unknown</span>
+        <span><i class="swatch" style="background:var(--good)"></i>Good</span>
+        <span><i class="swatch" style="background:var(--bad)"></i>Bad</span>
+        <span><i class="swatch" style="background:var(--suspect)"></i>Suspect</span>
+      </span>
+    </p>
+
+    <div id="canvasWrap">
+      <svg id="diagram" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Interactive fishbone diagram"></svg>
+    </div>
+  </main>
+
+  <dialog id="textDialog">
+    <form method="dialog" class="dialog-body" id="textForm">
+      <h2 id="dialogTitle">Edit text</h2>
+      <label for="textInput">Text</label>
+      <input id="textInput" maxlength="100" autocomplete="off" required />
+      <div class="dialog-actions">
+        <button id="cancelTextBtn" type="button">Cancel</button>
+        <button id="saveTextBtn" type="submit" class="primary">Save</button>
+      </div>
+    </form>
+  </dialog>
+
+  <script>
+    (() => {
+      const STORAGE_KEY = 'interactive-fishbone-v1';
+      const STATES = ['unknown', 'good', 'bad', 'suspect'];
+      const FONT_OPTIONS = {
+        'Arial': 'Arial, Helvetica, sans-serif',
+        'Calibri': 'Calibri, Candara, "Segoe UI", sans-serif',
+        'Verdana': 'Verdana, Geneva, sans-serif',
+        'Trebuchet MS': '"Trebuchet MS", Arial, sans-serif',
+        'Georgia': 'Georgia, "Times New Roman", serif',
+        'Times New Roman': '"Times New Roman", Times, serif',
+        'Courier New': '"Courier New", Courier, monospace'
+      };
+
+      const defaultData = {
+        effect: 'PROBLEM',
+        fontFamily: 'Arial',
+        globalFontSize: 100,
+        branchLength: 140,
+        mainBubbleSize: 100,
+        itemBubbleSize: 100,
+        branches: [
+          { id: crypto.randomUUID(), text: 'MACHINE', status: 'unknown', items: [] },
+          { id: crypto.randomUUID(), text: 'MATERIAL', status: 'unknown', items: [] },
+          { id: crypto.randomUUID(), text: 'MEASUREMENT', status: 'unknown', items: [] },
+          { id: crypto.randomUUID(), text: 'MAN', status: 'unknown', items: [] },
+          { id: crypto.randomUUID(), text: 'METHOD', status: 'unknown', items: [] },
+          { id: crypto.randomUUID(), text: 'ENVIRONMENT', status: 'unknown', items: [] }
+        ]
+      };
+
+      let data = loadData();
+      let editor = null;
+      let dragState = null;
+      let suppressClick = false;
+
+      const svg = document.getElementById('diagram');
+      const dialog = document.getElementById('textDialog');
+      const dialogTitle = document.getElementById('dialogTitle');
+      const textInput = document.getElementById('textInput');
+      const textForm = document.getElementById('textForm');
+      const fontFamilyInput = document.getElementById('fontFamily');
+      const globalFontSizeInput = document.getElementById('globalFontSize');
+      const globalFontSizeValue = document.getElementById('globalFontSizeValue');
+      const branchLengthInput = document.getElementById('branchLength');
+      const branchLengthValue = document.getElementById('branchLengthValue');
+      const mainBubbleSizeInput = document.getElementById('mainBubbleSize');
+      const mainBubbleSizeValue = document.getElementById('mainBubbleSizeValue');
+      const itemBubbleSizeInput = document.getElementById('itemBubbleSize');
+      const itemBubbleSizeValue = document.getElementById('itemBubbleSizeValue');
+      const printTitle = document.getElementById('printTitle');
+
+      function loadData() {
+        try {
+          const saved = JSON.parse(localStorage.getItem(STORAGE_KEY));
+          if (saved && Array.isArray(saved.branches)) {
+            if (!FONT_OPTIONS[saved.fontFamily]) saved.fontFamily = 'Arial';
+            if (!Number.isFinite(saved.globalFontSize)) saved.globalFontSize = 100;
+            if (!Number.isFinite(saved.branchLength)) saved.branchLength = 140;
+            if (!Number.isFinite(saved.mainBubbleSize)) saved.mainBubbleSize = 100;
+            if (!Number.isFinite(saved.itemBubbleSize)) saved.itemBubbleSize = 100;
+            return saved;
+          }
+        } catch (_) {}
+        return structuredClone(defaultData);
+      }
+
+      function saveData() {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+      }
+
+      function esc(text) {
+        return String(text)
+          .replaceAll('&', '&amp;')
+          .replaceAll('<', '&lt;')
+          .replaceAll('>', '&gt;')
+          .replaceAll('"', '&quot;');
+      }
+
+      function truncate(text, max = 28) {
+        return text.length > max ? text.slice(0, max - 1) + '…' : text;
+      }
+
+      function nextStatus(current) {
+        return STATES[(STATES.indexOf(current) + 1) % STATES.length];
+      }
+
+      function statusClass(status) {
+        return `status-${STATES.includes(status) ? status : 'unknown'}`;
+      }
+
+      function findBranch(id) {
+        return data.branches.find(branch => branch.id === id);
+      }
+
+      function render() {
+        const branchCount = Math.max(data.branches.length, 1);
+        const maxItems = Math.max(0, ...data.branches.map(b => b.items.length));
+        const fontFamily = FONT_OPTIONS[data.fontFamily] ? data.fontFamily : 'Arial';
+        const globalFontSize = Math.max(70, Math.min(160, Number(data.globalFontSize) || 100));
+        const globalFontScale = globalFontSize / 100;
+        const branchLength = Math.max(80, Math.min(260, Number(data.branchLength) || 140));
+        const mainBubbleSize = Math.max(60, Math.min(180, Number(data.mainBubbleSize) || 100));
+        const itemBubbleSize = Math.max(60, Math.min(180, Number(data.itemBubbleSize) || 100));
+        const mainScale = mainBubbleSize / 100;
+        const itemScale = itemBubbleSize / 100;
+        const branchBubbleWidth = 152 * mainScale;
+        const branchBubbleHeight = 46 * mainScale;
+        const branchBubbleRadius = 18 * mainScale;
+        const branchFontSize = 14 * mainScale * globalFontScale;
+        const effectBubbleWidth = 172 * mainScale;
+        const effectBubbleHeight = 70 * mainScale;
+        const effectBubbleRadius = 18 * mainScale;
+        const effectFontSize = 13 * mainScale * globalFontScale;
+        const itemBubbleWidth = 134 * itemScale;
+        const itemBubbleHeight = 48 * itemScale;
+        const itemBubbleRadius = 20 * itemScale;
+        const itemFontSize = 13 * itemScale * globalFontScale;
+        data.fontFamily = fontFamily;
+        data.globalFontSize = globalFontSize;
+        data.branchLength = branchLength;
+        data.mainBubbleSize = mainBubbleSize;
+        data.itemBubbleSize = itemBubbleSize;
+        document.documentElement.style.setProperty('--app-font', FONT_OPTIONS[fontFamily]);
+        document.documentElement.style.fontSize = `${16 * globalFontScale}px`;
+        const pairs = Math.max(1, Math.ceil(branchCount / 2));
+        const laneWidth = Math.max(270, branchBubbleWidth + 100);
+        const outerItemGap = Math.max(72, itemBubbleHeight + 24);
+        const outerPadding = 90 + Math.max(branchBubbleHeight, itemBubbleHeight) / 2;
+        const width = Math.max(1100, 390 + pairs * laneWidth + Math.max(0, effectBubbleWidth - 172));
+        const outwardDepth = branchLength + branchBubbleHeight + 30 + maxItems * outerItemGap;
+        const height = Math.max(700, outwardDepth * 2 + outerPadding * 2);
+        const spineY = height / 2;
+        const spineStartX = 80;
+        const effectX = width - effectBubbleWidth / 2 - 38;
+        const spineEndX = effectX - effectBubbleWidth / 2 - 35;
+        const usableSpine = spineEndX - spineStartX - 100;
+
+        svg.setAttribute('viewBox', `0 0 ${width} ${height}`);
+        svg.setAttribute('height', height);
+
+        let out = '';
+        out += `<line class="bone-line" x1="${spineStartX}" y1="${spineY}" x2="${spineEndX}" y2="${spineY}" />`;
+        out += `<polygon points="${spineEndX},${spineY - 9} ${spineEndX + 22},${spineY} ${spineEndX},${spineY + 9}" fill="var(--line)" />`;
+
+        out += `<g class="node clickable print-hide" data-action="edit-effect" tabindex="0" role="button" aria-label="Edit effect: ${esc(data.effect)}">
+          <rect x="${effectX - effectBubbleWidth / 2}" y="${spineY - effectBubbleHeight / 2}" width="${effectBubbleWidth}" height="${effectBubbleHeight}" rx="${effectBubbleRadius}" class="status-unknown" />
+          <text x="${effectX}" y="${spineY + effectFontSize * 0.36}" text-anchor="middle" style="font-size:${effectFontSize}px">${esc(truncate(data.effect, 23))}</text>
+        </g>`;
+
+        data.branches.forEach((branch, index) => {
+          const top = index % 2 === 0;
+          const sideIndex = Math.floor(index / 2);
+          const direction = top ? -1 : 1;
+          const x = spineStartX + 100 + (sideIndex + 0.5) * (usableSpine / pairs);
+          const branchRun = Math.max(68, branchLength * 0.68);
+          const tipX = x - branchRun;
+          const tipY = spineY + direction * branchLength;
+          const branchOffset = branch.position || { x: 0, y: 0 };
+          const branchLabelX = tipX + (Number(branchOffset.x) || 0);
+          const branchLabelY = tipY + direction * (branchBubbleHeight / 2 + 11) + (Number(branchOffset.y) || 0);
+          const itemCenterX = branchLabelX;
+          const firstItemY = branchLabelY + direction * (branchBubbleHeight / 2 + itemBubbleHeight / 2 + 31);
+
+          out += `<line class="bone-line" x1="${x}" y1="${spineY}" x2="${branchLabelX}" y2="${branchLabelY}" />`;
+          out += `<line class="branch-add-target" data-action="add-item-at-point" data-branch-id="${branch.id}" x1="${x}" y1="${spineY}" x2="${branchLabelX}" y2="${branchLabelY}">
+            <title>Click here to add a child item anchored at this point</title>
+          </line>`;
+
+          out += `<g class="node branch-label clickable draggable" data-action="edit-branch" data-draggable="branch" data-branch-id="${branch.id}" tabindex="0" role="button">
+            <rect x="${branchLabelX - branchBubbleWidth / 2}" y="${branchLabelY - branchBubbleHeight / 2}" width="${branchBubbleWidth}" height="${branchBubbleHeight}" rx="${branchBubbleRadius}" class="${statusClass(branch.status)}" />
+            <text x="${branchLabelX}" y="${branchLabelY + branchFontSize * 0.36}" text-anchor="middle" style="font-size:${branchFontSize}px">${esc(truncate(branch.text, 19))}</text>
+            <title>${esc(branch.text)} — ${esc(branch.status)}</title>
+          </g>`;
+
+          out += `<g data-action="delete-branch" data-branch-id="${branch.id}" tabindex="0" role="button" aria-label="Delete branch ${esc(branch.text)}">
+            <circle class="delete-handle" cx="${branchLabelX - branchBubbleWidth / 2 - 18}" cy="${branchLabelY}" r="${Math.max(8, Math.min(13, 10 * mainScale))}" />
+            <text class="delete-symbol" x="${branchLabelX - branchBubbleWidth / 2 - 18}" y="${branchLabelY + 4 * mainScale}" text-anchor="middle" style="font-size:${Math.max(11, 13 * mainScale)}px">×</text>
+          </g>`;
+
+          branch.items.forEach((item, itemIndex) => {
+            const itemAnchorT = Math.max(0.04, Math.min(0.98,
+              Number.isFinite(Number(item.anchorT))
+                ? Number(item.anchorT)
+                : (Number(branch.childAnchor) || 0.72)
+            ));
+            const itemAnchorX = x + (branchLabelX - x) * itemAnchorT;
+            const itemAnchorY = spineY + (branchLabelY - spineY) * itemAnchorT;
+            const itemOffset = item.position || { x: 0, y: 0 };
+            let itemX;
+            let itemY;
+
+            if (item.anchorRelative) {
+              itemX = itemAnchorX + (Number(itemOffset.x) || 0);
+              itemY = itemAnchorY + (Number(itemOffset.y) || 0);
+            } else {
+              // Legacy saved items retain their previous lane-based placement.
+              const baseItemY = firstItemY + direction * (itemIndex * outerItemGap);
+              const stagger = itemIndex % 2 === 0 ? -18 : 18;
+              const baseItemX = itemCenterX + stagger;
+              itemX = baseItemX + (Number(itemOffset.x) || 0);
+              itemY = baseItemY + (Number(itemOffset.y) || 0);
+            }
+            const connectorStartY = itemY - direction * (itemBubbleHeight / 2 + 3 * itemScale);
+
+            out += `<line class="sub-line" x1="${itemAnchorX}" y1="${itemAnchorY}" x2="${itemX}" y2="${itemY}" />`;
+            out += `<circle class="item-anchor-marker" cx="${itemAnchorX}" cy="${itemAnchorY}" r="${Math.max(3, 4 * itemScale)}" />`;
+            out += `<g class="node clickable draggable" data-action="edit-item" data-draggable="item" data-branch-id="${branch.id}" data-item-id="${item.id}" tabindex="0" role="button">
+              <rect x="${itemX - itemBubbleWidth / 2}" y="${itemY - itemBubbleHeight / 2}" width="${itemBubbleWidth}" height="${itemBubbleHeight}" rx="${itemBubbleRadius}" class="${statusClass(item.status)}" />
+              <text x="${itemX}" y="${itemY + itemFontSize * 0.36}" text-anchor="middle" style="font-size:${itemFontSize}px">${esc(truncate(item.text, 16))}</text>
+              <title>${esc(item.text)} — ${esc(item.status)}</title>
+            </g>`;
+            out += `<g data-action="delete-item" data-branch-id="${branch.id}" data-item-id="${item.id}" tabindex="0" role="button" aria-label="Delete item ${esc(item.text)}">
+              <circle class="delete-handle" cx="${itemX + itemBubbleWidth / 2}" cy="${connectorStartY}" r="${Math.max(7, Math.min(12, 9 * itemScale))}" />
+              <text class="delete-symbol" x="${itemX + itemBubbleWidth / 2}" y="${connectorStartY + 4 * itemScale}" text-anchor="middle" style="font-size:${Math.max(11, 13 * itemScale)}px">×</text>
+            </g>`;
+          });
+        });
+
+        svg.innerHTML = out;
+        fontFamilyInput.value = fontFamily;
+        globalFontSizeInput.value = String(globalFontSize);
+        globalFontSizeValue.value = `${globalFontSize}%`;
+        globalFontSizeValue.textContent = `${globalFontSize}%`;
+        branchLengthInput.value = String(branchLength);
+        branchLengthValue.value = `${branchLength}px`;
+        branchLengthValue.textContent = `${branchLength}px`;
+        mainBubbleSizeInput.value = String(mainBubbleSize);
+        mainBubbleSizeValue.value = `${mainBubbleSize}%`;
+        mainBubbleSizeValue.textContent = `${mainBubbleSize}%`;
+        itemBubbleSizeInput.value = String(itemBubbleSize);
+        itemBubbleSizeValue.value = `${itemBubbleSize}%`;
+        itemBubbleSizeValue.textContent = `${itemBubbleSize}%`;
+        printTitle.textContent = `${data.effect} Fishbone Diagram`;
+        document.title = `${data.effect} Fishbone Diagram`;
+        saveData();
+      }
+
+      function openEditor(type, branchId = null, itemId = null, options = {}) {
+        editor = { type, branchId, itemId, ...options };
+        let value = '';
+        let title = 'Edit text';
+
+        if (type === 'effect') {
+          value = data.effect;
+          title = 'Edit effect / problem';
+        } else if (type === 'new-branch') {
+          title = 'Add branch';
+        } else if (type === 'branch') {
+          value = findBranch(branchId)?.text ?? '';
+          title = 'Edit branch';
+        } else if (type === 'new-item') {
+          title = 'Add item';
+        } else if (type === 'item') {
+          value = findBranch(branchId)?.items.find(i => i.id === itemId)?.text ?? '';
+          title = 'Edit item';
+        }
+
+        dialogTitle.textContent = title;
+        textInput.value = value;
+        dialog.showModal();
+        requestAnimationFrame(() => textInput.select());
+      }
+
+      function saveEditor() {
+        if (!editor) return;
+        const value = textInput.value.trim();
+        if (!value) return;
+
+        const { type, branchId, itemId, anchorT } = editor;
+        if (type === 'effect') data.effect = value;
+        if (type === 'new-branch') {
+          data.branches.push({ id: crypto.randomUUID(), text: value, status: 'unknown', position: { x: 0, y: 0 }, items: [] });
+        }
+        if (type === 'branch') findBranch(branchId).text = value;
+        if (type === 'new-item') {
+          findBranch(branchId).items.push({
+            id: crypto.randomUUID(),
+            text: value,
+            status: 'unknown',
+            anchorT: Math.max(0.04, Math.min(0.98, Number(anchorT) || 0.72)),
+            anchorRelative: true,
+            position: {
+              x: -(67 * (Math.max(60, Math.min(180, Number(data.itemBubbleSize) || 100)) / 100) + 88),
+              y: 0
+            }
+          });
+        }
+        if (type === 'item') {
+          findBranch(branchId).items.find(i => i.id === itemId).text = value;
+        }
+        editor = null;
+        render();
+      }
+
+      function cycleNodeStatus(target) {
+        const action = target.dataset.action;
+        const branchId = target.dataset.branchId;
+        const itemId = target.dataset.itemId;
+
+        if (action === 'edit-branch') {
+          const branch = findBranch(branchId);
+          branch.status = nextStatus(branch.status);
+          render();
+        } else if (action === 'edit-item') {
+          const item = findBranch(branchId).items.find(i => i.id === itemId);
+          item.status = nextStatus(item.status);
+          render();
+        }
+      }
+
+      function clientToSvg(clientX, clientY) {
+        const point = svg.createSVGPoint();
+        point.x = clientX;
+        point.y = clientY;
+        return point.matrixTransform(svg.getScreenCTM().inverse());
+      }
+
+      svg.addEventListener('pointerdown', event => {
+        const target = event.target.closest('[data-draggable]');
+        if (!target || event.button !== 0) return;
+
+        const point = clientToSvg(event.clientX, event.clientY);
+        const branchId = target.dataset.branchId;
+        const itemId = target.dataset.itemId;
+        const type = target.dataset.draggable;
+        const node = type === 'branch'
+          ? findBranch(branchId)
+          : findBranch(branchId)?.items.find(item => item.id === itemId);
+        if (!node) return;
+
+        const position = node.position || { x: 0, y: 0 };
+        dragState = {
+          pointerId: event.pointerId,
+          type,
+          branchId,
+          itemId,
+          startX: point.x,
+          startY: point.y,
+          originX: Number(position.x) || 0,
+          originY: Number(position.y) || 0,
+          moved: false
+        };
+        target.classList.add('dragging');
+        target.setPointerCapture?.(event.pointerId);
+        event.preventDefault();
+      });
+
+      svg.addEventListener('pointermove', event => {
+        if (!dragState || event.pointerId !== dragState.pointerId) return;
+        const point = clientToSvg(event.clientX, event.clientY);
+        const dx = point.x - dragState.startX;
+        const dy = point.y - dragState.startY;
+        if (Math.hypot(dx, dy) > 3) dragState.moved = true;
+        if (!dragState.moved) return;
+
+        const node = dragState.type === 'branch'
+          ? findBranch(dragState.branchId)
+          : findBranch(dragState.branchId)?.items.find(item => item.id === dragState.itemId);
+        if (!node) return;
+
+        node.position = {
+          x: Math.round(dragState.originX + dx),
+          y: Math.round(dragState.originY + dy)
+        };
+        render();
+      });
+
+      function finishDrag(event) {
+        if (!dragState || event.pointerId !== dragState.pointerId) return;
+        if (dragState.moved) {
+          suppressClick = true;
+          saveData();
+          setTimeout(() => { suppressClick = false; }, 0);
+        }
+        dragState = null;
+      }
+
+      svg.addEventListener('pointerup', finishDrag);
+      svg.addEventListener('pointercancel', finishDrag);
+
+      svg.addEventListener('click', event => {
+        if (suppressClick) {
+          event.preventDefault();
+          return;
+        }
+        const target = event.target.closest('[data-action]');
+        if (!target) return;
+        const action = target.dataset.action;
+        const branchId = target.dataset.branchId;
+        const itemId = target.dataset.itemId;
+
+        if (action === 'add-item-at-point') {
+          const branch = findBranch(branchId);
+          if (branch) {
+            const point = clientToSvg(event.clientX, event.clientY);
+            const x1 = Number(target.getAttribute('x1'));
+            const y1 = Number(target.getAttribute('y1'));
+            const x2 = Number(target.getAttribute('x2'));
+            const y2 = Number(target.getAttribute('y2'));
+            const vx = x2 - x1;
+            const vy = y2 - y1;
+            const lengthSquared = vx * vx + vy * vy;
+            const projected = lengthSquared
+              ? ((point.x - x1) * vx + (point.y - y1) * vy) / lengthSquared
+              : 0.72;
+            openEditor('new-item', branchId, null, {
+              anchorT: Math.max(0.04, Math.min(0.98, projected))
+            });
+          }
+          return;
+        }
+        if (action === 'edit-effect') openEditor('effect');
+        if (action === 'edit-branch') openEditor('branch', branchId);
+        if (action === 'edit-item') openEditor('item', branchId, itemId);
+        if (action === 'delete-branch' && confirm('Delete this branch and all its items?')) {
+          data.branches = data.branches.filter(b => b.id !== branchId);
+          render();
+        }
+        if (action === 'delete-item') {
+          const branch = findBranch(branchId);
+          branch.items = branch.items.filter(i => i.id !== itemId);
+          render();
+        }
+      });
+
+      svg.addEventListener('contextmenu', event => {
+        const target = event.target.closest('[data-action="edit-branch"], [data-action="edit-item"]');
+        if (!target) return;
+        event.preventDefault();
+        cycleNodeStatus(target);
+      });
+
+      svg.addEventListener('keydown', event => {
+        if (event.key !== 'Enter' && event.key !== ' ') return;
+        const target = event.target.closest('[data-action]');
+        if (!target) return;
+        event.preventDefault();
+        target.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+      });
+
+      textForm.addEventListener('submit', event => {
+        event.preventDefault();
+        saveEditor();
+        if (!editor) dialog.close();
+      });
+
+      textInput.addEventListener('keydown', event => {
+        if (event.key === 'Enter' && !event.shiftKey) {
+          event.preventDefault();
+          textForm.requestSubmit(document.getElementById('saveTextBtn'));
+        }
+      });
+
+      document.getElementById('cancelTextBtn').addEventListener('click', () => {
+        editor = null;
+        dialog.close();
+      });
+
+      fontFamilyInput.addEventListener('change', () => {
+        data.fontFamily = fontFamilyInput.value;
+        render();
+      });
+
+      globalFontSizeInput.addEventListener('input', () => {
+        data.globalFontSize = Number(globalFontSizeInput.value);
+        globalFontSizeValue.value = `${data.globalFontSize}%`;
+        globalFontSizeValue.textContent = `${data.globalFontSize}%`;
+        render();
+      });
+
+      branchLengthInput.addEventListener('input', () => {
+        data.branchLength = Number(branchLengthInput.value);
+        branchLengthValue.value = `${data.branchLength}px`;
+        branchLengthValue.textContent = `${data.branchLength}px`;
+        render();
+      });
+
+      mainBubbleSizeInput.addEventListener('input', () => {
+        data.mainBubbleSize = Number(mainBubbleSizeInput.value);
+        mainBubbleSizeValue.value = `${data.mainBubbleSize}%`;
+        mainBubbleSizeValue.textContent = `${data.mainBubbleSize}%`;
+        render();
+      });
+
+      itemBubbleSizeInput.addEventListener('input', () => {
+        data.itemBubbleSize = Number(itemBubbleSizeInput.value);
+        itemBubbleSizeValue.value = `${data.itemBubbleSize}%`;
+        itemBubbleSizeValue.textContent = `${data.itemBubbleSize}%`;
+        render();
+      });
+
+      document.getElementById('printBtn').addEventListener('click', () => {
+        printTitle.textContent = `${data.effect} Fishbone Diagram`;
+        window.print();
+      });
+
+      window.addEventListener('beforeprint', () => {
+        printTitle.textContent = `${data.effect} Fishbone Diagram`;
+      });
+
+      document.getElementById('editEffectBtn').addEventListener('click', () => openEditor('effect'));
+      document.getElementById('addBranchBtn').addEventListener('click', () => openEditor('new-branch'));
+
+      document.getElementById('resetBtn').addEventListener('click', () => {
+        if (!confirm('Reset the entire diagram?')) return;
+        data = structuredClone(defaultData);
+        render();
+      });
+
+      document.getElementById('exportBtn').addEventListener('click', () => {
+        const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'fishbone-diagram.json';
+        a.click();
+        URL.revokeObjectURL(url);
+      });
+
+      const importFile = document.getElementById('importFile');
+      document.getElementById('importBtn').addEventListener('click', () => importFile.click());
+      importFile.addEventListener('change', async () => {
+        const file = importFile.files?.[0];
+        if (!file) return;
+        try {
+          const imported = JSON.parse(await file.text());
+          if (!imported || !Array.isArray(imported.branches)) throw new Error('Invalid format');
+          data = imported;
+          render();
+        } catch (error) {
+          alert('Could not import that file. Please choose a valid exported fishbone JSON file.');
+        } finally {
+          importFile.value = '';
+        }
+      });
+
+      render();
+    })();
+  </script>
+</body>
+</html>
