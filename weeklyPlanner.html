@@ -1,0 +1,1333 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Weekly Production Planner</title>
+  <style>
+    :root {
+      --bg: #f6f7f9;
+      --card: #ffffff;
+      --text: #1f2937;
+      --muted: #6b7280;
+      --border: #d1d5db;
+      --good: #047857;
+      --bad: #b91c1c;
+      --accent: #2563eb;
+      --accent-soft: #dbeafe;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      font-family: Arial, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      padding: 16px;
+    }
+
+    .subtitle {
+      margin: 4px 0 20px;
+      font-size: 12px;
+      color: #6b7280;
+      font-style: italic;
+      letter-spacing: 0.5px;
+    }
+
+    .wrap {
+      max-width: 1500px;
+      margin: 0 auto;
+    }
+
+    h1 { margin: 0 0 8px; }
+
+    p {
+      color: var(--muted);
+      margin-top: 0;
+      line-height: 1.5;
+    }
+
+    .card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 18px;
+      box-shadow: 0 2px 8px rgba(0,0,0,.05);
+      margin-bottom: 18px;
+    }
+
+    .controls {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 14px;
+      align-items: end;
+    }
+
+    label {
+      font-weight: 700;
+      font-size: 14px;
+      display: block;
+      margin-bottom: 6px;
+    }
+
+    input {
+      width: 100%;
+      padding: 10px;
+      border: 1px solid var(--border);
+      border-radius: 9px;
+      font-size: 15px;
+      background: white;
+    }
+
+    input:focus,
+    button:focus {
+      outline: 3px solid var(--accent-soft);
+      outline-offset: 2px;
+    }
+
+    input.invalid {
+      border-color: var(--bad);
+      background: #fef2f2;
+    }
+
+    button {
+      border: 0;
+      border-radius: 9px;
+      padding: 11px 14px;
+      font-weight: 700;
+      cursor: pointer;
+      background: var(--accent);
+      color: white;
+    }
+
+    button:hover { filter: brightness(.95); }
+
+    button.secondary { background: #4b5563; }
+    button.danger { background: #991b1b; }
+
+    .buttons {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .budget-toggle {
+      min-height: 42px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      gap: 5px;
+    }
+
+    .toggle-label {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin: 0;
+      cursor: pointer;
+    }
+
+    .toggle-label input {
+      width: 18px;
+      height: 18px;
+      margin: 0;
+      accent-color: var(--accent);
+    }
+
+    .budget-toggle small {
+      color: var(--muted);
+      font-size: 11px;
+      line-height: 1.3;
+    }
+
+    .status-line {
+      margin-top: 10px;
+      font-size: 13px;
+      color: var(--muted);
+    }
+
+    .summary {
+      display: grid;
+      grid-template-columns: repeat(8, minmax(115px, 1fr));
+      gap: 8px;
+      margin-top: 12px;
+      padding-top: 12px;
+      border-top: 1px solid var(--border);
+    }
+
+    .metric {
+      min-width: 0;
+      background: #f9fafb;
+      border: 1px solid var(--border);
+      border-radius: 9px;
+      padding: 8px 10px;
+    }
+
+    .metric span {
+      color: var(--muted);
+      font-size: 11px;
+      line-height: 1.15;
+      display: block;
+    }
+
+    .metric strong {
+      font-size: 17px;
+      line-height: 1.2;
+      display: block;
+      margin-top: 3px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    @media (max-width: 1250px) {
+      .summary { grid-template-columns: repeat(4, minmax(140px, 1fr)); }
+    }
+
+    @media (max-width: 700px) {
+      .summary { grid-template-columns: repeat(2, minmax(130px, 1fr)); }
+    }
+
+    .table-wrap { overflow-x: auto; }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      min-width: 1250px;
+    }
+
+    th, td {
+      border-bottom: 1px solid var(--border);
+      padding: 10px;
+      text-align: right;
+      vertical-align: middle;
+    }
+
+    th:first-child,
+    td:first-child {
+      text-align: left;
+      font-weight: 700;
+    }
+
+    th {
+      background: #f3f4f6;
+      font-size: 13px;
+      color: #374151;
+    }
+
+    tr.today { background: #eff6ff; }
+
+    td input {
+      max-width: 125px;
+      margin-left: auto;
+    }
+
+    .percent-cell { position: relative; }
+
+    .percent-cell input { padding-right: 26px; }
+
+    .percent-symbol {
+      position: absolute;
+      right: 18px;
+      top: 50%;
+      transform: translateY(-50%);
+      color: var(--muted);
+      pointer-events: none;
+      font-size: 14px;
+    }
+
+    .pos {
+      color: var(--good);
+      font-weight: 700;
+    }
+
+    .neg {
+      color: var(--bad);
+      font-weight: 700;
+    }
+
+    .zero {
+      color: var(--muted);
+      font-weight: 700;
+    }
+
+    .note {
+      font-size: 9px;
+      color: var(--muted);
+      margin-top: 10px;
+    }
+
+
+    .plan-modal-backdrop {
+      position: fixed;
+      inset: 0;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 18px;
+      background: rgba(17, 24, 39, 0.55);
+      z-index: 999;
+    }
+
+    .plan-modal-backdrop.open { display: flex; }
+
+    .plan-modal {
+      width: min(760px, 100%);
+      background: white;
+      border-radius: 14px;
+      border: 1px solid var(--border);
+      box-shadow: 0 20px 45px rgba(0,0,0,.25);
+      padding: 18px;
+    }
+
+    .plan-modal h2 {
+      margin: 0 0 14px;
+      font-size: 20px;
+    }
+
+    .plan-modal textarea {
+      width: 100%;
+      min-height: 280px;
+      resize: vertical;
+      padding: 10px;
+      border: 1px solid var(--border);
+      border-radius: 9px;
+      font-family: Consolas, Monaco, monospace;
+      font-size: 12px;
+      white-space: pre;
+    }
+
+    .plan-modal textarea:focus,
+    .plan-modal input:focus {
+      outline: 3px solid var(--accent-soft);
+      outline-offset: 2px;
+    }
+
+    .plan-modal-actions {
+      display: flex;
+      justify-content: flex-end;
+      gap: 10px;
+      margin-top: 12px;
+      flex-wrap: wrap;
+    }
+
+    .plan-error {
+      min-height: 18px;
+      color: var(--bad);
+      font-size: 13px;
+      margin-top: 8px;
+    }
+
+    @page {
+      size: Letter landscape;
+      margin: 0.35in;
+    }
+
+    @media print {
+      :root {
+        --border: #9ca3af;
+      }
+
+      html,
+      body {
+        width: 100%;
+        background: white;
+      }
+
+      body {
+        padding: 0;
+        font-size: 10px;
+        color: #111827;
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+      }
+
+      .wrap {
+        max-width: none;
+        width: 100%;
+        margin: 0;
+      }
+
+      h1 {
+        font-size: 18px;
+        margin: 0 0 2px;
+      }
+
+      .subtitle {
+        font-size: 12px;
+        margin: 0 0 6px;
+      }
+
+      .buttons,
+      .note,
+      .status-line,
+      .plan-modal-backdrop {
+        display: none !important;
+      }
+
+      .card {
+        box-shadow: none;
+        border: 0;
+        border-radius: 0;
+        padding: 0;
+        margin-bottom: 6px;
+        break-inside: avoid;
+        page-break-inside: avoid;
+      }
+
+      .controls {
+        grid-template-columns: 1fr 1fr;
+        gap: 8px;
+        margin-bottom: 6px;
+      }
+
+      label {
+        font-size: 9px;
+        margin-bottom: 1px;
+      }
+
+      input {
+        border: 0;
+        border-radius: 0;
+        padding: 0;
+        font-size: 10px;
+        background: transparent;
+        color: #111827;
+      }
+
+      .summary {
+        display: grid;
+        grid-template-columns: repeat(8, 1fr);
+        gap: 4px;
+        margin-top: 5px;
+        padding-top: 5px;
+      }
+
+      .metric {
+        padding: 5px 6px;
+        border-radius: 6px;
+        background: #f9fafb;
+      }
+
+      .metric span {
+        font-size: 8px;
+      }
+
+      .metric strong {
+        font-size: 12px;
+        margin-top: 1px;
+      }
+
+      .table-wrap {
+        overflow: visible;
+      }
+
+      table {
+        width: 100%;
+        min-width: 0;
+        table-layout: fixed;
+        font-size: 8px;
+      }
+
+      th,
+      td {
+        padding: 4px 5px;
+        line-height: 1.15;
+        border-bottom: 1px solid var(--border);
+        white-space: normal;
+      }
+
+      th {
+        font-size: 8px;
+        padding-top: 5px;
+        padding-bottom: 5px;
+      }
+
+      th:nth-child(1),
+      td:nth-child(1) { width: 8%; }
+
+      th:nth-child(2),
+      td:nth-child(2) { width: 9%; }
+
+      th:nth-child(3),
+      td:nth-child(3),
+      th:nth-child(4),
+      td:nth-child(4) { width: 7%; }
+
+      th:nth-child(5),
+      td:nth-child(5) { width: 6%; }
+
+      th:nth-child(6),
+      td:nth-child(6),
+      th:nth-child(7),
+      td:nth-child(7) { width: 10%; }
+
+      th:nth-child(8),
+      td:nth-child(8),
+      th:nth-child(9),
+      td:nth-child(9) { width: 9%; }
+
+      th:nth-child(10),
+      td:nth-child(10),
+      th:nth-child(11),
+      td:nth-child(11) { width: 12.5%; }
+
+      tr {
+        break-inside: avoid;
+        page-break-inside: avoid;
+      }
+
+      tr.today {
+        background: #eff6ff !important;
+      }
+
+      td input {
+        max-width: none;
+        width: 100%;
+        text-align: right;
+      }
+
+      .percent-cell input {
+        padding-right: 10px;
+      }
+
+      .percent-symbol {
+        right: 4px;
+        font-size: 9px;
+      }
+
+      a {
+        color: inherit;
+        text-decoration: none;
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <div class="wrap">
+    <h1>Weekly Production Planner</h1>
+    <p></p>
+
+    <p class="subtitle">
+      from
+      <a href="https://github.com/OffTheClockStudios"
+         target="_blank"
+         rel="noopener noreferrer">
+        OFFTHECLOCKSTUDIOS
+      </a>
+    </p>
+
+    <div class="card">
+      <div class="controls">
+        <div>
+          <label for="startingStatus">Starting Behind / Ahead Quantity</label>
+          <input id="startingStatus" type="text" value="0" inputmode="decimal" autocomplete="off" />
+        </div>
+
+        <div>
+          <label for="fullProduction">100% Production Quantity</label>
+          <input id="fullProduction" type="text" value="0" inputmode="decimal" autocomplete="off" />
+        </div>
+
+        <div>
+          <label for="costPerPiece">Scrap $ / Pc. (IHL)</label>
+          <input id="costPerPiece" type="text" value="0" inputmode="decimal" autocomplete="off" />
+        </div>
+
+        <div class="budget-toggle">
+          <label class="toggle-label" for="useAdjustedBudget">
+            <input id="useAdjustedBudget" type="checkbox" />
+            <span>Use adjusted IHL budget</span>
+          </label>
+          <small id="budgetBasisHelp">Budget uses planned quantity × scrap $/pc.</small>
+        </div>
+
+        <div class="buttons">
+          <button id="planTotalsBtn">Get Plan Totals</button>
+          <button id="printBtn" class="secondary">Print</button>
+          <button id="resetBtn" class="danger">Reset</button>
+        </div>
+      </div>
+
+      <div class="note">
+      </div>
+
+      <div id="summary" class="summary"></div>
+      <div id="saveStatus" class="status-line" aria-live="polite">Loading saved planner...</div>
+    </div>
+
+    <div class="card">
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Day</th>
+              <th>Starting Status</th>
+              <th>Planned Qty</th>
+              <th>Actual Qty</th>
+              <th>Production %</th>
+              <th>Daily Over / Under</th>
+              <th>Ending Status</th>
+              <th id="budgetColumnHeader">Planned Budget</th>
+              <th>Actual IHL</th>
+              <th>IHL Daily Over / Under</th>
+              <th>IHL Ending Status</th>
+            </tr>
+          </thead>
+          <tbody id="plannerBody"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+
+  <div id="planModalBackdrop" class="plan-modal-backdrop" role="dialog" aria-modal="true" aria-labelledby="planModalTitle">
+    <div class="plan-modal">
+      <h2 id="planModalTitle">Get Plan Totals</h2>
+      <div>
+        <label for="planStartDate">Start Date</label>
+        <input id="planStartDate" type="date" />
+      </div>
+      <div style="margin-top: 12px;">
+        <label for="planPasteData">Paste Plan Data</label>
+        <textarea id="planPasteData" spellcheck="false"></textarea>
+      </div>
+      <div id="planError" class="plan-error" aria-live="polite"></div>
+      <div class="plan-modal-actions">
+        <button id="planCancelBtn" type="button" class="secondary">Cancel</button>
+        <button id="planOkBtn" type="button">OK</button>
+      </div>
+    </div>
+  </div>
+
+<script>
+const days = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
+const STORAGE_KEY = "weeklyProductionPlanner.v6";
+
+let data = createEmptyData();
+let saveTimer;
+let isSyncingInputs = false;
+
+const els = {
+  startingStatus: document.getElementById("startingStatus"),
+  fullProduction: document.getElementById("fullProduction"),
+  costPerPiece: document.getElementById("costPerPiece"),
+  useAdjustedBudget: document.getElementById("useAdjustedBudget"),
+  budgetBasisHelp: document.getElementById("budgetBasisHelp"),
+  budgetColumnHeader: document.getElementById("budgetColumnHeader"),
+  plannerBody: document.getElementById("plannerBody"),
+  summary: document.getElementById("summary"),
+  saveStatus: document.getElementById("saveStatus"),
+  printBtn: document.getElementById("printBtn"),
+  resetBtn: document.getElementById("resetBtn"),
+  planTotalsBtn: document.getElementById("planTotalsBtn"),
+  planModalBackdrop: document.getElementById("planModalBackdrop"),
+  planStartDate: document.getElementById("planStartDate"),
+  planPasteData: document.getElementById("planPasteData"),
+  planError: document.getElementById("planError"),
+  planCancelBtn: document.getElementById("planCancelBtn"),
+  planOkBtn: document.getElementById("planOkBtn")
+};
+
+function createEmptyData() {
+  return {
+    startingStatus: 0,
+    fullProduction: 0,
+    costPerPiece: 0,
+    useAdjustedBudget: false,
+    rows: days.map(day => ({
+      day,
+      planned: 0,
+      actual: 0,
+      percent: 0,
+      actualIHL: 0
+    }))
+  };
+}
+
+function evaluateMath(value) {
+  if (typeof value === "number") {
+    return Number.isFinite(value) ? value : 0;
+  }
+
+  value = String(value ?? "").trim();
+  if (!value) return 0;
+
+  // Allow only numbers, spaces, decimal points, parentheses, and + - * / operators.
+  // This keeps entries like "1000+250" valid while blocking letters or code.
+  if (!/^[0-9+\-*/().\s]+$/.test(value)) {
+    return NaN;
+  }
+
+  try {
+    const result = Function(`"use strict"; return (${value});`)();
+    return Number.isFinite(result) ? result : NaN;
+  } catch {
+    return NaN;
+  }
+}
+
+function num(value) {
+  const result = evaluateMath(value);
+  return Number.isFinite(result) ? result : 0;
+}
+
+function roundQty(value) {
+  return Math.round(num(value));
+}
+
+function roundPercent(value) {
+  return Math.round(num(value) * 10) / 10;
+}
+
+function fmt(value) {
+  return Math.round(num(value)).toLocaleString();
+}
+
+function fmtInput(value, decimals = 0) {
+  const n = num(value);
+  if (decimals > 0) return String(Math.round(n * 10 ** decimals) / 10 ** decimals);
+  return String(Math.round(n));
+}
+
+function fmtPercent(value) {
+  return roundPercent(value).toLocaleString(undefined, {
+    maximumFractionDigits: 1
+  });
+}
+
+function fmtCurrency(value) {
+  return num(value).toLocaleString(undefined, {
+    style: "currency",
+    currency: "USD",
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2
+  });
+}
+
+function classForBudget(value) {
+  value = num(value);
+  if (value > 0) return "pos";
+  if (value < 0) return "neg";
+  return "zero";
+}
+
+function labelBudgetStatus(value) {
+  value = num(value);
+  if (value > 0) return `${fmtCurrency(value)} under`;
+  if (value < 0) return `${fmtCurrency(Math.abs(value))} over`;
+  return "On budget";
+}
+
+function classFor(value) {
+  value = num(value);
+  if (value > 0) return "neg";
+  if (value < 0) return "pos";
+  return "zero";
+}
+
+function labelStatus(value) {
+  value = num(value);
+  if (value > 0) return `${fmt(value)} behind`;
+  if (value < 0) return `${fmt(Math.abs(value))} ahead`;
+  return "On plan";
+}
+
+function setInvalid(input, isInvalid) {
+  input.classList.toggle("invalid", isInvalid);
+}
+
+function readMathInput(input, previousValue = 0) {
+  const result = evaluateMath(input.value);
+
+  if (!Number.isFinite(result)) {
+    setInvalid(input, true);
+    return previousValue;
+  }
+
+  setInvalid(input, false);
+  return result;
+}
+
+function commitMathInput(input, value, decimals = 0) {
+  input.value = fmtInput(value, decimals);
+  setInvalid(input, false);
+}
+
+function commitMathInputOnEnter(input, callback) {
+  input.addEventListener("keydown", e => {
+    if (e.key === "Enter") {
+      e.preventDefault();
+      input.blur();
+      if (typeof callback === "function") callback();
+    }
+  });
+}
+
+function calculatePercentFromActual(actual) {
+  const baseline = num(data.fullProduction);
+  if (baseline <= 0) return 0;
+  return roundPercent((num(actual) / baseline) * 100);
+}
+
+function calculateActualFromPercent(percent) {
+  const baseline = num(data.fullProduction);
+  if (baseline <= 0) return 0;
+  return roundQty((num(percent) / 100) * baseline);
+}
+
+function syncRowPercentFromActual(index) {
+  data.rows[index].percent = calculatePercentFromActual(data.rows[index].actual);
+}
+
+function syncRowActualFromPercent(index) {
+  data.rows[index].actual = calculateActualFromPercent(data.rows[index].percent);
+}
+
+function syncAllPercentsFromActuals() {
+  data.rows.forEach((_, i) => syncRowPercentFromActual(i));
+}
+
+function calculate() {
+  let carry = num(data.startingStatus);
+  let ihlCarry = 0;
+  let totalPlanned = 0;
+  let totalActual = 0;
+  let totalPlannedBudget = 0;
+  let totalActualIHL = 0;
+  const costPerPiece = num(data.costPerPiece);
+
+  return data.rows.map(row => {
+    const start = carry;
+    const planned = num(row.planned);
+    const actual = num(row.actual);
+    const percent = num(row.percent);
+    const dailyVariance = planned - actual;
+    const ending = start + dailyVariance;
+
+    const budgetQuantity = data.useAdjustedBudget ? actual : planned;
+    const plannedBudget = budgetQuantity * costPerPiece;
+    const actualIHL = num(row.actualIHL);
+    const ihlDailyVariance = plannedBudget - actualIHL;
+    const ihlEnding = ihlCarry + ihlDailyVariance;
+
+    totalPlanned += planned;
+    totalActual += actual;
+    totalPlannedBudget += plannedBudget;
+    totalActualIHL += actualIHL;
+    carry = ending;
+    ihlCarry = ihlEnding;
+
+    return {
+      ...row,
+      start,
+      planned,
+      actual,
+      percent,
+      dailyVariance,
+      ending,
+      budgetQuantity,
+      plannedBudget,
+      actualIHL,
+      ihlDailyVariance,
+      ihlEnding,
+      totalPlanned,
+      totalActual,
+      totalPlannedBudget,
+      totalActualIHL
+    };
+  });
+}
+
+function buildTable() {
+  const todayIndex = new Date().getDay() - 1;
+
+  els.plannerBody.innerHTML = days.map((day, i) => `
+    <tr class="${i === todayIndex ? "today" : ""}">
+      <td>${day}${i === todayIndex ? " — Today" : ""}</td>
+      <td id="start-${i}"></td>
+      <td>
+        <input id="planned-${i}" type="text" inputmode="decimal" autocomplete="off" aria-label="${day} planned quantity">
+      </td>
+      <td>
+        <input id="actual-${i}" type="text" inputmode="decimal" autocomplete="off" aria-label="${day} actual quantity">
+      </td>
+      <td class="percent-cell">
+        <input id="percent-${i}" type="number" step="0.1" inputmode="decimal" aria-label="${day} production percentage">
+        <span class="percent-symbol">%</span>
+      </td>
+      <td id="variance-${i}"></td>
+      <td id="ending-${i}"></td>
+      <td id="planned-budget-${i}"></td>
+      <td>
+        <input id="actual-ihl-${i}" type="text" inputmode="decimal" autocomplete="off" aria-label="${day} actual IHL dollars">
+      </td>
+      <td id="ihl-variance-${i}"></td>
+      <td id="ihl-ending-${i}"></td>
+    </tr>
+  `).join("");
+
+  data.rows.forEach((_, i) => {
+    const plannedInput = document.getElementById(`planned-${i}`);
+    const actualInput = document.getElementById(`actual-${i}`);
+    const percentInput = document.getElementById(`percent-${i}`);
+    const actualIHLInput = document.getElementById(`actual-ihl-${i}`);
+
+    plannedInput.addEventListener("input", e => {
+      if (isSyncingInputs) return;
+      data.rows[i].planned = readMathInput(e.target, data.rows[i].planned);
+      update();
+      autoSave();
+    });
+
+    plannedInput.addEventListener("blur", e => {
+      data.rows[i].planned = readMathInput(e.target, data.rows[i].planned);
+      commitMathInput(e.target, data.rows[i].planned);
+      update();
+      autoSave();
+    });
+
+    commitMathInputOnEnter(plannedInput);
+
+    actualInput.addEventListener("input", e => {
+      if (isSyncingInputs) return;
+      data.rows[i].actual = readMathInput(e.target, data.rows[i].actual);
+      syncRowPercentFromActual(i);
+      percentInput.value = data.rows[i].percent;
+      update();
+      autoSave();
+    });
+
+    actualInput.addEventListener("blur", e => {
+      data.rows[i].actual = readMathInput(e.target, data.rows[i].actual);
+      syncRowPercentFromActual(i);
+      commitMathInput(e.target, data.rows[i].actual);
+      percentInput.value = data.rows[i].percent;
+      update();
+      autoSave();
+    });
+
+    commitMathInputOnEnter(actualInput);
+
+    percentInput.addEventListener("input", e => {
+      if (isSyncingInputs) return;
+      data.rows[i].percent = num(e.target.value);
+      syncRowActualFromPercent(i);
+      actualInput.value = data.rows[i].actual;
+      update();
+      autoSave();
+    });
+
+    actualIHLInput.addEventListener("input", e => {
+      if (isSyncingInputs) return;
+      data.rows[i].actualIHL = readMathInput(e.target, data.rows[i].actualIHL);
+      update();
+      autoSave();
+    });
+
+    actualIHLInput.addEventListener("blur", e => {
+      data.rows[i].actualIHL = readMathInput(e.target, data.rows[i].actualIHL);
+      commitMathInput(e.target, data.rows[i].actualIHL, 2);
+      update();
+      autoSave();
+    });
+
+    commitMathInputOnEnter(actualIHLInput);
+  });
+}
+
+function loadRowInputs(index) {
+  isSyncingInputs = true;
+  const row = data.rows[index];
+  document.getElementById(`planned-${index}`).value = row.planned;
+  document.getElementById(`actual-${index}`).value = row.actual;
+  document.getElementById(`percent-${index}`).value = row.percent;
+  document.getElementById(`actual-ihl-${index}`).value = fmtInput(row.actualIHL, 2);
+  isSyncingInputs = false;
+}
+
+function loadInputsFromData() {
+  isSyncingInputs = true;
+  els.startingStatus.value = data.startingStatus;
+  els.fullProduction.value = data.fullProduction;
+  els.costPerPiece.value = data.costPerPiece;
+  els.useAdjustedBudget.checked = Boolean(data.useAdjustedBudget);
+  isSyncingInputs = false;
+
+  data.rows.forEach((_, i) => loadRowInputs(i));
+}
+
+function setStatusCell(id, value) {
+  const cell = document.getElementById(id);
+  cell.className = classFor(value);
+  cell.textContent = labelStatus(value);
+}
+
+function setBudgetCell(id, value) {
+  const cell = document.getElementById(id);
+  cell.className = classForBudget(value);
+  cell.textContent = labelBudgetStatus(value);
+}
+
+function update() {
+  const calculated = calculate();
+  els.budgetBasisHelp.textContent = data.useAdjustedBudget
+    ? "Budget uses actual quantity × scrap $/pc."
+    : "Budget uses planned quantity × scrap $/pc.";
+  els.budgetColumnHeader.textContent = data.useAdjustedBudget ? "Adjusted Budget" : "Planned Budget";
+
+  calculated.forEach((row, i) => {
+    setStatusCell(`start-${i}`, row.start);
+    setStatusCell(`variance-${i}`, row.dailyVariance);
+    setStatusCell(`ending-${i}`, row.ending);
+
+    document.getElementById(`planned-budget-${i}`).textContent = fmtCurrency(row.plannedBudget);
+    setBudgetCell(`ihl-variance-${i}`, row.ihlDailyVariance);
+    setBudgetCell(`ihl-ending-${i}`, row.ihlEnding);
+  });
+
+  const last = calculated.at(-1);
+  const totalPlanned = last?.totalPlanned ?? 0;
+  const totalActual = last?.totalActual ?? 0;
+  const totalPlannedBudget = last?.totalPlannedBudget ?? 0;
+  const totalActualIHL = last?.totalActualIHL ?? 0;
+  const weeklyIHLVariance = totalPlannedBudget - totalActualIHL;
+  const weeklyVariance = totalPlanned - totalActual;
+  const finalStatus = last?.ending ?? num(data.startingStatus);
+  const fullProduction = num(data.fullProduction);
+  const plannedDays = data.rows.filter(row => num(row.planned) > 0).length;
+
+  const averageProductionPercent =
+    fullProduction > 0 && plannedDays > 0
+      ? (totalActual / (fullProduction * plannedDays)) * 100
+      : 0;
+
+  els.summary.innerHTML = `
+    <div class="metric">
+      <span>Total Planned</span>
+      <strong>${fmt(totalPlanned)}</strong>
+    </div>
+    <div class="metric">
+      <span>Total Actual</span>
+      <strong>${fmt(totalActual)}</strong>
+    </div>
+    <div class="metric">
+      <span>${data.useAdjustedBudget ? "Adjusted IHL Budget" : "Planned IHL Budget"}</span>
+      <strong>${fmtCurrency(totalPlannedBudget)}</strong>
+    </div>
+    <div class="metric">
+      <span>Actual IHL</span>
+      <strong>${fmtCurrency(totalActualIHL)}</strong>
+    </div>
+    <div class="metric">
+      <span>IHL Over / Under</span>
+      <strong class="${classForBudget(weeklyIHLVariance)}">${labelBudgetStatus(weeklyIHLVariance)}</strong>
+    </div>
+    <div class="metric">
+      <span>Avg Production %</span>
+      <strong>${fmtPercent(averageProductionPercent)}%</strong>
+    </div>
+    <div class="metric">
+      <span>Weekly Over / Under</span>
+      <strong class="${classFor(weeklyVariance)}">${labelStatus(weeklyVariance)}</strong>
+    </div>
+    <div class="metric">
+      <span>Final Week Status</span>
+      <strong class="${classFor(finalStatus)}">${labelStatus(finalStatus)}</strong>
+    </div>
+  `;
+}
+
+function setSaveStatus(message) {
+  els.saveStatus.textContent = message;
+}
+
+function autoSave() {
+  clearTimeout(saveTimer);
+  saveTimer = setTimeout(saveData, 250);
+}
+
+function saveData() {
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+    setSaveStatus(`Automatically saved ${new Date().toLocaleTimeString()}.`);
+  } catch {
+    setSaveStatus("Could not save. Browser storage may be full or disabled.");
+  }
+}
+
+function loadData() {
+  const saved = localStorage.getItem(STORAGE_KEY) || localStorage.getItem("weeklyProductionPlanner.v5") || localStorage.getItem("weeklyProductionPlanner.v4") || localStorage.getItem("weeklyProductionPlanner.v3");
+
+  if (!saved) {
+    setSaveStatus("Ready. Changes save automatically.");
+    return;
+  }
+
+  try {
+    const parsed = JSON.parse(saved);
+
+    data = {
+      startingStatus: num(parsed.startingStatus),
+      fullProduction: num(parsed.fullProduction),
+      costPerPiece: num(parsed.costPerPiece),
+      useAdjustedBudget: Boolean(parsed.useAdjustedBudget),
+      rows: days.map((day, i) => ({
+        day,
+        planned: num(parsed.rows?.[i]?.planned),
+        actual: num(parsed.rows?.[i]?.actual),
+        percent: num(parsed.rows?.[i]?.percent),
+        actualIHL: num(parsed.rows?.[i]?.actualIHL)
+      }))
+    };
+
+    if (!parsed.rows?.some(row => row && "percent" in row)) {
+      syncAllPercentsFromActuals();
+    }
+
+    setSaveStatus("Loaded saved planner. Changes save automatically.");
+  } catch {
+    data = createEmptyData();
+    setSaveStatus("Saved planner could not be loaded. Starting fresh.");
+  }
+}
+
+
+function toDateInputValue(date) {
+  const y = date.getFullYear();
+  const m = String(date.getMonth() + 1).padStart(2, "0");
+  const d = String(date.getDate()).padStart(2, "0");
+  return `${y}-${m}-${d}`;
+}
+
+function dateKey(date) {
+  return toDateInputValue(date);
+}
+
+function addDays(date, daysToAdd) {
+  const copy = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+  copy.setDate(copy.getDate() + daysToAdd);
+  return copy;
+}
+
+function parsePlanDate(value) {
+  value = String(value ?? "").trim();
+  if (!value) return null;
+
+  const match = value.match(/^(\d{1,2})[-\/\s]([A-Za-z]{3,})[-\/\s](\d{2}|\d{4})$/);
+  if (!match) return null;
+
+  const monthMap = {
+    jan: 0, january: 0,
+    feb: 1, february: 1,
+    mar: 2, march: 2,
+    apr: 3, april: 3,
+    may: 4,
+    jun: 5, june: 5,
+    jul: 6, july: 6,
+    aug: 7, august: 7,
+    sep: 8, sept: 8, september: 8,
+    oct: 9, october: 9,
+    nov: 10, november: 10,
+    dec: 11, december: 11
+  };
+
+  const day = Number(match[1]);
+  const month = monthMap[match[2].toLowerCase()];
+  let year = Number(match[3]);
+  if (year < 100) year += 2000;
+
+  if (!Number.isInteger(day) || month === undefined || !Number.isInteger(year)) return null;
+
+  const parsed = new Date(year, month, day);
+  if (parsed.getFullYear() !== year || parsed.getMonth() !== month || parsed.getDate() !== day) return null;
+  return parsed;
+}
+
+function parsePlanNumber(value) {
+  value = String(value ?? "").replace(/,/g, "").trim();
+  if (!value) return 0;
+  const match = value.match(/-?\d+(?:\.\d+)?/);
+  return match ? Number(match[0]) || 0 : 0;
+}
+
+function splitPlanLine(line) {
+  if (line.includes("\t")) return line.split("\t").map(cell => cell.trim());
+  return line.trim().split(/\s+/).map(cell => cell.trim());
+}
+
+function getPlanTotalsFromText(planText, startDateValue) {
+  const start = new Date(`${startDateValue}T00:00:00`);
+  if (!startDateValue || Number.isNaN(start.getTime())) {
+    throw new Error("Choose a valid start date.");
+  }
+
+  const neededKeys = Array.from({ length: 7 }, (_, i) => dateKey(addDays(start, i)));
+  const totalsByKey = Object.fromEntries(neededKeys.map(key => [key, 0]));
+  const lines = String(planText ?? "").split(/\r?\n/).filter(line => line.trim());
+
+  const parsedLines = lines.map(splitPlanLine);
+  const headerIndex = parsedLines.findIndex(cells =>
+    cells.some(cell => cell.toUpperCase() === "PART") &&
+    cells.some(cell => parsePlanDate(cell))
+  );
+
+  if (headerIndex === -1) {
+    throw new Error("Could not find the header row with dates.");
+  }
+
+  const header = parsedLines[headerIndex];
+  const dateColumns = new Map();
+
+  header.forEach((cell, index) => {
+    const parsedDate = parsePlanDate(cell);
+    if (parsedDate) dateColumns.set(dateKey(parsedDate), index);
+  });
+
+  const matchedColumns = neededKeys.filter(key => dateColumns.has(key));
+  if (!matchedColumns.length) {
+    throw new Error("None of the selected 7 dates were found in the pasted data.");
+  }
+
+  for (let i = headerIndex + 1; i < parsedLines.length; i++) {
+    const cells = parsedLines[i];
+    if (!cells.length) continue;
+
+    neededKeys.forEach(key => {
+      const columnIndex = dateColumns.get(key);
+      if (columnIndex === undefined) return;
+      totalsByKey[key] += parsePlanNumber(cells[columnIndex]);
+    });
+  }
+
+  return neededKeys.map(key => Math.round(totalsByKey[key]));
+}
+
+function openPlanModal() {
+  els.planError.textContent = "";
+  els.planPasteData.value = "";
+  if (!els.planStartDate.value) els.planStartDate.value = toDateInputValue(new Date());
+  els.planModalBackdrop.classList.add("open");
+  els.planStartDate.focus();
+}
+
+function closePlanModal() {
+  els.planModalBackdrop.classList.remove("open");
+}
+
+function applyPlanTotals() {
+  try {
+    const totals = getPlanTotalsFromText(els.planPasteData.value, els.planStartDate.value);
+
+    totals.forEach((total, i) => {
+      data.rows[i].planned = total;
+      const input = document.getElementById(`planned-${i}`);
+      if (input) {
+        input.value = total;
+        setInvalid(input, false);
+      }
+    });
+
+    update();
+    autoSave();
+    setSaveStatus(`Plan totals added: ${totals.map(fmt).join(", ")}.`);
+    closePlanModal();
+  } catch (error) {
+    els.planError.textContent = error.message || "Could not read the pasted plan data.";
+  }
+}
+
+function resetAll() {
+  if (!confirm("Clear all planner values?")) return;
+
+  data = createEmptyData();
+  localStorage.removeItem(STORAGE_KEY);
+  localStorage.removeItem("weeklyProductionPlanner.v4");
+  localStorage.removeItem("weeklyProductionPlanner.v3");
+
+  loadInputsFromData();
+  update();
+  setSaveStatus("Planner reset. Changes save automatically.");
+}
+
+els.startingStatus.addEventListener("input", e => {
+  data.startingStatus = readMathInput(e.target, data.startingStatus);
+  update();
+  autoSave();
+});
+
+els.startingStatus.addEventListener("blur", e => {
+  data.startingStatus = readMathInput(e.target, data.startingStatus);
+  commitMathInput(e.target, data.startingStatus);
+  update();
+  autoSave();
+});
+
+commitMathInputOnEnter(els.startingStatus);
+
+els.fullProduction.addEventListener("input", e => {
+  data.fullProduction = readMathInput(e.target, data.fullProduction);
+  syncAllPercentsFromActuals();
+  data.rows.forEach((_, i) => {
+    const percentInput = document.getElementById(`percent-${i}`);
+    const actualIHLInput = document.getElementById(`actual-ihl-${i}`);
+    if (percentInput) percentInput.value = data.rows[i].percent;
+  });
+  update();
+  autoSave();
+});
+
+els.fullProduction.addEventListener("blur", e => {
+  data.fullProduction = readMathInput(e.target, data.fullProduction);
+  commitMathInput(e.target, data.fullProduction);
+  syncAllPercentsFromActuals();
+  loadInputsFromData();
+  update();
+  autoSave();
+});
+
+commitMathInputOnEnter(els.fullProduction);
+
+els.costPerPiece.addEventListener("input", e => {
+  data.costPerPiece = readMathInput(e.target, data.costPerPiece);
+  update();
+  autoSave();
+});
+
+els.costPerPiece.addEventListener("blur", e => {
+  data.costPerPiece = readMathInput(e.target, data.costPerPiece);
+  commitMathInput(e.target, data.costPerPiece, 4);
+  update();
+  autoSave();
+});
+
+commitMathInputOnEnter(els.costPerPiece);
+
+els.useAdjustedBudget.addEventListener("change", e => {
+  data.useAdjustedBudget = e.target.checked;
+  update();
+  autoSave();
+});
+
+els.planTotalsBtn.addEventListener("click", openPlanModal);
+els.planCancelBtn.addEventListener("click", closePlanModal);
+els.planOkBtn.addEventListener("click", applyPlanTotals);
+els.planModalBackdrop.addEventListener("click", e => {
+  if (e.target === els.planModalBackdrop) closePlanModal();
+});
+document.addEventListener("keydown", e => {
+  if (e.key === "Escape" && els.planModalBackdrop.classList.contains("open")) closePlanModal();
+});
+
+els.printBtn.addEventListener("click", () => window.print());
+els.resetBtn.addEventListener("click", resetAll);
+
+loadData();
+buildTable();
+loadInputsFromData();
+update();
+</script>
+</body>
+</html>
