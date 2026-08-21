@@ -1,0 +1,2619 @@
+<!DOCTYPE html>
+
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Interrelationship Digraph</title>
+<style>
+  :root {
+    --bg: #f4f6f8;
+    --panel: #ffffff;
+    --line: #d9dee7;
+    --line-strong: #c7ced9;
+    --text: #172033;
+    --muted: #667085;
+    --accent: #2563eb;
+    --accent-soft: #dbeafe;
+    --danger: #b42318;
+    --danger-soft: #fee4e2;
+    --shadow: 0 10px 30px rgba(16, 24, 40, 0.12);
+    --radius: 10px;
+    --toolbar-h: 64px;
+  }
+
+{ box-sizing: border-box; }
+
+html, body {
+width: 100%;
+height: 100%;
+margin: 0;
+overflow: hidden;
+color: var(--text);
+background: var(--bg);
+font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+}
+
+button, input, select { font: inherit; }
+
+button {
+border: 1px solid var(--line-strong);
+background: #fff;
+color: var(--text);
+border-radius: 8px;
+min-height: 36px;
+padding: 7px 11px;
+cursor: pointer;
+transition: background .15s ease, border-color .15s ease, box-shadow .15s ease, transform .05s ease;
+}
+
+button:hover() { background: #f8fafc; border-color: #aab4c3; }
+button:active() { transform: translateY(1px); }
+button, input, select {
+outline: 3px solid rgba(37, 99, 235, .2);
+outline-offset: 1px;
+}
+button { opacity: .45; cursor: not-allowed; }
+
+.primary {
+background: var(--accent);
+color: #fff;
+border-color: var(--accent);
+font-weight: 650;
+}
+.primary:hover() { background: #1d4ed8; border-color: #1d4ed8; }
+.danger { color: var(--danger); border-color: #f1b7b2; }
+.danger:hover() { background: #fff5f4; border-color: #e99089; }
+
+#app {
+height: 100%;
+display: grid;
+grid-template-rows: var(--toolbar-h) 1fr;
+}
+
+.toolbar {
+height: var(--toolbar-h);
+display: flex;
+align-items: center;
+gap: 6px;
+padding: 10px 12px;
+min-width: 0;
+border-bottom: 1px solid var(--line);
+background: rgba(255,255,255,.96);
+box-shadow: 0 1px 3px rgba(16,24,40,.06);
+z-index: 20;
+}
+
+.brand {
+display: flex;
+align-items: center;
+gap: 8px;
+flex: 0 1 330px;
+min-width: 170px;
+}
+
+.brand-mark {
+width: 34px;
+height: 34px;
+border-radius: 9px;
+display: grid;
+place-items: center;
+background: #eff6ff;
+border: 1px solid #bfdbfe;
+color: var(--accent);
+font-weight: 800;
+}
+
+.title-input {
+width: 100%;
+min-width: 0;
+max-width: 310px;
+height: 38px;
+border: 1px solid transparent;
+border-radius: 8px;
+padding: 7px 9px;
+font-size: 16px;
+font-weight: 700;
+color: var(--text);
+background: transparent;
+}
+.title-input { border-color: var(--line); background: #fff; }
+.title-input { border-color: #93c5fd; background: #fff; }
+
+.toolbar-sep { width: 1px; height: 28px; background: var(--line); margin: 0 2px; }
+.spacer { flex: 1; min-width: 8px; }
+
+.toolbar .compact { min-width: 36px; padding-inline: 9px; }
+.toolbar .label-btn { white-space: nowrap; }
+.toolbar-select-wrap {
+display: inline-flex;
+align-items: center;
+gap: 6px;
+height: 36px;
+padding: 0 7px 0 9px;
+border: 1px solid var(--line-strong);
+border-radius: 8px;
+background: #fff;
+color: var(--muted);
+font-size: 12px;
+white-space: nowrap;
+}
+.toolbar-select-wrap { border-color: #aab4c3; }
+.toolbar-select-wrap select {
+height: 30px;
+border: 0;
+outline: 0;
+background: transparent;
+color: var(--text);
+font-weight: 650;
+cursor: pointer;
+}
+
+.theme-toggle {
+display: inline-flex;
+align-items: center;
+gap: 7px;
+height: 36px;
+padding: 0 9px;
+border: 1px solid var(--line-strong);
+border-radius: 8px;
+background: #fff;
+color: var(--text);
+font-size: 12px;
+font-weight: 650;
+cursor: pointer;
+white-space: nowrap;
+transition: background .15s ease, border-color .15s ease;
+}
+.theme-toggle { background: #f8fafc; border-color: #aab4c3; }
+.theme-toggle input {
+position: absolute;
+width: 1px;
+height: 1px;
+opacity: 0;
+pointer-events: none;
+}
+.theme-switch {
+position: relative;
+width: 32px;
+height: 18px;
+border-radius: 999px;
+background: #b8c0cc;
+box-shadow: inset 0 0 0 1px rgba(0,0,0,.08);
+transition: background .15s ease;
+flex: 0 0 auto;
+}
+.theme-switch::after {
+content: "";
+position: absolute;
+width: 14px;
+height: 14px;
+left: 2px;
+top: 2px;
+border-radius: 50%;
+background: #fff;
+box-shadow: 0 1px 3px rgba(0,0,0,.25);
+transition: transform .15s ease;
+}
+.theme-toggle input + .theme-switch { background: #73787e; }
+.theme-toggle input + .theme-switch::after { transform: translateX(14px); }
+.theme-toggle input + .theme-switch {
+outline: 3px solid rgba(37, 99, 235, .24);
+outline-offset: 2px;
+}
+
+.toolbar-actions,
+.toolbar-utility {
+display: flex;
+align-items: center;
+gap: 6px;
+min-width: 0;
+}
+.toolbar-actions { flex: 0 0 auto; }
+.toolbar-utility { flex: 0 0 auto; }
+
+.stats-pill {
+display: inline-flex;
+align-items: center;
+height: 32px;
+padding: 0 10px;
+border: 1px solid var(--line);
+border-radius: 999px;
+background: #f8fafc;
+color: var(--muted);
+font-size: 12px;
+white-space: nowrap;
+}
+
+.main {
+position: relative;
+min-height: 0;
+overflow: hidden;
+}
+
+#workspace {
+position: absolute;
+inset: 0;
+background:
+linear-gradient(#e9edf3 1px, transparent 1px),
+linear-gradient(90deg, #e9edf3 1px, transparent 1px),
+#f8fafc;
+background-size: 24px 24px;
+}
+
+#diagram {
+width: 100%;
+height: 100%;
+display: block;
+user-select: none;
+-webkit-user-select: none;
+touch-action: none;
+cursor: default;
+}
+
+.canvas-bg { fill: transparent; }
+
+.node { cursor: grab; }
+.node.dragging { cursor: grabbing; }
+.node .node-shape {
+stroke: #aab4c3;
+stroke-width: 1.5;
+vector-effect: non-scaling-stroke;
+transition: filter .12s ease, stroke .12s ease, stroke-width .12s ease;
+}
+.node .node-shape { filter: drop-shadow(0 4px 7px rgba(16,24,40,.12)); }
+.node.selected .node-shape { stroke: #7c3aed; stroke-width: 3; filter: drop-shadow(0 0 5px rgba(124,58,237,.2)); }
+.node.source-selected .node-shape { stroke: var(--accent); stroke-width: 4; filter: drop-shadow(0 0 6px rgba(37,99,235,.28)); }
+.node text { pointer-events: none; }
+.node-label { font-weight: 650; }
+.node-counts { font-weight: 650; opacity: .78; }
+
+.relationship-visible {
+fill: none;
+stroke-linecap: round;
+stroke-linejoin: round;
+vector-effect: non-scaling-stroke;
+pointer-events: none;
+}
+.relationship-hit {
+fill: none;
+stroke: transparent;
+stroke-width: 16;
+stroke-linecap: round;
+pointer-events: stroke;
+cursor: pointer;
+}
+.relationship-hover {
+fill: none;
+stroke: var(--accent);
+stroke-width: 10;
+opacity: 0;
+pointer-events: none;
+vector-effect: non-scaling-stroke;
+}
+.relationship-group .relationship-hover { opacity: .08; }
+.relationship-group.selected .relationship-hover { opacity: .24; }
+
+.workspace-hint {
+position: absolute;
+left: 50%;
+bottom: 14px;
+transform: translateX(-50%);
+max-width: calc(100% - 32px);
+padding: 8px 12px;
+border: 1px solid rgba(201, 208, 219, .9);
+border-radius: 999px;
+background: rgba(255,255,255,.9);
+box-shadow: 0 4px 12px rgba(16,24,40,.06);
+color: var(--muted);
+font-size: 12px;
+pointer-events: none;
+white-space: nowrap;
+}
+
+.selection-status {
+position: absolute;
+top: 14px;
+left: 14px;
+display: none;
+align-items: center;
+gap: 8px;
+padding: 8px 10px;
+border-radius: 8px;
+border: 1px solid #bfdbfe;
+background: rgba(239,246,255,.96);
+color: #1e40af;
+box-shadow: 0 4px 16px rgba(16,24,40,.07);
+font-size: 12px;
+font-weight: 650;
+z-index: 5;
+}
+.selection-status.visible { display: flex; }
+
+.panel {
+position: absolute;
+top: 12px;
+right: 12px;
+width: 310px;
+max-height: calc(100% - 24px);
+overflow: auto;
+border: 1px solid var(--line);
+border-radius: 12px;
+background: rgba(255,255,255,.98);
+box-shadow: var(--shadow);
+z-index: 30;
+transform: translateX(calc(100% + 24px));
+opacity: 0;
+pointer-events: none;
+transition: transform .18s ease, opacity .18s ease;
+}
+.panel.open { transform: translateX(0); opacity: 1; pointer-events: auto; }
+
+.panel-header {
+position: sticky;
+top: 0;
+z-index: 2;
+display: flex;
+align-items: center;
+justify-content: space-between;
+gap: 10px;
+padding: 14px 14px 10px;
+border-bottom: 1px solid var(--line);
+background: rgba(255,255,255,.98);
+}
+.panel-header h2 { font-size: 15px; margin: 0; }
+.panel-body { padding: 12px 14px 16px; }
+.setting-section + .setting-section { margin-top: 18px; padding-top: 16px; border-top: 1px solid var(--line); }
+.setting-section h3 { margin: 0 0 10px; font-size: 13px; }
+.field { display: grid; grid-template-columns: 1fr 112px; align-items: center; gap: 10px; margin: 9px 0; }
+.field label { font-size: 12px; color: #344054; }
+.field input[type="color"] { width: 100%; height: 34px; padding: 3px; border: 1px solid var(--line-strong); border-radius: 7px; background: #fff; }
+.field input[type="number"], .field select {
+width: 100%; height: 34px; border: 1px solid var(--line-strong); border-radius: 7px; padding: 5px 8px; background: #fff;
+}
+.panel-actions { display: grid; gap: 8px; margin-top: 12px; }
+.panel-note { margin: 8px 0 0; color: var(--muted); font-size: 11px; line-height: 1.45; }
+
+.context-menu {
+position: fixed;
+z-index: 100;
+width: 248px;
+display: none;
+border: 1px solid var(--line);
+border-radius: 10px;
+background: #fff;
+box-shadow: var(--shadow);
+padding: 8px;
+}
+.context-menu.open { display: block; }
+.context-title { padding: 5px 7px 8px; font-size: 12px; font-weight: 750; color: #344054; }
+.context-menu .menu-row { display: grid; grid-template-columns: 1fr 100px; align-items: center; gap: 8px; padding: 5px 7px; }
+.context-menu .menu-row label { font-size: 12px; color: #475467; }
+.context-menu select, .context-menu input[type="number"] { width: 100%; height: 32px; border: 1px solid var(--line-strong); border-radius: 6px; padding: 4px 6px; background: #fff; }
+.context-menu input[type="color"] { width: 100%; height: 32px; border: 1px solid var(--line-strong); border-radius: 6px; padding: 2px; background: #fff; }
+.context-menu .menu-btn { width: 100%; text-align: left; border: 0; min-height: 34px; padding: 7px 8px; }
+.context-menu .menu-btn { background: #f2f4f7; }
+.context-menu .menu-btn.danger { color: var(--danger); }
+.context-divider { height: 1px; background: var(--line); margin: 6px 0; }
+
+.toast-stack {
+position: fixed;
+right: 16px;
+bottom: 16px;
+z-index: 200;
+display: grid;
+gap: 8px;
+pointer-events: none;
+}
+.toast {
+min-width: 220px;
+max-width: 360px;
+padding: 10px 12px;
+border: 1px solid var(--line);
+border-radius: 9px;
+background: #fff;
+color: #344054;
+box-shadow: var(--shadow);
+font-size: 12px;
+animation: toastIn .18s ease-out;
+}
+@keyframes toastIn { from { transform: translateY(6px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+
+/* Dark editor mode changes only application chrome/workspace, not diagram object colors. */
+ body {
+background: #3f4246;
+color: #f3f4f6;
+}
+ .toolbar {
+background: #3f4246;
+border-color: #5e636a;
+box-shadow: none;
+}
+ .toolbar-sep { background: #5e636a; }
+ .brand-mark {
+background: #4b4f54;
+border-color: #676c73;
+}
+ .title-input { color: #f3f4f6; }
+ .title-input,
+ .title-input {
+background: #4b4f54;
+border-color: #72777e;
+}
+ button,
+ .toolbar-select-wrap,
+ .theme-toggle {
+background: #4b4f54;
+color: #f3f4f6;
+border-color: #6b7077;
+}
+ button:hover(),
+ .toolbar-select-wrap,
+ .theme-toggle {
+background: #555a60;
+border-color: #7a8087;
+}
+ button.primary {
+background: var(--accent);
+color: #fff;
+border-color: var(--accent);
+}
+ button.primary:hover() {
+background: #1d4ed8;
+border-color: #1d4ed8;
+}
+ .danger {
+color: #ffaaa5;
+border-color: #80605e;
+}
+ .danger:hover() {
+background: #5a4140;
+border-color: #996a66;
+}
+ .toolbar-select-wrap { color: #c5c9ce; }
+ .toolbar-select-wrap select { color: #f3f4f6; color-scheme: dark; }
+ .stats-pill {
+background: #4b4f54;
+color: #c5c9ce;
+border-color: #61666d;
+}
+ #workspace {
+background:
+linear-gradient(#62666b 1px, transparent 1px),
+linear-gradient(90deg, #62666b 1px, transparent 1px),
+#55595e;
+}
+ .workspace-hint {
+background: rgba(63,66,70,.94);
+border-color: #686d74;
+color: #d1d5da;
+box-shadow: none;
+}
+ .selection-status {
+background: rgba(63,66,70,.96);
+border-color: #747a82;
+color: #f1f3f5;
+box-shadow: none;
+}
+ .panel,
+ .panel-header {
+background: rgba(72,76,81,.98);
+border-color: #61666d;
+}
+ .setting-section + .setting-section { border-color: #61666d; }
+ .field label,
+ .context-title { color: #e5e7eb; }
+ .panel-note,
+ .context-menu .menu-row label { color: #cbd0d5; }
+ .field input[type="number"],
+ .field select,
+ .context-menu select,
+ .context-menu input[type="number"] {
+background: #4b4f54;
+color: #f3f4f6;
+border-color: #6b7077;
+color-scheme: dark;
+}
+ .field input[type="color"],
+ .context-menu input[type="color"] {
+background: #4b4f54;
+border-color: #6b7077;
+}
+ .context-menu {
+background: #484c51;
+border-color: #61666d;
+}
+ .context-menu .menu-btn { background: #555a60; }
+ .context-divider { background: #61666d; }
+ .toast {
+background: #484c51;
+color: #f3f4f6;
+border-color: #61666d;
+}
+ .theme-switch { background: #73787e; }
+ .theme-toggle input + .theme-switch { background: #8b9096; }
+
+#printTitle { display: none; }
+
+@media (max-width: 1220px) {
+.stats-pill { display: none; }
+.toolbar .optional-label { display: none; }
+.brand { flex-basis: 260px; }
+.toolbar button { padding-inline: 9px; }
+}
+
+@media (max-width: 980px) {
+.brand-mark { display: none; }
+.brand { flex-basis: 205px; min-width: 120px; }
+.theme-toggle .theme-toggle-label { display: none; }
+.toolbar-secondary { font-size: 0; width: 36px; min-width: 36px; padding: 0; }
+#exportBtn::after { content: "⇩"; font-size: 16px; }
+#importBtn::after { content: "⇧"; font-size: 16px; }
+#printBtn::after { content: "⎙"; font-size: 16px; }
+.destructive-toolbar { font-size: 0; width: 36px; min-width: 36px; padding: 0; }
+#clearBtn::after { content: "⌫"; font-size: 16px; }
+#newBtn::after { content: "＋"; font-size: 18px; }
+}
+
+@media (max-width: 760px) {
+ { --toolbar-h: 112px; }
+.toolbar {
+height: var(--toolbar-h);
+flex-wrap: wrap;
+align-content: center;
+row-gap: 6px;
+}
+.brand { order: 1; flex: 1 1 240px; max-width: none; }
+.toolbar > .toolbar-sep { display: none; }
+.toolbar-actions { order: 2; }
+.spacer { order: 3; flex: 1 1 auto; }
+.theme-toggle { order: 4; }
+#settingsBtn { order: 5; }
+.toolbar-utility { order: 6; flex: 1 1 auto; }
+#clearBtn { order: 7; }
+#newBtn { order: 8; }
+.title-input { max-width: none; }
+}
+
+@page { size: landscape; margin: 10mm; }
+@media print {
+html, body { overflow: visible !important; width: auto; height: auto; background: #fff !important; }
+#app { display: block; height: auto; }
+.toolbar, .panel, .context-menu, .workspace-hint, .selection-status, .toast-stack { display: none !important; }
+.main { position: static; overflow: visible; }
+#workspace {
+position: static;
+width: 100%;
+height: 175mm;
+background: #fff !important;
+border: 0;
+}
+#diagram { width: 100%; height: 100%; }
+#printTitle {
+display: block;
+margin: 0 0 5mm;
+text-align: center;
+font-size: 18pt;
+font-weight: 750;
+color: #111827;
+}
+.node .node-shape { filter: none !important; }
+.relationship-hover { display: none !important; }
+* { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+}
+</style>
+
+</head>
+<body>
+<div id="app">
+  <header class="toolbar" aria-label="Diagram toolbar">
+    <div class="brand">
+      <div class="brand-mark" aria-hidden="true">↗</div>
+      <input id="diagramTitle" class="title-input" type="text" value="Interrelationship Digraph" aria-label="Diagram title" title="Diagram title" />
+    </div>
+
+<div class="toolbar-sep"></div>
+<div class="toolbar-actions" aria-label="Diagram actions">
+  <button id="addItemBtn" class="primary label-btn" title="Add a new item">＋ Add Item</button>
+  <button id="undoBtn" class="compact" title="Undo (Ctrl/Cmd+Z)" aria-label="Undo">↶</button>
+  <button id="redoBtn" class="compact" title="Redo (Ctrl/Cmd+Shift+Z or Ctrl/Cmd+Y)" aria-label="Redo">↷</button>
+  <button id="fitBtn" class="label-btn" title="Fit and center the entire diagram">Fit</button>
+</div>
+
+<div class="toolbar-sep"></div>
+<div class="toolbar-utility" aria-label="File and view actions">
+  <button id="exportBtn" class="label-btn toolbar-secondary" title="Export diagram data as JSON">Export</button>
+  <button id="importBtn" class="label-btn toolbar-secondary" title="Import diagram data from JSON">Import</button>
+  <input id="importInput" type="file" accept="application/json,.json" hidden />
+  <button id="printBtn" class="label-btn toolbar-secondary" title="Print a clean, fitted diagram">Print</button>
+</div>
+
+<div class="spacer"></div>
+<label class="theme-toggle" title="Switch to dark editor background. Diagram object colors are not changed.">
+  <span class="theme-toggle-label">Dark</span>
+  <input id="darkModeToggle" type="checkbox" role="switch" aria-label="Dark mode" aria-checked="false" />
+  <span class="theme-switch" aria-hidden="true"></span>
+</label>
+<span id="diagramStats" class="stats-pill">0 items · 0 relationships</span>
+<button id="settingsBtn" class="label-btn" title="Defaults and formatting settings">⚙ <span class="optional-label">Settings</span></button>
+<button id="clearBtn" class="danger label-btn destructive-toolbar" title="Remove all nodes and relationships">Clear</button>
+<button id="newBtn" class="danger label-btn destructive-toolbar" title="Start a completely new blank diagram">New Blank</button>
+
+  </header>
+
+  <main class="main">
+    <div id="workspace">
+      <div id="printTitle">Interrelationship Digraph</div>
+      <svg id="diagram" xmlns="http://www.w3.org/2000/svg" viewBox="-900 -560 1800 1120" preserveAspectRatio="xMidYMid meet" aria-label="Interrelationship digraph workspace">
+        <defs id="svgDefs"></defs>
+        <rect class="canvas-bg" x="-10000" y="-10000" width="20000" height="20000"></rect>
+        <g id="relationshipLayer"></g>
+        <g id="nodeLayer"></g>
+      </svg>
+      <div id="selectionStatus" class="selection-status"></div>
+      <div class="workspace-hint">Click two nodes to connect · Drag nodes to move · Right-click to edit · Mouse wheel to zoom · Middle Mouse + drag to pan · Click "Add Item" then Space to quick-add items</div>
+    </div>
+
+<aside id="settingsPanel" class="panel" aria-label="Diagram settings">
+  <div class="panel-header">
+    <h2>Formatting Defaults</h2>
+    <button id="closeSettingsBtn" class="compact" aria-label="Close settings">✕</button>
+  </div>
+  <div class="panel-body">
+    <section class="setting-section">
+      <h3>New Nodes</h3>
+      <div class="field"><label for="defaultNodeShape">Shape</label><select id="defaultNodeShape"></select></div>
+      <div class="field"><label for="defaultNodeFill">Background</label><input id="defaultNodeFill" type="color" /></div>
+      <div class="field"><label for="defaultTextColor">Text color</label><input id="defaultTextColor" type="color" /></div>
+      <div class="field"><label for="defaultFontSize">Label font size</label><input id="defaultFontSize" type="number" min="10" max="30" step="1" /></div>
+      <div class="field"><label for="defaultCountFontSize">In/Out font size</label><input id="defaultCountFontSize" type="number" min="8" max="24" step="1" /></div>
+      <div class="panel-actions"><button id="applyNodesBtn">Apply node defaults to all existing</button></div>
+    </section>
+
+    <section class="setting-section">
+      <h3>New Relationships</h3>
+      <p class="panel-note" style="margin:0 0 10px">Choose direction, two-way display, and routing here. These settings control newly created relationships.</p>
+      <div class="field"><label for="defaultRelationshipDirection">Direction</label><select id="defaultRelationshipDirection"><option value="one-way">One-way</option><option value="two-way">Two-way</option></select></div>
+      <div class="field"><label for="defaultTwoWayStyle">Two-way display</label><select id="defaultTwoWayStyle"></select></div>
+      <div class="field"><label for="defaultRelationshipRouting">Routing</label><select id="defaultRelationshipRouting"></select></div>
+      <div class="field"><label for="defaultArrowColor">Arrow color</label><input id="defaultArrowColor" type="color" /></div>
+      <div class="field"><label for="defaultArrowWidth">Line width</label><input id="defaultArrowWidth" type="number" min="1" max="8" step="0.5" /></div>
+      <div class="panel-actions"><button id="applyArrowsBtn">Apply arrow defaults to all existing</button></div>
+    </section>
+
+    <section class="setting-section">
+      <h3>Workspace</h3>
+      <div class="panel-actions">
+        <button id="settingsFitBtn">Fit Diagram</button>
+        <button id="resetDefaultsBtn">Reset application defaults</button>
+      </div>
+      <p class="panel-note">Defaults affect newly created objects. “Apply” buttons update existing objects while preserving names, positions, and relationships.</p>
+    </section>
+  </div>
+</aside>
+
+  </main>
+</div>
+
+<div id="nodeMenu" class="context-menu" role="menu" aria-label="Node menu">
+  <div class="context-title">Edit Item</div>
+  <button id="renameNodeBtn" class="menu-btn">Rename item…</button>
+  <div class="context-divider"></div>
+  <div class="menu-row"><label for="nodeShapeInput">Shape</label><select id="nodeShapeInput"></select></div>
+  <div class="menu-row"><label for="nodeFillInput">Background</label><input id="nodeFillInput" type="color" /></div>
+  <div class="menu-row"><label for="nodeTextInput">Text color</label><input id="nodeTextInput" type="color" /></div>
+  <div class="menu-row"><label for="nodeFontInput">Label font size</label><input id="nodeFontInput" type="number" min="10" max="30" step="1" /></div>
+  <div class="menu-row"><label for="nodeCountFontInput">In/Out font size</label><input id="nodeCountFontInput" type="number" min="8" max="24" step="1" /></div>
+  <div class="context-divider"></div>
+  <button id="resetNodeBtn" class="menu-btn">Reset formatting to defaults</button>
+  <button id="deleteNodeBtn" class="menu-btn danger">Delete item</button>
+</div>
+
+<div id="relationshipMenu" class="context-menu" role="menu" aria-label="Relationship menu">
+  <div id="relationshipMenuTitle" class="context-title">Edit Relationship</div>
+  <button id="reverseRelationshipBtn" class="menu-btn">Reverse direction</button>
+  <div class="context-divider"></div>
+  <div class="menu-row"><label for="relDirectionInput">Direction</label><select id="relDirectionInput"><option value="one-way">One-way</option><option value="two-way">Two-way</option></select></div>
+  <div class="menu-row"><label for="relTwoWayStyleInput">Two-way display</label><select id="relTwoWayStyleInput"></select></div>
+  <div class="menu-row"><label for="relRoutingInput">Routing</label><select id="relRoutingInput"></select></div>
+  <div class="menu-row"><label for="relColorInput">Arrow color</label><input id="relColorInput" type="color" /></div>
+  <div class="menu-row"><label for="relWidthInput">Line width</label><input id="relWidthInput" type="number" min="1" max="8" step="0.5" /></div>
+  <div class="context-divider"></div>
+  <button id="resetRelationshipBtn" class="menu-btn">Reset formatting to defaults</button>
+  <button id="deleteRelationshipBtn" class="menu-btn danger">Delete relationship</button>
+</div>
+
+<div id="toastStack" class="toast-stack" aria-live="polite" aria-atomic="true"></div>
+
+<script>
+(() => {
+  'use strict';
+
+  // ---------------------------------------------------------------------------
+  // Constants and state
+  // ---------------------------------------------------------------------------
+
+  const STORAGE_KEY = 'interrelationship-digraph-state-v1';
+  const THEME_STORAGE_KEY = 'interrelationship-digraph-theme-v1';
+  const BUILTIN_DEFAULTS = Object.freeze({
+    shape: 'rounded',
+    fillColor: '#eaf2ff',
+    textColor: '#172033',
+    fontSize: 16,
+    countFontSize: 12,
+    arrowColor: '#111111',
+    arrowWidth: 2,
+    relationshipRouting: 'curved',
+    bidirectional: false,
+    twoWayStyle: 'double-headed'
+  });
+  const SHAPES = [
+    ['circle', 'Circle'],
+    ['oval', 'Oval'],
+    ['rounded', 'Rounded rectangle'],
+    ['rectangle', 'Rectangle'],
+    ['square', 'Square'],
+    ['diamond', 'Diamond'],
+    ['hexagon', 'Hexagon']
+  ];
+  const SHAPE_KEYS = new Set(SHAPES.map(([value]) => value));
+  const RELATIONSHIP_ROUTINGS = [
+    ['curved', 'Curved'],
+    ['straight', 'Straight'],
+    ['orthogonal', 'Right-angle']
+  ];
+  const RELATIONSHIP_ROUTING_KEYS = new Set(RELATIONSHIP_ROUTINGS.map(([value]) => value));
+  const TWO_WAY_STYLES = [
+    ['double-headed', 'Arrowheads both ends'],
+    ['parallel', 'Two parallel arrows']
+  ];
+  const TWO_WAY_STYLE_KEYS = new Set(TWO_WAY_STYLES.map(([value]) => value));
+
+  let state = createInitialState();
+  let undoStack = [];
+  let redoStack = [];
+  let sourceSelectionId = null;
+  let activeSelection = null; // { type: 'node'|'relationship', id }
+  let contextTarget = null;
+  let dragCandidate = null;
+  let panState = null;
+  let spaceDown = false;
+  let prePrintViewBox = null;
+  let viewport = { x: -900, y: -560, w: 1800, h: 1120 };
+  let storageWarningShown = false;
+  let currentTheme = 'light';
+
+  const $ = (id) => document.getElementById(id);
+  const svg = $('diagram');
+  const nodeLayer = $('nodeLayer');
+  const relationshipLayer = $('relationshipLayer');
+  const svgDefs = $('svgDefs');
+  const nodeMenu = $('nodeMenu');
+  const relationshipMenu = $('relationshipMenu');
+
+  function createInitialState() {
+    return {
+      version: 1,
+      title: 'Interrelationship Digraph',
+      nodes: [],
+      relationships: [],
+      defaults: { ...BUILTIN_DEFAULTS },
+      nextNodeId: 1,
+      nextRelationshipId: 1
+    };
+  }
+
+  // ---------------------------------------------------------------------------
+  // History, persistence, and safe state mutation
+  // ---------------------------------------------------------------------------
+
+  function snapshot() {
+    return JSON.parse(JSON.stringify(state));
+  }
+
+  function commit(mutator, options = {}) {
+    const before = snapshot();
+    mutator();
+    undoStack.push(before);
+    if (undoStack.length > 100) undoStack.shift();
+    redoStack = [];
+    saveState();
+    if (options.render !== false) renderAll();
+  }
+
+  function undo() {
+    if (!undoStack.length) return;
+    redoStack.push(snapshot());
+    state = undoStack.pop();
+    clearTransientSelection();
+    saveState();
+    renderAll();
+    toast('Undid last change.');
+  }
+
+  function redo() {
+    if (!redoStack.length) return;
+    undoStack.push(snapshot());
+    state = redoStack.pop();
+    clearTransientSelection();
+    saveState();
+    renderAll();
+    toast('Redid change.');
+  }
+
+  function saveState() {
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+    } catch (error) {
+      if (!storageWarningShown) {
+        storageWarningShown = true;
+        toast('Autosave is unavailable in this browser context.');
+      }
+      console.warn('Autosave failed:', error);
+    }
+  }
+
+  function loadState() {
+    try {
+      const raw = localStorage.getItem(STORAGE_KEY);
+      if (!raw) return false;
+      const parsed = JSON.parse(raw);
+      const validated = validateState(parsed);
+      if (!validated) return false;
+      state = validated;
+      return true;
+    } catch (error) {
+      console.warn('Could not restore saved diagram:', error);
+      return false;
+    }
+  }
+
+  function loadTheme() {
+    try {
+      return localStorage.getItem(THEME_STORAGE_KEY) === 'dark' ? 'dark' : 'light';
+    } catch (error) {
+      return 'light';
+    }
+  }
+
+  function applyTheme(theme, persist = true) {
+    currentTheme = theme === 'dark' ? 'dark' : 'light';
+    document.documentElement.dataset.theme = currentTheme;
+    const toggle = $('darkModeToggle');
+    if (toggle) {
+      const isDark = currentTheme === 'dark';
+      toggle.checked = isDark;
+      toggle.setAttribute('aria-checked', String(isDark));
+      const wrapper = toggle.closest('.theme-toggle');
+      if (wrapper) {
+        wrapper.title = isDark
+          ? 'Switch to light editor background. Diagram object colors are not changed.'
+          : 'Switch to dark editor background. Diagram object colors are not changed.';
+      }
+    }
+    if (persist) {
+      try { localStorage.setItem(THEME_STORAGE_KEY, currentTheme); } catch (error) { /* optional preference */ }
+    }
+  }
+
+  // ---------------------------------------------------------------------------
+  // Validation and normalization
+  // ---------------------------------------------------------------------------
+
+  function isHexColor(value) {
+    return typeof value === 'string' && /^#[0-9a-fA-F]{6}$/.test(value);
+  }
+
+  function finiteNumber(value, fallback) {
+    const n = Number(value);
+    return Number.isFinite(n) ? n : fallback;
+  }
+
+  function clamp(value, min, max) {
+    return Math.min(max, Math.max(min, value));
+  }
+
+  function normalizeDefaults(input) {
+    const d = input && typeof input === 'object' ? input : {};
+    return {
+      shape: SHAPE_KEYS.has(d.shape) ? d.shape : BUILTIN_DEFAULTS.shape,
+      fillColor: isHexColor(d.fillColor) ? d.fillColor : BUILTIN_DEFAULTS.fillColor,
+      textColor: isHexColor(d.textColor) ? d.textColor : BUILTIN_DEFAULTS.textColor,
+      fontSize: clamp(finiteNumber(d.fontSize, BUILTIN_DEFAULTS.fontSize), 10, 30),
+      countFontSize: clamp(finiteNumber(d.countFontSize, BUILTIN_DEFAULTS.countFontSize), 8, 24),
+      arrowColor: isHexColor(d.arrowColor) ? d.arrowColor : BUILTIN_DEFAULTS.arrowColor,
+      arrowWidth: clamp(finiteNumber(d.arrowWidth, BUILTIN_DEFAULTS.arrowWidth), 1, 8),
+      relationshipRouting: RELATIONSHIP_ROUTING_KEYS.has(d.relationshipRouting) ? d.relationshipRouting : BUILTIN_DEFAULTS.relationshipRouting,
+      bidirectional: d.bidirectional === true,
+      twoWayStyle: TWO_WAY_STYLE_KEYS.has(d.twoWayStyle) ? d.twoWayStyle : BUILTIN_DEFAULTS.twoWayStyle
+    };
+  }
+
+  function validateState(input) {
+    if (!input || typeof input !== 'object' || !Array.isArray(input.nodes) || !Array.isArray(input.relationships)) return null;
+
+    const defaults = normalizeDefaults(input.defaults);
+    const nodes = [];
+    const ids = new Set();
+
+    for (const raw of input.nodes.slice(0, 500)) {
+      if (!raw || typeof raw !== 'object') continue;
+      const id = String(raw.id || '').slice(0, 80);
+      const label = String(raw.label || '').trim().slice(0, 300);
+      if (!id || !label || ids.has(id)) continue;
+      ids.add(id);
+      nodes.push({
+        id,
+        label,
+        x: clamp(finiteNumber(raw.x, 0), -9000, 9000),
+        y: clamp(finiteNumber(raw.y, 0), -9000, 9000),
+        shape: SHAPE_KEYS.has(raw.shape) ? raw.shape : defaults.shape,
+        fillColor: isHexColor(raw.fillColor) ? raw.fillColor : defaults.fillColor,
+        textColor: isHexColor(raw.textColor) ? raw.textColor : defaults.textColor,
+        fontSize: clamp(finiteNumber(raw.fontSize, defaults.fontSize), 10, 30),
+        countFontSize: clamp(finiteNumber(raw.countFontSize, defaults.countFontSize), 8, 24)
+      });
+    }
+
+    const relationships = [];
+    const relIds = new Set();
+    const pairs = new Set();
+    for (const raw of input.relationships.slice(0, 2000)) {
+      if (!raw || typeof raw !== 'object') continue;
+      const id = String(raw.id || '').slice(0, 80);
+      const sourceNodeId = String(raw.sourceNodeId || '');
+      const targetNodeId = String(raw.targetNodeId || '');
+      const pair = `${sourceNodeId}→${targetNodeId}`;
+      if (!id || relIds.has(id) || sourceNodeId === targetNodeId || !ids.has(sourceNodeId) || !ids.has(targetNodeId) || pairs.has(pair)) continue;
+      relIds.add(id);
+      pairs.add(pair);
+      relationships.push({
+        id,
+        sourceNodeId,
+        targetNodeId,
+        color: isHexColor(raw.color) ? raw.color : defaults.arrowColor,
+        width: clamp(finiteNumber(raw.width, defaults.arrowWidth), 1, 8),
+        routing: RELATIONSHIP_ROUTING_KEYS.has(raw.routing) ? raw.routing : defaults.relationshipRouting,
+        bidirectional: raw.bidirectional === true,
+        twoWayStyle: TWO_WAY_STYLE_KEYS.has(raw.twoWayStyle) ? raw.twoWayStyle : defaults.twoWayStyle
+      });
+    }
+
+    const maxNodeNum = nodes.reduce((m, n) => Math.max(m, parseTrailingNumber(n.id)), 0);
+    const maxRelNum = relationships.reduce((m, r) => Math.max(m, parseTrailingNumber(r.id)), 0);
+
+    return {
+      version: 1,
+      title: String(input.title || 'Interrelationship Digraph').slice(0, 180),
+      nodes,
+      relationships,
+      defaults,
+      nextNodeId: Math.max(finiteNumber(input.nextNodeId, 1), maxNodeNum + 1),
+      nextRelationshipId: Math.max(finiteNumber(input.nextRelationshipId, 1), maxRelNum + 1)
+    };
+  }
+
+  function parseTrailingNumber(id) {
+    const match = String(id).match(/(\d+)$/);
+    return match ? Number(match[1]) : 0;
+  }
+
+  // ---------------------------------------------------------------------------
+  // Geometry
+  // ---------------------------------------------------------------------------
+
+  function getNodeDimensions(node) {
+    const fs = clamp(Number(node.fontSize) || 16, 10, 30);
+    const countFs = clamp(Number(node.countFontSize) || 12, 8, 24);
+    const countExtraW = Math.max(0, countFs - 12) * 5;
+    const fontExtraW = Math.max(0, fs - 16);
+
+    // Start with a comfortable minimum footprint for each shape.
+    let w;
+    let baseH;
+    let usableHeightFactor;
+    switch (node.shape) {
+      case 'circle':
+        w = 164 + fontExtraW * 2 + countExtraW;
+        baseH = 164 + fontExtraW * 2;
+        usableHeightFactor = 0.70;
+        break;
+      case 'oval':
+        w = 220 + fontExtraW * 3 + countExtraW;
+        baseH = 130 + fontExtraW * 1.6;
+        usableHeightFactor = 0.72;
+        break;
+      case 'square':
+        w = 160 + fontExtraW * 2.5 + countExtraW;
+        baseH = w;
+        usableHeightFactor = 0.76;
+        break;
+      case 'diamond':
+        w = 210 + fontExtraW * 3 + countExtraW;
+        baseH = 160 + fontExtraW * 2;
+        usableHeightFactor = 0.55;
+        break;
+      case 'hexagon':
+        w = 220 + fontExtraW * 3 + countExtraW;
+        baseH = 136 + fontExtraW * 1.8;
+        usableHeightFactor = 0.72;
+        break;
+      case 'rectangle':
+      case 'rounded':
+      default:
+        w = 220 + fontExtraW * 3 + countExtraW;
+        baseH = 130 + fontExtraW * 1.7;
+        usableHeightFactor = 0.80;
+        break;
+    }
+
+    // The label and In/Out line are treated as one centered content block.
+    // Size the shape around that combined block instead of reserving a footer
+    // at the bottom of the node.
+    const lines = wrapLabel(node.label, node, { w });
+    const metrics = getNodeTextMetrics(node, lines.length);
+    const verticalPadding = Math.max(18, fs * 0.8, countFs * 0.9);
+    const requiredH = (metrics.totalHeight + verticalPadding * 2) / usableHeightFactor;
+    let h = Math.max(baseH, requiredH);
+
+    if (node.shape === 'square') {
+      const size = Math.max(w, h);
+      w = size;
+      h = size;
+    }
+    if (node.shape === 'circle') {
+      const size = Math.max(w, h);
+      w = size;
+      h = size;
+    }
+
+    return { w, h };
+  }
+
+  function getNodeTextMetrics(node, lineCount) {
+    const fontSize = clamp(Number(node.fontSize) || 16, 10, 30);
+    const countFontSize = clamp(Number(node.countFontSize) || state.defaults.countFontSize || 12, 8, 24);
+    const labelLineHeight = fontSize * 1.18;
+    const labelHeight = Math.max(1, lineCount) * labelLineHeight;
+    const countHeight = countFontSize * 1.15;
+    const gap = Math.max(9, fontSize * 0.42, countFontSize * 0.55);
+    return {
+      fontSize,
+      countFontSize,
+      labelLineHeight,
+      labelHeight,
+      countHeight,
+      gap,
+      totalHeight: labelHeight + gap + countHeight
+    };
+  }
+
+  function polygonForNode(node) {
+    const { w, h } = getNodeDimensions(node);
+    if (node.shape === 'diamond') {
+      return [[0, -h/2], [w/2, 0], [0, h/2], [-w/2, 0]];
+    }
+    if (node.shape === 'hexagon') {
+      return [[-w*.42, -h/2], [w*.42, -h/2], [w/2, 0], [w*.42, h/2], [-w*.42, h/2], [-w/2, 0]];
+    }
+    return null;
+  }
+
+  function boundaryPoint(node, towardX, towardY) {
+    let dx = towardX - node.x;
+    let dy = towardY - node.y;
+    if (Math.abs(dx) < 0.001 && Math.abs(dy) < 0.001) dx = 1;
+    const { w, h } = getNodeDimensions(node);
+
+    if (node.shape === 'circle' || node.shape === 'oval') {
+      const a = w / 2;
+      const b = h / 2;
+      const scale = 1 / Math.sqrt((dx*dx)/(a*a) + (dy*dy)/(b*b));
+      return { x: node.x + dx * scale, y: node.y + dy * scale };
+    }
+
+    const poly = polygonForNode(node);
+    if (poly) {
+      const hit = rayPolygonIntersection(dx, dy, poly);
+      if (hit) return { x: node.x + hit.x, y: node.y + hit.y };
+    }
+
+    // Rectangle approximation is also appropriate for rounded rectangles.
+    const scale = 1 / Math.max(Math.abs(dx) / (w / 2), Math.abs(dy) / (h / 2));
+    return { x: node.x + dx * scale, y: node.y + dy * scale };
+  }
+
+  function rayPolygonIntersection(dx, dy, points) {
+    let bestT = Infinity;
+    let best = null;
+    for (let i = 0; i < points.length; i++) {
+      const a = points[i];
+      const b = points[(i + 1) % points.length];
+      const sx = b[0] - a[0];
+      const sy = b[1] - a[1];
+      const denom = cross(dx, dy, sx, sy);
+      if (Math.abs(denom) < 1e-9) continue;
+      const t = cross(a[0], a[1], sx, sy) / denom;
+      const u = cross(a[0], a[1], dx, dy) / denom;
+      if (t >= 0 && u >= 0 && u <= 1 && t < bestT) {
+        bestT = t;
+        best = { x: dx * t, y: dy * t };
+      }
+    }
+    return best;
+  }
+
+  function cross(ax, ay, bx, by) { return ax * by - ay * bx; }
+
+  function distancePointToSegment(px, py, ax, ay, bx, by) {
+    const vx = bx - ax;
+    const vy = by - ay;
+    const len2 = vx*vx + vy*vy;
+    if (!len2) return { distance: Math.hypot(px - ax, py - ay), t: 0 };
+    const t = clamp(((px - ax)*vx + (py - ay)*vy) / len2, 0, 1);
+    const qx = ax + t*vx;
+    const qy = ay + t*vy;
+    return { distance: Math.hypot(px - qx, py - qy), t };
+  }
+
+  function relationshipGeometry(rel, options = {}) {
+    const source = options.source || getNode(rel.sourceNodeId);
+    const target = options.target || getNode(rel.targetNodeId);
+    if (!source || !target) return null;
+
+    // Parallel/opposite arrows need a predictable separation rule for every
+    // routing style.  Explicit options (used by logical two-way relationships)
+    // take precedence; otherwise a pair of opposite one-way relationships is
+    // automatically separated so the two arrows do not collapse onto one line.
+    const ignoreReverse = options.ignoreReverse === true;
+    const reverseExists = !ignoreReverse && state.relationships.some(r =>
+      r.id !== rel.id &&
+      !r.bidirectional &&
+      r.sourceNodeId === rel.targetNodeId &&
+      r.targetNodeId === rel.sourceNodeId
+    );
+    const hasLaneOverride = Object.prototype.hasOwnProperty.call(options, 'laneOffset');
+    const automaticLane = reverseExists ? Math.max(14, 9 + finiteNumber(rel.width, 2) * 2) : 0;
+    const laneOffset = hasLaneOverride ? finiteNumber(options.laneOffset, 0) : automaticLane;
+    const routing = RELATIONSHIP_ROUTING_KEYS.has(rel.routing) ? rel.routing : state.defaults.relationshipRouting;
+
+    if (routing === 'straight') return straightRelationshipGeometry(source, target, laneOffset);
+    if (routing === 'orthogonal') {
+      return orthogonalRelationshipGeometry(rel, source, target, laneOffset, { ignoreReverse });
+    }
+    return curvedRelationshipGeometry(rel, source, target, laneOffset, options.curveSide, { ignoreReverse });
+  }
+
+  function straightRelationshipGeometry(source, target, laneOffset = 0) {
+    const dx = target.x - source.x;
+    const dy = target.y - source.y;
+    const len = Math.max(1, Math.hypot(dx, dy));
+    const ux = dx / len;
+    const uy = dy / len;
+    const nx = -uy;
+    const ny = ux;
+
+    // A true parallel straight lane must be offset in world space, not merely
+    // aimed toward an offset point.  Intersect that offset line with each node
+    // boundary so arrowheads remain attached to the shapes.
+    const sourceDims = getNodeDimensions(source);
+    const targetDims = getNodeDimensions(target);
+    const maxSafeOffset = Math.max(0, Math.min(
+      Math.min(sourceDims.w, sourceDims.h),
+      Math.min(targetDims.w, targetDims.h)
+    ) * 0.38);
+    const offset = clamp(laneOffset, -maxSafeOffset, maxSafeOffset);
+
+    const start = Math.abs(offset) < 0.01
+      ? boundaryPoint(source, target.x, target.y)
+      : offsetLineBoundaryPoint(source, ux, uy, nx, ny, offset, 1);
+    const end = Math.abs(offset) < 0.01
+      ? boundaryPoint(target, source.x, source.y)
+      : offsetLineBoundaryPoint(target, ux, uy, nx, ny, offset, -1);
+
+    return {
+      start,
+      end,
+      control: { x: (start.x + end.x) / 2, y: (start.y + end.y) / 2 },
+      points: [start, end],
+      d: `M ${fmt(start.x)} ${fmt(start.y)} L ${fmt(end.x)} ${fmt(end.y)}`
+    };
+  }
+
+  function offsetLineBoundaryPoint(node, ux, uy, nx, ny, offset, directionSign) {
+    return lineBoundaryPointFromLocal(node, nx * offset, ny * offset, ux * directionSign, uy * directionSign);
+  }
+
+  function lineBoundaryPointFromLocal(node, p0x, p0y, dirX, dirY) {
+    const { w, h } = getNodeDimensions(node);
+    const dirLen = Math.max(1e-9, Math.hypot(dirX, dirY));
+    const dir = { x: dirX / dirLen, y: dirY / dirLen };
+    const p0 = { x: p0x, y: p0y };
+    let localHit = null;
+
+    if (node.shape === 'circle' || node.shape === 'oval') {
+      const a = w / 2;
+      const b = h / 2;
+      const A = (dir.x * dir.x) / (a * a) + (dir.y * dir.y) / (b * b);
+      const B = 2 * ((p0.x * dir.x) / (a * a) + (p0.y * dir.y) / (b * b));
+      const C = (p0.x * p0.x) / (a * a) + (p0.y * p0.y) / (b * b) - 1;
+      const disc = B * B - 4 * A * C;
+      if (disc >= 0 && A > 1e-12) {
+        const root = Math.sqrt(disc);
+        const roots = [(-B - root) / (2 * A), (-B + root) / (2 * A)]
+          .filter(t => t >= -1e-8)
+          .sort((a, b) => a - b);
+        if (roots.length) localHit = { x: p0.x + dir.x * roots[0], y: p0.y + dir.y * roots[0] };
+      }
+    } else {
+      const polygon = polygonForNode(node) || [
+        [-w/2, -h/2], [w/2, -h/2], [w/2, h/2], [-w/2, h/2]
+      ];
+      localHit = rayPolygonIntersectionFromPoint(p0.x, p0.y, dir.x, dir.y, polygon);
+    }
+
+    if (!localHit) return boundaryPoint(node, node.x + dir.x * 10000, node.y + dir.y * 10000);
+    return { x: node.x + localHit.x, y: node.y + localHit.y };
+  }
+
+  function rayPolygonIntersectionFromPoint(px, py, dx, dy, points) {
+    let bestT = Infinity;
+    let best = null;
+    for (let i = 0; i < points.length; i++) {
+      const a = points[i];
+      const b = points[(i + 1) % points.length];
+      const sx = b[0] - a[0];
+      const sy = b[1] - a[1];
+      const denom = cross(dx, dy, sx, sy);
+      if (Math.abs(denom) < 1e-9) continue;
+      const qx = a[0] - px;
+      const qy = a[1] - py;
+      const t = cross(qx, qy, sx, sy) / denom;
+      const u = cross(qx, qy, dx, dy) / denom;
+      if (t >= -1e-8 && u >= -1e-8 && u <= 1 + 1e-8 && t < bestT) {
+        bestT = t;
+        best = { x: px + dx * t, y: py + dy * t };
+      }
+    }
+    return best;
+  }
+
+  function curvedRelationshipGeometry(rel, source, target, laneOffset = 0, curveSide = null, options = {}) {
+    const dx = target.x - source.x;
+    const dy = target.y - source.y;
+    const len = Math.max(1, Math.hypot(dx, dy));
+    const nx = -dy / len;
+    const ny = dx / len;
+
+    const reverseExists = options.ignoreReverse !== true && state.relationships.some(r =>
+      r.id !== rel.id &&
+      !r.bidirectional &&
+      r.sourceNodeId === rel.targetNodeId &&
+      r.targetNodeId === rel.sourceNodeId
+    );
+    const soloSign = curveSide === 1 || curveSide === -1 ? curveSide : (hashString(rel.id) % 2 ? 1 : -1);
+
+    // For opposite directions, use the SAME local curve sign. Reversing the
+    // source/target also reverses the path normal, which naturally puts the
+    // second arrow on the opposite physical side. Using opposite signs here
+    // would make the two curves overlap.
+    const baseSign = reverseExists ? 1 : soloSign;
+    let curvature = baseSign * clamp(len * 0.12, 44, 92);
+    curvature += Math.sign(curvature || baseSign || 1) * laneOffset;
+
+    let collisions = 0;
+    for (const node of state.nodes) {
+      if (node.id === source.id || node.id === target.id) continue;
+      const { w, h } = getNodeDimensions(node);
+      const proximity = distancePointToSegment(node.x, node.y, source.x, source.y, target.x, target.y);
+      if (proximity.t > .08 && proximity.t < .92 && proximity.distance < Math.max(w, h) * .56 + 24) collisions++;
+    }
+    if (collisions) curvature += Math.sign(curvature || 1) * Math.min(150, collisions * 38);
+
+    const mx = (source.x + target.x) / 2;
+    const my = (source.y + target.y) / 2;
+    const cx = mx + nx * curvature;
+    const cy = my + ny * curvature;
+    const start = boundaryPoint(source, cx, cy);
+    const end = boundaryPoint(target, cx, cy);
+
+    return {
+      start,
+      end,
+      control: { x: cx, y: cy },
+      points: [start, { x: cx, y: cy }, end],
+      d: `M ${fmt(start.x)} ${fmt(start.y)} Q ${fmt(cx)} ${fmt(cy)} ${fmt(end.x)} ${fmt(end.y)}`
+    };
+  }
+
+  function orthogonalRelationshipGeometry(rel, source, target, laneOffset = 0, options = {}) {
+    const dx = target.x - source.x;
+    const dy = target.y - source.y;
+
+    // World-space sign keeps the two orthogonal lanes on opposite corridors
+    // when source and target are swapped.
+    const pairSign = String(source.id) < String(target.id) ? 1 : -1;
+    const directionalLaneOffset = laneOffset * pairSign;
+
+    // Nearly aligned nodes do not need a visible elbow; the same lane-offset
+    // rule still produces distinct parallel arrows when required.
+    if (Math.abs(dx) < 12 || Math.abs(dy) < 12) return straightRelationshipGeometry(source, target, laneOffset);
+
+    const reverseExists = options.ignoreReverse !== true && state.relationships.some(r =>
+      r.id !== rel.id &&
+      !r.bidirectional &&
+      r.sourceNodeId === rel.targetNodeId &&
+      r.targetNodeId === rel.sourceNodeId
+    );
+    const reverseOffset = reverseExists ? pairSign * 42 : 0;
+    const candidates = [];
+    const offsets = [0, 86, -86, 165, -165];
+    const midX = (source.x + target.x) / 2 + reverseOffset + directionalLaneOffset;
+    const midY = (source.y + target.y) / 2 + reverseOffset + directionalLaneOffset;
+
+    for (const offset of offsets) {
+      candidates.push(buildOrthogonalCandidate(source, target, 'vertical-corridor', midX + offset));
+      candidates.push(buildOrthogonalCandidate(source, target, 'horizontal-corridor', midY + offset));
+    }
+
+    candidates.forEach(candidate => {
+      candidate.score = orthogonalCollisionScore(candidate.points, source.id, target.id) + candidate.length * 0.0008;
+    });
+    candidates.sort((a, b) => a.score - b.score);
+    return candidates[0];
+  }
+
+  function buildOrthogonalCandidate(source, target, mode, corridor) {
+    let firstAim;
+    let lastAim;
+    let bends;
+
+    if (mode === 'vertical-corridor') {
+      firstAim = { x: corridor, y: source.y };
+      lastAim = { x: corridor, y: target.y };
+      bends = [firstAim, lastAim];
+    } else {
+      firstAim = { x: source.x, y: corridor };
+      lastAim = { x: target.x, y: corridor };
+      bends = [firstAim, lastAim];
+    }
+
+    const start = boundaryPoint(source, firstAim.x, firstAim.y);
+    const end = boundaryPoint(target, lastAim.x, lastAim.y);
+    const points = simplifyPolyline([start, ...bends, end]);
+    const d = points.map((p, i) => `${i ? 'L' : 'M'} ${fmt(p.x)} ${fmt(p.y)}`).join(' ');
+    let length = 0;
+    for (let i = 1; i < points.length; i++) length += Math.hypot(points[i].x - points[i-1].x, points[i].y - points[i-1].y);
+
+    return {
+      start,
+      end,
+      control: points[Math.floor(points.length / 2)] || { x: (start.x + end.x)/2, y: (start.y + end.y)/2 },
+      points,
+      length,
+      mode,
+      corridor,
+      d
+    };
+  }
+
+  function simplifyPolyline(points) {
+    const result = [];
+    for (const point of points) {
+      const prev = result[result.length - 1];
+      if (!prev || Math.hypot(point.x - prev.x, point.y - prev.y) > 0.5) result.push(point);
+    }
+    if (result.length < 3) return result;
+
+    const simplified = [result[0]];
+    for (let i = 1; i < result.length - 1; i++) {
+      const a = simplified[simplified.length - 1];
+      const b = result[i];
+      const c = result[i + 1];
+      const sameX = Math.abs(a.x - b.x) < 0.5 && Math.abs(b.x - c.x) < 0.5;
+      const sameY = Math.abs(a.y - b.y) < 0.5 && Math.abs(b.y - c.y) < 0.5;
+      if (!sameX && !sameY) simplified.push(b);
+    }
+    simplified.push(result[result.length - 1]);
+    return simplified;
+  }
+
+  function orthogonalCollisionScore(points, sourceId, targetId) {
+    let score = 0;
+    for (const node of state.nodes) {
+      if (node.id === sourceId || node.id === targetId) continue;
+      const { w, h } = getNodeDimensions(node);
+      const clearance = Math.max(w, h) * 0.52 + 18;
+      for (let i = 1; i < points.length; i++) {
+        const proximity = distancePointToSegment(node.x, node.y, points[i-1].x, points[i-1].y, points[i].x, points[i].y);
+        if (proximity.distance < clearance) {
+          score += 1000 + (clearance - proximity.distance) * 4;
+        }
+      }
+    }
+    return score;
+  }
+
+  function hashString(value) {
+    let h = 0;
+    const s = String(value);
+    for (let i = 0; i < s.length; i++) h = ((h << 5) - h + s.charCodeAt(i)) | 0;
+    return Math.abs(h);
+  }
+
+  function fmt(n) { return Number(n.toFixed(2)); }
+
+  function placementForIndex(index) {
+    // Concentric radial rings sized to maintain roughly 220px arc spacing.
+    let remaining = index;
+    let ring = 1;
+    while (ring < 20) {
+      const radius = 250 + (ring - 1) * 245;
+      const capacity = Math.max(6, Math.floor((2 * Math.PI * radius) / 225));
+      if (remaining < capacity) {
+        const angle = -Math.PI / 2 + (remaining * 2 * Math.PI / capacity) + (ring % 2 ? 0 : Math.PI / capacity);
+        return { x: Math.cos(angle) * radius, y: Math.sin(angle) * radius };
+      }
+      remaining -= capacity;
+      ring++;
+    }
+    return { x: 0, y: 0 };
+  }
+
+  function relationshipRenderGeometries(rel) {
+    if (!rel?.bidirectional || rel.twoWayStyle !== 'parallel') {
+      const geometry = relationshipGeometry(rel);
+      return geometry ? [{ geometry, markerStart: !!rel?.bidirectional, markerEnd: true }] : [];
+    }
+
+    const source = getNode(rel.sourceNodeId);
+    const target = getNode(rel.targetNodeId);
+    if (!source || !target) return [];
+
+    const lane = Math.max(14, 9 + finiteNumber(rel.width, 2) * 2);
+    const routing = RELATIONSHIP_ROUTING_KEYS.has(rel.routing) ? rel.routing : state.defaults.relationshipRouting;
+
+    // Orthogonal two-way relationships need both arrows to share the same
+    // routing decision. Building each direction independently can make one
+    // choose a horizontal corridor and the other a vertical corridor. Instead,
+    // choose one base route and derive two matched elbow lanes from it.
+    if (routing === 'orthogonal') {
+      const base = orthogonalRelationshipGeometry(rel, source, target, 0, { ignoreReverse: true });
+      if (!base) return [];
+      if (!base.mode || !Number.isFinite(base.corridor)) {
+        // Aligned nodes legitimately collapse to straight orthogonal segments.
+        const forward = straightRelationshipGeometry(source, target, lane);
+        const reverse = straightRelationshipGeometry(target, source, lane);
+        return [
+          { geometry: forward, markerStart: false, markerEnd: true },
+          { geometry: reverse, markerStart: false, markerEnd: true }
+        ];
+      }
+      const forward = buildParallelOrthogonalGeometry(source, target, base, lane);
+      const returnForward = buildParallelOrthogonalGeometry(source, target, base, -lane);
+      const reverse = reversePolylineGeometry(returnForward);
+      return [
+        { geometry: forward, markerStart: false, markerEnd: true },
+        { geometry: reverse, markerStart: false, markerEnd: true }
+      ];
+    }
+
+    const forward = relationshipGeometry(rel, {
+      source,
+      target,
+      laneOffset: lane,
+      curveSide: 1,
+      ignoreReverse: true
+    });
+    const reverseRel = { ...rel, id: `${rel.id}-return`, sourceNodeId: rel.targetNodeId, targetNodeId: rel.sourceNodeId };
+    const reverse = relationshipGeometry(reverseRel, {
+      source: target,
+      target: source,
+      laneOffset: lane,
+      curveSide: 1,
+      ignoreReverse: true
+    });
+    return [
+      ...(forward ? [{ geometry: forward, markerStart: false, markerEnd: true }] : []),
+      ...(reverse ? [{ geometry: reverse, markerStart: false, markerEnd: true }] : [])
+    ];
+  }
+
+  function buildParallelOrthogonalGeometry(source, target, base, offset) {
+    let points;
+    if (base.mode === 'vertical-corridor') {
+      const corridor = base.corridor + offset;
+      const sourceDirX = Math.sign(corridor - source.x) || Math.sign(target.x - source.x) || 1;
+      const targetDirX = Math.sign(corridor - target.x) || Math.sign(source.x - target.x) || -1;
+      const start = lineBoundaryPointFromLocal(source, 0, offset, sourceDirX, 0);
+      const end = lineBoundaryPointFromLocal(target, 0, offset, targetDirX, 0);
+      points = simplifyPolyline([
+        start,
+        { x: corridor, y: start.y },
+        { x: corridor, y: end.y },
+        end
+      ]);
+    } else {
+      const corridor = base.corridor + offset;
+      const sourceDirY = Math.sign(corridor - source.y) || Math.sign(target.y - source.y) || 1;
+      const targetDirY = Math.sign(corridor - target.y) || Math.sign(source.y - target.y) || -1;
+      const start = lineBoundaryPointFromLocal(source, offset, 0, 0, sourceDirY);
+      const end = lineBoundaryPointFromLocal(target, offset, 0, 0, targetDirY);
+      points = simplifyPolyline([
+        start,
+        { x: start.x, y: corridor },
+        { x: end.x, y: corridor },
+        end
+      ]);
+    }
+    return polylineGeometry(points);
+  }
+
+  function polylineGeometry(points) {
+    const clean = simplifyPolyline(points);
+    const start = clean[0];
+    const end = clean[clean.length - 1];
+    return {
+      start,
+      end,
+      control: clean[Math.floor(clean.length / 2)] || { x: (start.x + end.x) / 2, y: (start.y + end.y) / 2 },
+      points: clean,
+      d: clean.map((p, i) => `${i ? 'L' : 'M'} ${fmt(p.x)} ${fmt(p.y)}`).join(' ')
+    };
+  }
+
+  function reversePolylineGeometry(geometry) {
+    if (!geometry?.points?.length) return geometry;
+    return polylineGeometry([...geometry.points].reverse());
+  }
+
+  function getDiagramBounds(includeCurves = true) {
+    if (!state.nodes.length) return { x: -300, y: -200, w: 600, h: 400 };
+    let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+    for (const node of state.nodes) {
+      const { w, h } = getNodeDimensions(node);
+      minX = Math.min(minX, node.x - w/2);
+      maxX = Math.max(maxX, node.x + w/2);
+      minY = Math.min(minY, node.y - h/2);
+      maxY = Math.max(maxY, node.y + h/2);
+    }
+    if (includeCurves) {
+      for (const rel of state.relationships) {
+        for (const rendered of relationshipRenderGeometries(rel)) {
+          const g = rendered.geometry;
+          const geometryPoints = g.points?.length ? g.points : [g.start, g.control, g.end];
+          for (const point of geometryPoints) {
+            minX = Math.min(minX, point.x);
+            maxX = Math.max(maxX, point.x);
+            minY = Math.min(minY, point.y);
+            maxY = Math.max(maxY, point.y);
+          }
+        }
+      }
+    }
+    const pad = 95;
+    return { x: minX - pad, y: minY - pad, w: Math.max(400, maxX - minX + pad*2), h: Math.max(300, maxY - minY + pad*2) };
+  }
+
+  // ---------------------------------------------------------------------------
+  // SVG rendering
+  // ---------------------------------------------------------------------------
+
+  function renderAll() {
+    renderDefs();
+    renderRelationships();
+    renderNodes();
+    renderUiState();
+    applyViewport();
+  }
+
+  function renderDefs() {
+    svgDefs.innerHTML = state.relationships.map(rel => {
+      const markerId = `arrow-${safeId(rel.id)}`;
+      const size = 9 + rel.width * 1.4;
+      return `<marker id="${markerId}" markerWidth="${size}" markerHeight="${size}" refX="${size - 1.2}" refY="${size/2}" orient="auto-start-reverse" markerUnits="userSpaceOnUse" viewBox="0 0 ${size} ${size}">
+        <path d="M 0 0 L ${size} ${size/2} L 0 ${size} z" fill="${rel.color}"></path>
+      </marker>`;
+    }).join('');
+  }
+
+  function renderRelationships() {
+    relationshipLayer.innerHTML = '';
+    for (const rel of state.relationships) {
+      const renderedParts = relationshipRenderGeometries(rel);
+      if (!renderedParts.length) continue;
+      const group = svgEl('g', {
+        class: `relationship-group${activeSelection?.type === 'relationship' && activeSelection.id === rel.id ? ' selected' : ''}`,
+        'data-id': rel.id
+      });
+
+      const onClick = (e) => {
+        e.stopPropagation();
+        sourceSelectionId = null;
+        activeSelection = { type: 'relationship', id: rel.id };
+        closeContextMenus();
+        renderAll();
+      };
+      const onContextMenu = (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        sourceSelectionId = null;
+        activeSelection = { type: 'relationship', id: rel.id };
+        contextTarget = { type: 'relationship', id: rel.id };
+        renderAll();
+        openRelationshipMenu(e.clientX, e.clientY, rel.id);
+      };
+
+      for (const part of renderedParts) {
+        const g = part.geometry;
+        const hover = svgEl('path', { d: g.d, class: 'relationship-hover' });
+        const attrs = {
+          d: g.d,
+          class: 'relationship-visible',
+          stroke: rel.color,
+          'stroke-width': rel.width,
+          'marker-end': part.markerEnd ? `url(#arrow-${safeId(rel.id)})` : null,
+          'marker-start': part.markerStart ? `url(#arrow-${safeId(rel.id)})` : null
+        };
+        const visible = svgEl('path', attrs);
+        const hit = svgEl('path', { d: g.d, class: 'relationship-hit', 'data-id': rel.id });
+        hit.addEventListener('click', onClick);
+        hit.addEventListener('contextmenu', onContextMenu);
+        group.append(hover, visible, hit);
+      }
+      relationshipLayer.appendChild(group);
+    }
+  }
+
+  function renderNodes() {
+    const counts = calculateCounts();
+    nodeLayer.innerHTML = '';
+
+    for (const node of state.nodes) {
+      const dims = getNodeDimensions(node);
+      const group = svgEl('g', {
+        class: `node${sourceSelectionId === node.id ? ' source-selected' : ''}${activeSelection?.type === 'node' && activeSelection.id === node.id && sourceSelectionId !== node.id ? ' selected' : ''}`,
+        transform: `translate(${fmt(node.x)} ${fmt(node.y)})`,
+        'data-id': node.id,
+        role: 'button',
+        tabindex: '0',
+        'aria-label': `${node.label}. In ${counts[node.id]?.in || 0}, Out ${counts[node.id]?.out || 0}`
+      });
+
+      const shape = createNodeShape(node, dims);
+      group.appendChild(shape);
+
+      const titleEl = svgEl('title');
+      titleEl.textContent = node.label;
+      group.appendChild(titleEl);
+
+      const lines = wrapLabel(node.label, node, dims);
+      const metrics = getNodeTextMetrics(node, lines.length);
+
+      // Treat the label and the In/Out line as one visual object. The entire
+      // block is centered vertically around y=0, which prevents short labels
+      // from looking bottom-heavy and keeps multi-line labels balanced too.
+      const textGroup = svgEl('g', { class: 'node-text-group' });
+      const contentTop = -metrics.totalHeight / 2;
+      const labelFirstBaseline = contentTop + metrics.fontSize * 0.86;
+
+      const label = svgEl('text', {
+        class: 'node-label',
+        'text-anchor': 'middle',
+        fill: node.textColor,
+        'font-size': metrics.fontSize,
+        x: 0
+      });
+      lines.forEach((line, i) => {
+        const tspan = svgEl('tspan', {
+          x: 0,
+          y: fmt(labelFirstBaseline + i * metrics.labelLineHeight)
+        });
+        tspan.textContent = line;
+        label.appendChild(tspan);
+      });
+      textGroup.appendChild(label);
+
+      const countBaseline = contentTop + metrics.labelHeight + metrics.gap + metrics.countFontSize * 0.84;
+      const countText = svgEl('text', {
+        class: 'node-counts',
+        'text-anchor': 'middle',
+        fill: node.textColor,
+        'font-size': metrics.countFontSize,
+        x: 0,
+        y: fmt(countBaseline)
+      });
+      const c = counts[node.id] || { in: 0, out: 0 };
+      countText.textContent = `In: ${c.in}     Out: ${c.out}`;
+      textGroup.appendChild(countText);
+      group.appendChild(textGroup);
+
+      group.addEventListener('pointerdown', nodePointerDown);
+      group.addEventListener('click', (e) => e.stopPropagation());
+      group.addEventListener('contextmenu', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        sourceSelectionId = null;
+        activeSelection = { type: 'node', id: node.id };
+        contextTarget = { type: 'node', id: node.id };
+        renderAll();
+        openNodeMenu(e.clientX, e.clientY, node.id);
+      });
+      group.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          handleNodeClick(node.id);
+        }
+      });
+
+      nodeLayer.appendChild(group);
+
+      // Once the text is in the live SVG, use its real rendered bounds to
+      // remove font-baseline bias and center the complete label + counts group
+      // precisely inside the node.
+      try {
+        const textBounds = textGroup.getBBox();
+        const visualCenterY = textBounds.y + textBounds.height / 2;
+        if (Number.isFinite(visualCenterY)) {
+          textGroup.setAttribute('transform', `translate(0 ${fmt(-visualCenterY)})`);
+        }
+      } catch (error) {
+        // The metric-based placement above remains a centered fallback for
+        // environments that do not expose SVG getBBox() during rendering.
+      }
+    }
+  }
+
+  function createNodeShape(node, dims) {
+    const common = { class: 'node-shape', fill: node.fillColor };
+    const { w, h } = dims;
+    switch (node.shape) {
+      case 'circle': return svgEl('ellipse', { ...common, cx: 0, cy: 0, rx: w/2, ry: h/2 });
+      case 'oval': return svgEl('ellipse', { ...common, cx: 0, cy: 0, rx: w/2, ry: h/2 });
+      case 'square': return svgEl('rect', { ...common, x: -w/2, y: -h/2, width: w, height: h });
+      case 'rectangle': return svgEl('rect', { ...common, x: -w/2, y: -h/2, width: w, height: h });
+      case 'diamond': return svgEl('polygon', { ...common, points: `0,${-h/2} ${w/2},0 0,${h/2} ${-w/2},0` });
+      case 'hexagon': return svgEl('polygon', { ...common, points: `${-w*.42},${-h/2} ${w*.42},${-h/2} ${w/2},0 ${w*.42},${h/2} ${-w*.42},${h/2} ${-w/2},0` });
+      case 'rounded':
+      default: return svgEl('rect', { ...common, x: -w/2, y: -h/2, width: w, height: h, rx: 20, ry: 20 });
+    }
+  }
+
+  function wrapLabel(label, node, dims) {
+    let widthFactor = .80;
+    let maxLines = 3;
+    if (node.shape === 'circle' || node.shape === 'square') widthFactor = .66;
+    if (node.shape === 'diamond') widthFactor = .58;
+    if (node.shape === 'hexagon') widthFactor = .70;
+    const maxWidth = dims.w * widthFactor;
+    const approxChar = Math.max(5.5, node.fontSize * .57);
+    const maxChars = Math.max(8, Math.floor(maxWidth / approxChar));
+    const words = label.trim().split(/\s+/);
+    const lines = [];
+    let current = '';
+
+    for (const word of words) {
+      const candidate = current ? `${current} ${word}` : word;
+      if (candidate.length <= maxChars) {
+        current = candidate;
+      } else if (current) {
+        lines.push(current);
+        current = word;
+      } else {
+        lines.push(word.slice(0, maxChars));
+        current = word.slice(maxChars);
+      }
+      if (lines.length >= maxLines) break;
+    }
+    if (lines.length < maxLines && current) lines.push(current);
+
+    const reconstructed = lines.join(' ');
+    if (reconstructed.length < label.trim().length && lines.length) {
+      const last = lines.length - 1;
+      lines[last] = `${lines[last].slice(0, Math.max(1, maxChars - 1))}…`;
+    }
+    return lines.slice(0, maxLines);
+  }
+
+  function updateVisualPositions() {
+    for (const node of state.nodes) {
+      const el = nodeLayer.querySelector(`[data-id="${cssEscape(node.id)}"]`);
+      if (el) el.setAttribute('transform', `translate(${fmt(node.x)} ${fmt(node.y)})`);
+    }
+    renderRelationships();
+  }
+
+  function svgEl(name, attrs = {}) {
+    const el = document.createElementNS('http://www.w3.org/2000/svg', name);
+    for (const [key, value] of Object.entries(attrs)) {
+      if (value !== null && value !== undefined) el.setAttribute(key, String(value));
+    }
+    return el;
+  }
+
+  function safeId(value) { return String(value).replace(/[^a-zA-Z0-9_-]/g, '_'); }
+  function cssEscape(value) { return window.CSS?.escape ? CSS.escape(String(value)) : String(value).replace(/["\\]/g, '\\$&'); }
+
+  // ---------------------------------------------------------------------------
+  // Diagram actions
+  // ---------------------------------------------------------------------------
+
+  function addNode() {
+    closeContextMenus();
+    const label = window.prompt('Enter the item name or label:');
+    if (label === null) return;
+    const clean = label.trim();
+    if (!clean) {
+      toast('Item name cannot be blank.');
+      return;
+    }
+    const position = placementForIndex(state.nodes.length);
+    commit(() => {
+      state.nodes.push({
+        id: `n${state.nextNodeId++}`,
+        label: clean.slice(0, 300),
+        x: position.x,
+        y: position.y,
+        shape: state.defaults.shape,
+        fillColor: state.defaults.fillColor,
+        textColor: state.defaults.textColor,
+        fontSize: state.defaults.fontSize,
+        countFontSize: state.defaults.countFontSize
+      });
+    });
+    ensureDiagramVisible();
+  }
+
+  function handleNodeClick(nodeId) {
+    closeContextMenus();
+    const node = getNode(nodeId);
+    if (!node) return;
+
+    if (!sourceSelectionId) {
+      sourceSelectionId = nodeId;
+      activeSelection = { type: 'node', id: nodeId };
+      renderAll();
+      return;
+    }
+
+    if (sourceSelectionId === nodeId) {
+      clearTransientSelection();
+      renderAll();
+      toast('Selection canceled. A node cannot link to itself.');
+      return;
+    }
+
+    const sourceId = sourceSelectionId;
+    const same = state.relationships.find(r => r.sourceNodeId === sourceId && r.targetNodeId === nodeId);
+    const opposite = state.relationships.find(r => r.sourceNodeId === nodeId && r.targetNodeId === sourceId);
+    const coveringTwoWay = [same, opposite].find(r => r?.bidirectional);
+    sourceSelectionId = null;
+    activeSelection = null;
+
+    if (state.defaults.bidirectional) {
+      if (coveringTwoWay) {
+        activeSelection = { type: 'relationship', id: coveringTwoWay.id };
+        renderAll();
+        toast('A two-way relationship between those items already exists.');
+        return;
+      }
+
+      if (same || opposite) {
+        const baseId = (same || opposite).id;
+        commit(() => {
+          const base = getRelationship(baseId);
+          if (!base) return;
+          base.bidirectional = true;
+          base.twoWayStyle = state.defaults.twoWayStyle;
+          state.relationships = state.relationships.filter(r => r.id === base.id || !((r.sourceNodeId === base.targetNodeId && r.targetNodeId === base.sourceNodeId)));
+        });
+        activeSelection = { type: 'relationship', id: baseId };
+        renderAll();
+        toast('Existing connection upgraded to a two-way relationship.');
+        return;
+      }
+    } else {
+      if (coveringTwoWay) {
+        activeSelection = { type: 'relationship', id: coveringTwoWay.id };
+        renderAll();
+        toast('The existing two-way relationship already covers that direction.');
+        return;
+      }
+      if (same) {
+        activeSelection = { type: 'relationship', id: same.id };
+        renderAll();
+        toast('That relationship already exists.');
+        return;
+      }
+    }
+
+    commit(() => {
+      state.relationships.push({
+        id: `r${state.nextRelationshipId++}`,
+        sourceNodeId: sourceId,
+        targetNodeId: nodeId,
+        color: state.defaults.arrowColor,
+        width: state.defaults.arrowWidth,
+        routing: state.defaults.relationshipRouting,
+        bidirectional: state.defaults.bidirectional,
+        twoWayStyle: state.defaults.twoWayStyle
+      });
+    });
+  }
+
+  function deleteNode(nodeId, ask = true) {
+    const node = getNode(nodeId);
+    if (!node) return;
+    const connected = state.relationships.filter(r => r.sourceNodeId === nodeId || r.targetNodeId === nodeId).length;
+    if (ask && !window.confirm(`Delete “${node.label}”${connected ? ` and ${connected} connected relationship${connected === 1 ? '' : 's'}` : ''}?`)) return;
+    commit(() => {
+      state.nodes = state.nodes.filter(n => n.id !== nodeId);
+      state.relationships = state.relationships.filter(r => r.sourceNodeId !== nodeId && r.targetNodeId !== nodeId);
+    });
+    clearTransientSelection();
+    closeContextMenus();
+  }
+
+  function deleteRelationship(relId) {
+    if (!getRelationship(relId)) return;
+    commit(() => { state.relationships = state.relationships.filter(r => r.id !== relId); });
+    clearTransientSelection();
+    closeContextMenus();
+  }
+
+  function reverseRelationship(relId) {
+    const rel = getRelationship(relId);
+    if (!rel) return;
+    if (rel.bidirectional) {
+      toast('A two-way relationship has no single direction to reverse.');
+      return;
+    }
+    const wouldDuplicate = state.relationships.some(r => r.id !== rel.id && r.sourceNodeId === rel.targetNodeId && r.targetNodeId === rel.sourceNodeId);
+    if (wouldDuplicate) {
+      toast('Cannot reverse: the opposite relationship already exists.');
+      return;
+    }
+    commit(() => {
+      [rel.sourceNodeId, rel.targetNodeId] = [rel.targetNodeId, rel.sourceNodeId];
+    });
+    closeContextMenus();
+  }
+
+  function renameNode(nodeId) {
+    const node = getNode(nodeId);
+    if (!node) return;
+    const next = window.prompt('Rename item:', node.label);
+    if (next === null) return;
+    const clean = next.trim();
+    if (!clean) {
+      toast('Item name cannot be blank.');
+      return;
+    }
+    if (clean === node.label) return;
+    commit(() => { node.label = clean.slice(0, 300); });
+    closeContextMenus();
+  }
+
+  function clearDiagram() {
+    if (!state.nodes.length && !state.relationships.length) return;
+    if (!window.confirm('Clear the entire diagram? This removes all items and relationships.')) return;
+    commit(() => {
+      state.nodes = [];
+      state.relationships = [];
+      state.nextNodeId = 1;
+      state.nextRelationshipId = 1;
+    });
+    clearTransientSelection();
+    fitDiagram();
+  }
+
+  function newBlankDiagram() {
+    if ((state.nodes.length || state.relationships.length) && !window.confirm('Start a new blank diagram? This resets the title, diagram content, and formatting defaults.')) return;
+    const before = snapshot();
+    state = createInitialState();
+    undoStack.push(before);
+    if (undoStack.length > 100) undoStack.shift();
+    redoStack = [];
+    clearTransientSelection();
+    saveState();
+    fitDiagram();
+    renderAll();
+    toast('New blank diagram created.');
+  }
+
+  function calculateCounts() {
+    const counts = Object.fromEntries(state.nodes.map(n => [n.id, { in: 0, out: 0 }]));
+    for (const rel of state.relationships) {
+      if (counts[rel.sourceNodeId]) counts[rel.sourceNodeId].out++;
+      if (counts[rel.targetNodeId]) counts[rel.targetNodeId].in++;
+      if (rel.bidirectional) {
+        if (counts[rel.sourceNodeId]) counts[rel.sourceNodeId].in++;
+        if (counts[rel.targetNodeId]) counts[rel.targetNodeId].out++;
+      }
+    }
+    return counts;
+  }
+
+  function getNode(id) { return state.nodes.find(n => n.id === id); }
+  function getRelationship(id) { return state.relationships.find(r => r.id === id); }
+
+  // ---------------------------------------------------------------------------
+  // Dragging, panning, zooming, selection
+  // ---------------------------------------------------------------------------
+
+  function nodePointerDown(e) {
+    if (e.button !== 0) return;
+    e.preventDefault();
+    e.stopPropagation();
+    closeContextMenus();
+    const nodeId = e.currentTarget.getAttribute('data-id');
+    const node = getNode(nodeId);
+    if (!node) return;
+    const p = clientToSvg(e.clientX, e.clientY);
+    dragCandidate = {
+      nodeId,
+      startClientX: e.clientX,
+      startClientY: e.clientY,
+      offsetX: p.x - node.x,
+      offsetY: p.y - node.y,
+      moved: false,
+      before: snapshot()
+    };
+  }
+
+  document.addEventListener('pointermove', (e) => {
+    if (dragCandidate) {
+      const dist = Math.hypot(e.clientX - dragCandidate.startClientX, e.clientY - dragCandidate.startClientY);
+      if (!dragCandidate.moved && dist > 5) {
+        dragCandidate.moved = true;
+        const el = nodeLayer.querySelector(`[data-id="${cssEscape(dragCandidate.nodeId)}"]`);
+        el?.classList.add('dragging');
+      }
+      if (dragCandidate.moved) {
+        const node = getNode(dragCandidate.nodeId);
+        if (!node) return;
+        const p = clientToSvg(e.clientX, e.clientY);
+        node.x = clamp(p.x - dragCandidate.offsetX, -9000, 9000);
+        node.y = clamp(p.y - dragCandidate.offsetY, -9000, 9000);
+        updateVisualPositions();
+      }
+    }
+
+    if (panState) {
+      const dx = (e.clientX - panState.startClientX) * viewport.w / svg.clientWidth;
+      const dy = (e.clientY - panState.startClientY) * viewport.h / svg.clientHeight;
+      viewport.x = panState.startView.x - dx;
+      viewport.y = panState.startView.y - dy;
+      applyViewport();
+    }
+  });
+
+  document.addEventListener('pointerup', () => {
+    if (dragCandidate) {
+      const candidate = dragCandidate;
+      dragCandidate = null;
+      if (candidate.moved) {
+        undoStack.push(candidate.before);
+        if (undoStack.length > 100) undoStack.shift();
+        redoStack = [];
+        saveState();
+        renderAll();
+      } else {
+        handleNodeClick(candidate.nodeId);
+      }
+    }
+    panState = null;
+  });
+
+  svg.addEventListener('pointerdown', (e) => {
+    if (e.button === 1 || (e.button === 0 && spaceDown)) {
+      e.preventDefault();
+      panState = {
+        startClientX: e.clientX,
+        startClientY: e.clientY,
+        startView: { ...viewport }
+      };
+    }
+  });
+
+  svg.addEventListener('click', (e) => {
+    if (e.target === svg || e.target.classList.contains('canvas-bg')) {
+      clearTransientSelection();
+      closeContextMenus();
+      renderAll();
+    }
+  });
+
+  svg.addEventListener('contextmenu', (e) => {
+    if (e.target === svg || e.target.classList.contains('canvas-bg')) {
+      e.preventDefault();
+      closeContextMenus();
+      clearTransientSelection();
+      renderAll();
+    }
+  });
+
+  svg.addEventListener('wheel', (e) => {
+    e.preventDefault();
+    closeContextMenus();
+    const before = clientToSvg(e.clientX, e.clientY);
+    const scale = e.deltaY < 0 ? 0.9 : 1.1;
+    const newW = clamp(viewport.w * scale, 280, 12000);
+    const newH = viewport.h * (newW / viewport.w);
+    const rect = svg.getBoundingClientRect();
+    const rx = (e.clientX - rect.left) / rect.width;
+    const ry = (e.clientY - rect.top) / rect.height;
+    viewport = {
+      x: before.x - rx * newW,
+      y: before.y - ry * newH,
+      w: newW,
+      h: newH
+    };
+    applyViewport();
+  }, { passive: false });
+
+  function clientToSvg(clientX, clientY) {
+    const rect = svg.getBoundingClientRect();
+    return {
+      x: viewport.x + ((clientX - rect.left) / rect.width) * viewport.w,
+      y: viewport.y + ((clientY - rect.top) / rect.height) * viewport.h
+    };
+  }
+
+  function clearTransientSelection() {
+    sourceSelectionId = null;
+    activeSelection = null;
+    contextTarget = null;
+  }
+
+  function applyViewport() {
+    svg.setAttribute('viewBox', `${fmt(viewport.x)} ${fmt(viewport.y)} ${fmt(viewport.w)} ${fmt(viewport.h)}`);
+  }
+
+  function fitDiagram() {
+    const b = getDiagramBounds(true);
+    const rect = svg.getBoundingClientRect();
+    const targetAspect = rect.width > 0 && rect.height > 0 ? rect.width / rect.height : 1.6;
+    let w = Math.max(600, b.w);
+    let h = Math.max(400, b.h);
+    const contentAspect = w / h;
+    if (contentAspect > targetAspect) h = w / targetAspect;
+    else w = h * targetAspect;
+    viewport = { x: b.x + b.w/2 - w/2, y: b.y + b.h/2 - h/2, w, h };
+    applyViewport();
+  }
+
+  function ensureDiagramVisible() {
+    const b = getDiagramBounds(false);
+    const marginX = viewport.w * .04;
+    const marginY = viewport.h * .04;
+    const fits = b.x >= viewport.x + marginX && b.y >= viewport.y + marginY && b.x + b.w <= viewport.x + viewport.w - marginX && b.y + b.h <= viewport.y + viewport.h - marginY;
+    if (!fits) fitDiagram();
+  }
+
+  // ---------------------------------------------------------------------------
+  // Context menus
+  // ---------------------------------------------------------------------------
+
+  function openNodeMenu(x, y, nodeId) {
+    const node = getNode(nodeId);
+    if (!node) return;
+    $('nodeShapeInput').value = node.shape;
+    $('nodeFillInput').value = node.fillColor;
+    $('nodeTextInput').value = node.textColor;
+    $('nodeFontInput').value = node.fontSize;
+    $('nodeCountFontInput').value = node.countFontSize ?? state.defaults.countFontSize;
+    showMenu(nodeMenu, x, y);
+  }
+
+  function openRelationshipMenu(x, y, relId) {
+    const rel = getRelationship(relId);
+    if (!rel) return;
+    $('relationshipMenuTitle').textContent = rel.bidirectional ? 'Edit Two-way Relationship' : 'Edit Relationship';
+    $('relDirectionInput').value = rel.bidirectional ? 'two-way' : 'one-way';
+    $('relTwoWayStyleInput').value = rel.twoWayStyle || state.defaults.twoWayStyle;
+    $('relTwoWayStyleInput').disabled = !rel.bidirectional;
+    $('reverseRelationshipBtn').disabled = !!rel.bidirectional;
+    $('reverseRelationshipBtn').title = rel.bidirectional ? 'Two-way relationships do not need reversing' : 'Reverse relationship direction';
+    $('relRoutingInput').value = rel.routing || state.defaults.relationshipRouting;
+    $('relColorInput').value = rel.color;
+    $('relWidthInput').value = rel.width;
+    showMenu(relationshipMenu, x, y);
+  }
+
+  function showMenu(menu, x, y) {
+    closeContextMenus();
+    menu.classList.add('open');
+    menu.style.left = `${x}px`;
+    menu.style.top = `${y}px`;
+    requestAnimationFrame(() => {
+      const rect = menu.getBoundingClientRect();
+      const left = clamp(x, 8, window.innerWidth - rect.width - 8);
+      const top = clamp(y, 8, window.innerHeight - rect.height - 8);
+      menu.style.left = `${left}px`;
+      menu.style.top = `${top}px`;
+    });
+  }
+
+  function closeContextMenus() {
+    nodeMenu.classList.remove('open');
+    relationshipMenu.classList.remove('open');
+  }
+
+  document.addEventListener('pointerdown', (e) => {
+    if (!nodeMenu.contains(e.target) && !relationshipMenu.contains(e.target)) closeContextMenus();
+  }, true);
+
+  window.addEventListener('resize', closeContextMenus);
+
+  // ---------------------------------------------------------------------------
+  // Export, import, and printing
+  // ---------------------------------------------------------------------------
+
+  function exportDiagram() {
+    const data = JSON.stringify(state, null, 2);
+    const blob = new Blob([data], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    const name = (state.title || 'interrelationship-digraph').trim().replace(/[^a-z0-9_-]+/gi, '-').replace(/^-+|-+$/g, '').toLowerCase() || 'interrelationship-digraph';
+    a.href = url;
+    a.download = `${name}.json`;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(url);
+    toast('Diagram exported as JSON.');
+  }
+
+  async function importDiagram(file) {
+    if (!file) return;
+    try {
+      if (file.size > 5 * 1024 * 1024) throw new Error('File is too large.');
+      const text = await file.text();
+      const parsed = JSON.parse(text);
+      const validated = validateState(parsed);
+      if (!validated) throw new Error('The file does not contain a valid diagram.');
+      const before = snapshot();
+      state = validated;
+      undoStack.push(before);
+      if (undoStack.length > 100) undoStack.shift();
+      redoStack = [];
+      clearTransientSelection();
+      closeContextMenus();
+      saveState();
+      renderAll();
+      fitDiagram();
+      toast('Diagram imported successfully.');
+    } catch (error) {
+      window.alert(`Could not import this file. ${error.message || 'Invalid JSON.'}`);
+    } finally {
+      $('importInput').value = '';
+    }
+  }
+
+  function preparePrint() {
+    prePrintViewBox = { ...viewport };
+    const b = getDiagramBounds(true);
+    const pad = 45;
+    viewport = { x: b.x - pad, y: b.y - pad, w: b.w + pad*2, h: b.h + pad*2 };
+    $('printTitle').textContent = state.title || 'Interrelationship Digraph';
+    applyViewport();
+  }
+
+  function restoreAfterPrint() {
+    if (prePrintViewBox) {
+      viewport = prePrintViewBox;
+      prePrintViewBox = null;
+      applyViewport();
+    }
+  }
+
+  window.addEventListener('beforeprint', preparePrint);
+  window.addEventListener('afterprint', restoreAfterPrint);
+
+  // ---------------------------------------------------------------------------
+  // Settings and form binding
+  // ---------------------------------------------------------------------------
+
+  function populateShapeSelect(select) {
+    select.innerHTML = SHAPES.map(([value, label]) => `<option value="${value}">${label}</option>`).join('');
+  }
+
+  function populateRelationshipRoutingSelect(select) {
+    select.innerHTML = RELATIONSHIP_ROUTINGS.map(([value, label]) => `<option value="${value}">${label}</option>`).join('');
+  }
+
+  function populateTwoWayStyleSelect(select) {
+    select.innerHTML = TWO_WAY_STYLES.map(([value, label]) => `<option value="${value}">${label}</option>`).join('');
+  }
+
+  function syncSettingsControls() {
+    $('defaultNodeShape').value = state.defaults.shape;
+    $('defaultNodeFill').value = state.defaults.fillColor;
+    $('defaultTextColor').value = state.defaults.textColor;
+    $('defaultFontSize').value = state.defaults.fontSize;
+    $('defaultCountFontSize').value = state.defaults.countFontSize;
+    $('defaultRelationshipDirection').value = state.defaults.bidirectional ? 'two-way' : 'one-way';
+    $('defaultTwoWayStyle').value = state.defaults.twoWayStyle;
+    $('defaultTwoWayStyle').disabled = !state.defaults.bidirectional;
+    $('defaultRelationshipRouting').value = state.defaults.relationshipRouting;
+    $('defaultArrowColor').value = state.defaults.arrowColor;
+    $('defaultArrowWidth').value = state.defaults.arrowWidth;
+  }
+
+  function updateDefault(key, value) {
+    const next = key === 'fontSize' ? clamp(finiteNumber(value, state.defaults.fontSize), 10, 30)
+      : key === 'countFontSize' ? clamp(finiteNumber(value, state.defaults.countFontSize), 8, 24)
+      : key === 'arrowWidth' ? clamp(finiteNumber(value, state.defaults.arrowWidth), 1, 8)
+      : value;
+    if (state.defaults[key] === next) return;
+    commit(() => { state.defaults[key] = next; });
+  }
+
+  // ---------------------------------------------------------------------------
+  // General UI rendering and utility
+  // ---------------------------------------------------------------------------
+
+  function renderUiState() {
+    $('diagramTitle').value = state.title;
+    $('diagramStats').textContent = `${state.nodes.length} item${state.nodes.length === 1 ? '' : 's'} · ${state.relationships.length} relationship${state.relationships.length === 1 ? '' : 's'}`;
+    $('undoBtn').disabled = undoStack.length === 0;
+    $('redoBtn').disabled = redoStack.length === 0;
+
+    const status = $('selectionStatus');
+    if (sourceSelectionId) {
+      const node = getNode(sourceSelectionId);
+      status.textContent = node ? `Source selected: ${node.label} — click another item to create an arrow` : '';
+      status.classList.add('visible');
+    } else if (activeSelection?.type === 'relationship') {
+      const rel = getRelationship(activeSelection.id);
+      const a = rel && getNode(rel.sourceNodeId);
+      const b = rel && getNode(rel.targetNodeId);
+      status.textContent = rel && a && b ? `Relationship selected: ${a.label} ${rel.bidirectional ? '↔' : '→'} ${b.label}` : '';
+      status.classList.add('visible');
+    } else if (activeSelection?.type === 'node') {
+      const node = getNode(activeSelection.id);
+      status.textContent = node ? `Item selected: ${node.label}` : '';
+      status.classList.add('visible');
+    } else {
+      status.classList.remove('visible');
+      status.textContent = '';
+    }
+
+    syncSettingsControls();
+  }
+
+  function toast(message) {
+    const el = document.createElement('div');
+    el.className = 'toast';
+    el.textContent = message;
+    $('toastStack').appendChild(el);
+    window.setTimeout(() => el.remove(), 2600);
+  }
+
+  // ---------------------------------------------------------------------------
+  // Button and input events
+  // ---------------------------------------------------------------------------
+
+  $('addItemBtn').addEventListener('click', addNode);
+  $('undoBtn').addEventListener('click', undo);
+  $('redoBtn').addEventListener('click', redo);
+  $('fitBtn').addEventListener('click', fitDiagram);
+  $('settingsFitBtn').addEventListener('click', fitDiagram);
+  $('clearBtn').addEventListener('click', clearDiagram);
+  $('newBtn').addEventListener('click', newBlankDiagram);
+  $('exportBtn').addEventListener('click', exportDiagram);
+  $('importBtn').addEventListener('click', () => $('importInput').click());
+  $('importInput').addEventListener('change', (e) => importDiagram(e.target.files?.[0]));
+  $('printBtn').addEventListener('click', () => window.print());
+
+  $('darkModeToggle').addEventListener('change', (e) => {
+    applyTheme(e.target.checked ? 'dark' : 'light');
+  });
+
+  $('settingsBtn').addEventListener('click', () => {
+    closeContextMenus();
+    $('settingsPanel').classList.toggle('open');
+  });
+  $('closeSettingsBtn').addEventListener('click', () => $('settingsPanel').classList.remove('open'));
+
+  $('diagramTitle').addEventListener('change', (e) => {
+    const next = e.target.value.trim().slice(0, 180) || 'Interrelationship Digraph';
+    e.target.value = next;
+    if (next === state.title) return;
+    commit(() => { state.title = next; });
+  });
+
+  $('renameNodeBtn').addEventListener('click', () => contextTarget?.type === 'node' && renameNode(contextTarget.id));
+  $('deleteNodeBtn').addEventListener('click', () => contextTarget?.type === 'node' && deleteNode(contextTarget.id, true));
+  $('resetNodeBtn').addEventListener('click', () => {
+    if (contextTarget?.type !== 'node') return;
+    const node = getNode(contextTarget.id);
+    if (!node) return;
+    commit(() => {
+      node.shape = state.defaults.shape;
+      node.fillColor = state.defaults.fillColor;
+      node.textColor = state.defaults.textColor;
+      node.fontSize = state.defaults.fontSize;
+      node.countFontSize = state.defaults.countFontSize;
+    });
+    closeContextMenus();
+  });
+  $('nodeShapeInput').addEventListener('change', (e) => updateContextNode('shape', e.target.value));
+  $('nodeFillInput').addEventListener('change', (e) => updateContextNode('fillColor', e.target.value));
+  $('nodeTextInput').addEventListener('change', (e) => updateContextNode('textColor', e.target.value));
+  $('nodeFontInput').addEventListener('change', (e) => updateContextNode('fontSize', clamp(finiteNumber(e.target.value, 16), 10, 30)));
+  $('nodeCountFontInput').addEventListener('change', (e) => updateContextNode('countFontSize', clamp(finiteNumber(e.target.value, 12), 8, 24)));
+
+  function updateContextNode(key, value) {
+    if (contextTarget?.type !== 'node') return;
+    const node = getNode(contextTarget.id);
+    if (!node || node[key] === value) return;
+    const targetId = node.id;
+    commit(() => { const current = getNode(targetId); if (current) current[key] = value; });
+    contextTarget = { type: 'node', id: targetId };
+    const rect = nodeMenu.getBoundingClientRect();
+    openNodeMenu(rect.left, rect.top, targetId);
+  }
+
+  $('reverseRelationshipBtn').addEventListener('click', () => contextTarget?.type === 'relationship' && reverseRelationship(contextTarget.id));
+  $('deleteRelationshipBtn').addEventListener('click', () => contextTarget?.type === 'relationship' && deleteRelationship(contextTarget.id));
+  $('resetRelationshipBtn').addEventListener('click', () => {
+    if (contextTarget?.type !== 'relationship') return;
+    const rel = getRelationship(contextTarget.id);
+    if (!rel) return;
+    commit(() => {
+      rel.color = state.defaults.arrowColor;
+      rel.width = state.defaults.arrowWidth;
+      rel.routing = state.defaults.relationshipRouting;
+      if (rel.bidirectional) rel.twoWayStyle = state.defaults.twoWayStyle;
+    });
+    closeContextMenus();
+  });
+  $('relDirectionInput').addEventListener('change', (e) => {
+    if (contextTarget?.type === 'relationship') setRelationshipBidirectional(contextTarget.id, e.target.value === 'two-way');
+  });
+  $('relTwoWayStyleInput').addEventListener('change', (e) => updateContextRelationship('twoWayStyle', TWO_WAY_STYLE_KEYS.has(e.target.value) ? e.target.value : 'double-headed'));
+  $('relRoutingInput').addEventListener('change', (e) => updateContextRelationship('routing', RELATIONSHIP_ROUTING_KEYS.has(e.target.value) ? e.target.value : 'curved'));
+  $('relColorInput').addEventListener('change', (e) => updateContextRelationship('color', e.target.value));
+  $('relWidthInput').addEventListener('change', (e) => updateContextRelationship('width', clamp(finiteNumber(e.target.value, 2), 1, 8)));
+
+  function setRelationshipBidirectional(relId, bidirectional) {
+    const rel = getRelationship(relId);
+    if (!rel || rel.bidirectional === bidirectional) return;
+    const opposite = state.relationships.find(r => r.id !== rel.id && r.sourceNodeId === rel.targetNodeId && r.targetNodeId === rel.sourceNodeId);
+    commit(() => {
+      const current = getRelationship(relId);
+      if (!current) return;
+      current.bidirectional = bidirectional;
+      if (bidirectional) {
+        current.twoWayStyle = TWO_WAY_STYLE_KEYS.has(current.twoWayStyle) ? current.twoWayStyle : state.defaults.twoWayStyle;
+        if (opposite) state.relationships = state.relationships.filter(r => r.id !== opposite.id);
+      }
+    });
+    contextTarget = { type: 'relationship', id: relId };
+    activeSelection = { type: 'relationship', id: relId };
+    if (bidirectional && opposite) toast('Opposite one-way arrow merged into the two-way relationship.');
+    const rect = relationshipMenu.getBoundingClientRect();
+    openRelationshipMenu(rect.left, rect.top, relId);
+  }
+
+  function updateContextRelationship(key, value) {
+    if (contextTarget?.type !== 'relationship') return;
+    const rel = getRelationship(contextTarget.id);
+    if (!rel || rel[key] === value) return;
+    const targetId = rel.id;
+    commit(() => { const current = getRelationship(targetId); if (current) current[key] = value; });
+    contextTarget = { type: 'relationship', id: targetId };
+    const rect = relationshipMenu.getBoundingClientRect();
+    openRelationshipMenu(rect.left, rect.top, targetId);
+  }
+
+  $('defaultNodeShape').addEventListener('change', (e) => updateDefault('shape', e.target.value));
+  $('defaultNodeFill').addEventListener('change', (e) => updateDefault('fillColor', e.target.value));
+  $('defaultTextColor').addEventListener('change', (e) => updateDefault('textColor', e.target.value));
+  $('defaultFontSize').addEventListener('change', (e) => updateDefault('fontSize', e.target.value));
+  $('defaultCountFontSize').addEventListener('change', (e) => updateDefault('countFontSize', e.target.value));
+  $('defaultRelationshipDirection').addEventListener('change', (e) => updateDefault('bidirectional', e.target.value === 'two-way'));
+  $('defaultTwoWayStyle').addEventListener('change', (e) => updateDefault('twoWayStyle', TWO_WAY_STYLE_KEYS.has(e.target.value) ? e.target.value : 'double-headed'));
+  $('defaultRelationshipRouting').addEventListener('change', (e) => updateDefault('relationshipRouting', RELATIONSHIP_ROUTING_KEYS.has(e.target.value) ? e.target.value : 'curved'));
+  $('defaultArrowColor').addEventListener('change', (e) => updateDefault('arrowColor', e.target.value));
+  $('defaultArrowWidth').addEventListener('change', (e) => updateDefault('arrowWidth', e.target.value));
+
+  $('applyNodesBtn').addEventListener('click', () => {
+    if (!state.nodes.length) return toast('There are no existing nodes to update.');
+    commit(() => {
+      state.nodes.forEach(node => {
+        node.shape = state.defaults.shape;
+        node.fillColor = state.defaults.fillColor;
+        node.textColor = state.defaults.textColor;
+        node.fontSize = state.defaults.fontSize;
+        node.countFontSize = state.defaults.countFontSize;
+      });
+    });
+    toast('Node defaults applied to all existing items.');
+  });
+
+  $('applyArrowsBtn').addEventListener('click', () => {
+    if (!state.relationships.length) return toast('There are no existing relationships to update.');
+    commit(() => {
+      state.relationships.forEach(rel => {
+        rel.color = state.defaults.arrowColor;
+        rel.width = state.defaults.arrowWidth;
+        rel.routing = state.defaults.relationshipRouting;
+        if (rel.bidirectional) rel.twoWayStyle = state.defaults.twoWayStyle;
+      });
+    });
+    toast('Arrow defaults applied to all existing relationships.');
+  });
+
+  $('resetDefaultsBtn').addEventListener('click', () => {
+    commit(() => { state.defaults = { ...BUILTIN_DEFAULTS }; });
+    toast('Application defaults restored.');
+  });
+
+  // ---------------------------------------------------------------------------
+  // Keyboard shortcuts
+  // ---------------------------------------------------------------------------
+
+  document.addEventListener('keydown', (e) => {
+    const tag = document.activeElement?.tagName;
+    const editing = tag === 'INPUT' || tag === 'SELECT' || tag === 'TEXTAREA';
+
+    if (e.code === 'Space' && !editing) spaceDown = true;
+
+    if (e.key === 'Escape') {
+      clearTransientSelection();
+      closeContextMenus();
+      $('settingsPanel').classList.remove('open');
+      renderAll();
+      return;
+    }
+
+    if ((e.ctrlKey || e.metaKey) && !e.altKey) {
+      const key = e.key.toLowerCase();
+      if (key === 'z' && !e.shiftKey) {
+        e.preventDefault();
+        undo();
+        return;
+      }
+      if ((key === 'z' && e.shiftKey) || key === 'y') {
+        e.preventDefault();
+        redo();
+        return;
+      }
+    }
+
+    if (!editing && (e.key === 'Delete' || e.key === 'Backspace') && activeSelection) {
+      e.preventDefault();
+      if (activeSelection.type === 'node') deleteNode(activeSelection.id, true);
+      else if (activeSelection.type === 'relationship') deleteRelationship(activeSelection.id);
+    }
+  });
+
+  document.addEventListener('keyup', (e) => {
+    if (e.code === 'Space') spaceDown = false;
+  });
+  window.addEventListener('blur', () => { spaceDown = false; panState = null; });
+
+  // ---------------------------------------------------------------------------
+  // Initialization
+  // ---------------------------------------------------------------------------
+
+  populateShapeSelect($('defaultNodeShape'));
+  populateShapeSelect($('nodeShapeInput'));
+  populateRelationshipRoutingSelect($('defaultRelationshipRouting'));
+  populateRelationshipRoutingSelect($('relRoutingInput'));
+  populateTwoWayStyleSelect($('defaultTwoWayStyle'));
+  populateTwoWayStyleSelect($('relTwoWayStyleInput'));
+  currentTheme = loadTheme();
+  applyTheme(currentTheme, false);
+  const restored = loadState();
+  renderAll();
+  if (restored && state.nodes.length) fitDiagram();
+  if (restored) toast('Restored your autosaved diagram.');
+})();
+</script>
+
+</body>
+</html>
