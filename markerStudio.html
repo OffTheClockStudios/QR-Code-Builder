@@ -1,0 +1,1254 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#0d1829">
+  <script>try { if (localStorage.getItem("marker_studio_theme_v1") === "light") document.documentElement.dataset.theme = "light"; } catch (_) { /* Private browsing may block storage. */ }</script>
+  <title>Marker Studio — Image & Map Annotator</title>
+  <style>
+/* Marker Studio — a focused, single-screen image annotator */
+:root {
+  color-scheme: light;
+  --page: #f7f9fc;
+  --surface: #ffffff;
+  --canvas: #e9edf4;
+  --text: #1d2939;
+  --muted: #667085;
+  --faint: #8793a6;
+  --line: #e2e7ef;
+  --accent: #445fd1;
+  --accent-hover: #334ab6;
+  --accent-soft: #eef1ff;
+  --radius: 12px;
+  --shadow: 0 12px 28px rgba(30, 45, 75, .07);
+}
+* { box-sizing: border-box; }
+[hidden] { display: none !important; }
+html, body { height: 100%; }
+body {
+  margin: 0;
+  color: var(--text);
+  background: var(--page);
+  font: 13px/1.5 Inter, ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+}
+button, input, select, textarea { font: inherit; }
+button {
+  min-height: 35px;
+  padding: 7px 12px;
+  color: #394657;
+  background: #fff;
+  border: 1px solid #dce2ec;
+  border-radius: 9px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background .15s ease, border-color .15s ease;
+}
+button:hover:not(:disabled) { background: #f4f6fb; border-color: #bec9d9; }
+button:disabled { opacity: .38; cursor: not-allowed; }
+button.primary { background: var(--accent); border-color: var(--accent); color: #fff; }
+button.primary:hover:not(:disabled) { background: var(--accent-hover); border-color: var(--accent-hover); }
+button.ghost, button.subtle { background: transparent; border-color: transparent; }
+button.ghost:hover, button.subtle:hover { background: #f0f3f9; }
+button.small { min-height: 29px; font-size: 11px; padding: 4px 9px; }
+button.icon-btn { width: 29px; min-height: 29px; padding: 2px; font-size: 17px; font-weight: 500; }
+button.danger { color: #b42336; border-color: #f0d5d9; background: #fff9f9; }
+button.danger:hover:not(:disabled) { background: #fff0f0; }
+button:focus-visible, input:focus-visible, select:focus-visible,
+textarea:focus-visible, summary:focus-visible { outline: 3px solid #a7b7ff; outline-offset: 2px; }
+input[type=text], input[type=search], input[type=number], select, textarea {
+  width: 100%; min-height: 36px; padding: 8px 10px;
+  border: 1px solid #d8dfeb; border-radius: 8px;
+  outline: none; color: var(--text); background: #fff;
+}
+input::placeholder, textarea::placeholder { color: #98a2b3; }
+input[type=color] { width: 38px; min-width: 38px; height: 36px; padding: 4px; border-radius: 8px; border: 1px solid #dce2ec; background: #fff; cursor: pointer; }
+input[type=range], input[type=checkbox] { accent-color: var(--accent); }
+textarea { resize: vertical; }
+label { display: block; margin: 0 0 6px; color: #526176; font-weight: 600; font-size: 11px; }
+h1, h2, h3, p { margin-top: 0; }
+
+/* One calm header and two main work areas. */
+.app { height: 100dvh; min-height: 540px; display: grid; grid-template-rows: auto minmax(0,1fr); }
+.topbar { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px; min-height: 70px; padding: 13px 23px; background: #fff; border-bottom: 1px solid var(--line); }
+.brand { display: flex; align-items: center; gap: 11px; }
+.logo { display: grid; place-items: center; width: 37px; height: 37px; border-radius: 11px; background: var(--accent); color: #fff; font-size: 18px; font-weight: 800; }
+.brand h1 { margin: 0; font-size: 16px; line-height: 1.25; letter-spacing: -.02em; }
+.brand p { margin: 1px 0 0; font-size: 11px; color: var(--muted); }
+.top-actions { display: flex; flex-wrap: wrap; align-items: center; justify-content: flex-end; gap: 6px; }
+.top-actions button { min-height: 35px; }
+.top-actions .primary { margin-left: 7px; }
+.layout { display: grid; grid-template-columns: minmax(0, 1fr) 352px; min-height: 0; }
+
+/* Canvas */
+.workspace { display: flex; flex-direction: column; min-width: 0; min-height: 0; }
+.workspace-head { min-height: 74px; padding: 17px 25px; display: flex; justify-content: space-between; align-items: center; gap: 15px; background: #fff; border-bottom: 1px solid var(--line); }
+.eyebrow { display: block; margin-bottom: 1px; color: var(--faint); font-size: 10px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; }
+.workspace-head h2 { margin: 0; font-size: 17px; font-weight: 700; overflow-wrap: anywhere; }
+.workspace-meta { display: flex; align-items: center; flex-wrap: wrap; gap: 10px; justify-content: flex-end; }
+.chip { color: var(--muted); font-size: 11px; white-space: nowrap; }
+#imageChip { max-width: 175px; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+#countChip { background: #eff2f7; padding: 4px 8px; border-radius: 6px; color: #546278; }
+#placementTools button { color: var(--accent); font-size: 11px; }
+.canvas-outer { flex: 1; min-height: 0; overflow: hidden; position: relative; }
+.board {
+  position: relative; height: 100%; overflow: auto; padding: 36px;
+  overscroll-behavior: contain; background-color: var(--canvas);
+  background-image: linear-gradient(45deg, #f2f4f8 25%, transparent 25%), linear-gradient(-45deg, #f2f4f8 25%, transparent 25%), linear-gradient(45deg, transparent 75%, #f2f4f8 75%), linear-gradient(-45deg, transparent 75%, #f2f4f8 75%);
+  background-size: 22px 22px;
+  background-position: 0 0, 0 11px, 11px -11px, -11px 0;
+}
+.board.drag-over::after { content: 'Drop image to upload'; position: absolute; inset: 14px; z-index: 5; display: grid; place-items: center; border: 2px dashed var(--accent); border-radius: 14px; color: var(--accent); background: rgba(239,242,255,.91); font-size: 18px; font-weight: 700; pointer-events: none; }
+.stage { position: relative; margin: 0 auto; width: 200px; background: #fff; line-height: 0; user-select: none; touch-action: none; box-shadow: 0 14px 32px rgba(37, 52, 77, .18); }
+.stage img { display: block; width: 100%; height: auto; pointer-events: none; user-select: none; }
+.stage svg { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; cursor: grab; touch-action: none; }
+.stage svg.placing { cursor: crosshair; }
+.stage svg.panning { cursor: grabbing; }
+.marker-node { cursor: grab; outline: none; }
+.marker-node .marker-circle { stroke: #142034; stroke-width: 1.9; vector-effect: non-scaling-stroke; filter: drop-shadow(0 2px 2px rgba(0,0,0,.22)); }
+.marker-node .marker-number { font-family: Arial, sans-serif; dominant-baseline: central; text-anchor: middle; font-weight: 800; pointer-events: none; }
+.marker-node .select-ring { fill: none; stroke: var(--accent); stroke-width: 2.4; vector-effect: non-scaling-stroke; opacity: 0; }
+.marker-node.selected .select-ring, .marker-node:hover .select-ring { opacity: 1; }
+.marker-node.muted { opacity: .16; }
+.marker-node .status-icon { font-weight: 800; dominant-baseline: central; text-anchor: middle; pointer-events: none; }
+.empty { max-width: 372px; margin: clamp(35px, 11vh, 115px) auto 0; padding: 28px; text-align: center; background: #fff; border: 1px solid #dce2ec; box-shadow: var(--shadow); border-radius: 16px; }
+.hero-symbol { display: grid; place-items: center; width: 51px; height: 51px; margin: 0 auto 17px; background: var(--accent-soft); color: var(--accent); border-radius: 14px; font-size: 28px; }
+.empty h3 { margin: 0 0 7px; font-size: 18px; letter-spacing: -.025em; }
+.empty p { margin: 0 0 18px; color: var(--muted); font-size: 12px; line-height: 1.65; }
+.empty .primary { padding: 9px 19px; }
+.empty .drop-hint { margin: 12px 0 0; font-size: 10px; }
+.canvas-footer { min-height: 61px; padding: 10px 21px; display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; color: var(--muted); background: #fff; border-top: 1px solid var(--line); font-size: 11px; }
+.placement-hint { color: var(--accent); font-weight: 700; }
+.zoom-controls { display: flex; align-items: center; gap: 3px; }
+.zoom-controls button { padding: 4px 10px; min-height: 30px; }
+.zoom-readout { display: inline-block; min-width: 48px; text-align: center; font-variant-numeric: tabular-nums; color: #667085; }
+
+/* Right rail: only the primary tasks are visible by default. */
+.sidebar { min-width: 0; min-height: 0; background: #fff; border-left: 1px solid var(--line); overflow-y: auto; scrollbar-gutter: stable; }
+.panel { padding: 23px 19px; border-bottom: 1px solid var(--line); }
+.panel-head { display: flex; justify-content: space-between; align-items: center; gap: 9px; margin-bottom: 15px; }
+.panel h2 { margin: 0; font-size: 14px; letter-spacing: -.01em; }
+.panel-sub { margin: 3px 0 0; font-size: 11px; line-height: 1.45; color: var(--muted); }
+.section-count { color: #7b8697; font-size: 11px; white-space: nowrap; }
+.item-add { display: grid; grid-template-columns: minmax(0,1fr) 61px 38px auto; gap: 5px; margin-bottom: 12px; }
+.item-add input[type=number] { padding: 7px 4px; text-align: center; }
+.item-add button { padding-inline: 10px; }
+.item-scroll, .placed-list { display: flex; flex-direction: column; gap: 6px; max-height: 270px; overflow: auto; padding-right: 3px; }
+.item-row { display: grid; grid-template-columns: 8px minmax(0,1fr) auto; align-items: center; gap: 9px; padding: 9px; border: 1px solid var(--line); border-radius: 9px; background: #fff; }
+.item-row.armed { border-color: #8a9bec; background: #f5f7ff; box-shadow: 0 0 0 1px #cad3ff inset; }
+.item-color { width: 8px; height: 33px; border-radius: 4px; }
+.item-name { font-weight: 700; font-size: 12px; overflow-wrap: anywhere; }
+.item-number-tag { margin-left: 4px; color: #79869a; font-size: 10px; font-weight: 600; }
+.item-meta { color: var(--faint); font-size: 10px; line-height: 1.3; margin-top: 2px; }
+.item-actions { display: flex; align-items: center; gap: 1px; }
+.item-actions button[data-action=place] { color: var(--accent); border-color: #cdd6ff; background: #f4f6ff; }
+.item-actions button[data-action=place].primary { background: var(--accent); border-color: var(--accent); color: #fff; }
+.item-actions .icon-btn { color: #8b98ac; }
+.sub-actions { display: flex; align-items: center; justify-content: flex-start; gap: 8px; margin-top: 10px; }
+.sub-actions .small { padding: 5px 0; color: var(--accent); }
+.muted-note { color: var(--muted); font-size: 11px; line-height: 1.5; }
+.mini-empty { padding: 13px; color: #8994a5; font-size: 11px; line-height: 1.5; background: #f8fafc; border: 1px dashed #dde4ee; border-radius: 9px; }
+#selectionEmpty { margin: 0 0 11px; background: #fff; border: 0; padding: 0; }
+.selection-box { padding: 12px; margin-bottom: 13px; background: #f7f8ff; border: 1px solid #dce2ff; border-radius: 10px; }
+.selection-top { display: flex; gap: 10px; align-items: center; }
+.pin-chip { display: grid; place-items: center; flex: none; width: 36px; height: 36px; border-radius: 50%; font-weight: 800; border: 2px solid rgba(0,0,0,.1); }
+.selection-name { font-size: 12px; font-weight: 700; }
+.selection-detail { margin-top: 2px; color: var(--muted); font-size: 10px; }
+.selection-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-top: 11px; }
+.selection-actions button { width: 100%; font-size: 11px; }
+.marker-search { margin-bottom: 8px; }
+.filter-details { margin-bottom: 10px; }
+.filter-details summary { color: #64748b; font-size: 11px; cursor: pointer; padding: 2px 0; width: fit-content; }
+.list-filters { display: grid; grid-template-columns: 1fr 1fr; gap: 7px; padding-top: 8px; }
+.list-filters select { min-width: 0; font-size: 11px; }
+.placed-row { display: flex; gap: 9px; align-items: center; padding: 8px 9px; background: #fff; border: 1px solid var(--line); border-radius: 9px; cursor: pointer; }
+.placed-row:hover, .placed-row.selected { background: #f5f7ff; border-color: #a9b5ec; }
+.placed-row .pin-chip { width: 28px; height: 28px; font-size: 10px; }
+.placed-description { flex: 1; min-width: 0; }
+.placed-title { white-space: nowrap; text-overflow: ellipsis; overflow: hidden; font-weight: 700; font-size: 11px; }
+.placed-sub { margin-top: 2px; font-size: 10px; color: var(--muted); }
+.status-pill { font-size: 9px; color: #7c8999; white-space: nowrap; }
+.status-pill.complete { color: #087d4d; }
+.status-pill.attention { color: #b65a23; }
+.settings-panel { padding: 0; }
+.settings-panel > summary { display: flex; justify-content: space-between; align-items: center; padding: 19px; font-weight: 700; font-size: 12px; cursor: pointer; list-style: none; }
+.settings-panel > summary::-webkit-details-marker { display: none; }
+.settings-panel > summary::after { content: '+'; font-size: 19px; line-height: 1; color: #98a2b3; font-weight: 400; }
+.settings-panel[open] > summary::after { content: '−'; }
+.settings-inner { padding: 0 19px 19px; }
+.settings-inner > .setting-block + .setting-block { margin-top: 18px; }
+.setting-row { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+.setting-row label { margin: 0; }
+.setting-value { color: var(--faint); font-size: 11px; }
+.inline-toggle { display: flex; align-items: center; gap: 8px; margin: 8px 0 0; color: #556274; font-size: 11px; font-weight: 500; }
+.inline-toggle input { margin: 0; }
+.mode-setting { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.mode-setting strong { display: block; font-size: 12px; font-weight: 650; }
+.mode-setting small { display: block; margin-top: 3px; color: var(--muted); font-size: 10px; line-height: 1.4; }
+.switch { flex: none; display: block; position: relative; width: 41px; height: 24px; margin: 0; cursor: pointer; }
+.switch input { position: absolute; inset: 0; opacity: 0; cursor: pointer; }
+.switch-track { display: block; position: absolute; inset: 0; border-radius: 99px; background: #c6cfdd; pointer-events: none; transition: background .18s ease; }
+.switch-track::after { content: ''; position: absolute; left: 3px; top: 3px; width: 18px; height: 18px; background: #fff; border-radius: 50%; box-shadow: 0 1px 3px #0002; transition: transform .18s ease; }
+.switch input:checked + .switch-track { background: var(--accent); }
+.switch input:checked + .switch-track::after { transform: translateX(17px); }
+.switch input:focus-visible + .switch-track { outline: 3px solid #a7b7ff; outline-offset: 2px; }
+.numbering-info { margin: 7px 0 0; color: var(--muted); font-size: 10px; line-height: 1.5; }
+.autosave-note { padding: 13px 19px 21px; color: #8a96a7; font-size: 10px; line-height: 1.5; }
+
+/* Dialogs and notifications */
+.modal { display: none; position: fixed; inset: 0; z-index: 50; align-items: center; justify-content: center; padding: 16px; background: rgba(15,23,42,.42); backdrop-filter: blur(3px); }
+.modal.open { display: flex; }
+.dialog { width: min(460px, 96vw); max-height: 90vh; overflow: auto; padding: 23px; background: white; border-radius: 15px; box-shadow: 0 25px 80px #17243b55; }
+.dialog h2 { margin: 0 0 17px; font-size: 18px; }
+.form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.field-full { grid-column: 1 / -1; }
+.dialog-actions { display: flex; justify-content: flex-end; gap: 7px; margin-top: 17px; }
+.marker-number-note { padding: 9px 10px; color: #4a5b8f; background: #f4f6ff; border-radius: 8px; font-size: 11px; }
+.warning { color: #b42336; font-size: 11px; }
+.toast { position: fixed; z-index: 100; left: 50%; bottom: 20px; padding: 10px 15px; border-radius: 9px; color: #fff; background: #263349; font-size: 12px; font-weight: 650; box-shadow: var(--shadow); transform: translate(-50%, 13px); opacity: 0; transition: opacity .16s, transform .16s; pointer-events: none; }
+.toast.show { opacity: 1; transform: translate(-50%,0); }
+.file-input, .print-sheet { display: none; }
+
+
+/* Dark is the default. Light remains available from the header switch. */
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --page: #0a1220;
+  --surface: #111e30;
+  --canvas: #111d2e;
+  --text: #edf3ff;
+  --muted: #a8bad0;
+  --faint: #869bb5;
+  --line: #2b3d56;
+  --accent: #9bbcff;
+  --accent-hover: #b3ccff;
+  --accent-soft: #1c3657;
+  --shadow: 0 16px 45px rgba(0, 0, 0, .32);
+}
+.theme-toggle {
+  display: inline-flex; align-items: center; justify-content: center;
+  gap: 6px; font-size: 11px; white-space: nowrap;
+}
+[data-theme="light"] .theme-toggle { color: #485569; background: #f6f8fc; }
+[data-theme="light"] .theme-toggle:hover { background: #edf1f8; }
+[data-theme="dark"] .topbar,
+[data-theme="dark"] .workspace-head,
+[data-theme="dark"] .canvas-footer,
+[data-theme="dark"] .sidebar { background: #101c2e; }
+[data-theme="dark"] button { color: #e1ecfc; background: #1c2e47; border-color: #405574; }
+[data-theme="dark"] button:hover:not(:disabled) { background: #283e5c; border-color: #7696c5; }
+[data-theme="dark"] button.primary { background: var(--accent); border-color: var(--accent); color: #09182f; }
+[data-theme="dark"] button.primary:hover:not(:disabled) { background: var(--accent-hover); border-color: var(--accent-hover); }
+[data-theme="dark"] button.ghost,
+[data-theme="dark"] button.subtle { background: transparent; border-color: transparent; }
+[data-theme="dark"] button.ghost:hover:not(:disabled),
+[data-theme="dark"] button.subtle:hover:not(:disabled) { background: #1c304b; border-color: transparent; }
+[data-theme="dark"] button.danger { color: #ffb7be; border-color: #6f3949; background: #392532; }
+[data-theme="dark"] button.danger:hover:not(:disabled) { background: #542c3b; }
+[data-theme="dark"] button:focus-visible,
+[data-theme="dark"] input:focus-visible,
+[data-theme="dark"] select:focus-visible,
+[data-theme="dark"] textarea:focus-visible,
+[data-theme="dark"] summary:focus-visible { outline-color: #98b8ff; }
+[data-theme="dark"] input[type=text],
+[data-theme="dark"] input[type=search],
+[data-theme="dark"] input[type=number],
+[data-theme="dark"] select,
+[data-theme="dark"] textarea { background: #0d192a; color: var(--text); border-color: #39506e; }
+[data-theme="dark"] input::placeholder,
+[data-theme="dark"] textarea::placeholder { color: #7e91ad; }
+[data-theme="dark"] input[type=color] { background: #17283f; border-color: #425976; }
+[data-theme="dark"] label { color: #b5c6df; }
+[data-theme="dark"] .logo { background: #2c4f88; color: #e7f0ff; }
+[data-theme="dark"] #countChip { background: #1c314b; color: #b9cce5; }
+[data-theme="dark"] .board {
+  background-color: var(--canvas);
+  background-image:
+    linear-gradient(45deg, #1a2a3f 25%, transparent 25%),
+    linear-gradient(-45deg, #1a2a3f 25%, transparent 25%),
+    linear-gradient(45deg, transparent 75%, #1a2a3f 75%),
+    linear-gradient(-45deg, transparent 75%, #1a2a3f 75%);
+}
+[data-theme="dark"] .board.drag-over::after { background: rgba(20, 36, 58, .95); }
+[data-theme="dark"] .stage { box-shadow: 0 18px 40px rgba(0,0,0,.5); }
+[data-theme="dark"] .empty { background: #15253c; border-color: #3a5070; }
+[data-theme="dark"] .empty .hero-symbol { background: #203a5a; }
+[data-theme="dark"] .zoom-readout { color: var(--muted); }
+[data-theme="dark"] .section-count,
+[data-theme="dark"] .item-number-tag,
+[data-theme="dark"] .status-pill,
+[data-theme="dark"] .autosave-note { color: #98aac1; }
+[data-theme="dark"] .item-row,
+[data-theme="dark"] .placed-row { background: #16263b; border-color: #334864; }
+[data-theme="dark"] .item-row.armed,
+[data-theme="dark"] .placed-row:hover,
+[data-theme="dark"] .placed-row.selected { background: #233c5c; border-color: #84a9ef; }
+[data-theme="dark"] .item-actions button[data-action=place] { color: #b4cdff; background: #243a59; border-color: #4c6a95; }
+[data-theme="dark"] .item-actions button[data-action=place].primary { color: #09182f; background: var(--accent); border-color: var(--accent); }
+[data-theme="dark"] .item-actions .icon-btn { color: #c2d0e4; }
+[data-theme="dark"] .mini-empty { background: #17273e; color: #abbdd4; border-color: #435773; }
+[data-theme="dark"] #selectionEmpty { background: transparent; border: 0; }
+[data-theme="dark"] .selection-box { background: #1a304c; border-color: #496589; }
+[data-theme="dark"] .filter-details summary { color: #afc3df; }
+[data-theme="dark"] .status-pill.complete { color: #82e7b0; }
+[data-theme="dark"] .status-pill.attention { color: #ffc08a; }
+[data-theme="dark"] .inline-toggle { color: #b6c9e1; }
+[data-theme="dark"] .switch-track { background: #485a74; }
+[data-theme="dark"] .switch-track::after { background: #f4f8ff; }
+[data-theme="dark"] .dialog { background: #132137; border: 1px solid #405571; box-shadow: 0 25px 80px rgba(0,0,0,.62); }
+[data-theme="dark"] .marker-number-note { background: #213a5c; color: #c3d5fa; }
+[data-theme="dark"] .warning { color: #ffb0b7; }
+[data-theme="dark"] .toast { background: #e4eeff; color: #14233c; }
+/* Keep all number glyphs compact and visually centered inside round badges. */
+.pin-chip, .print-number { line-height: 1; text-align: center; font-variant-numeric: tabular-nums; }
+.marker-node .marker-number { text-anchor: middle; dominant-baseline: alphabetic; font-variant-numeric: tabular-nums; }
+
+@media (max-width: 960px) { .layout { grid-template-columns: minmax(0,1fr) 322px; } .topbar { padding-inline: 16px; } }
+@media (max-width: 740px) {
+  .app { height: auto; min-height: 100dvh; }
+  .layout { grid-template-columns: minmax(0,1fr); }
+  .workspace { height: clamp(470px, 65vh, 700px); }
+  .sidebar { border-left: none; border-top: 1px solid var(--line); overflow: visible; }
+  .item-scroll, .placed-list { max-height: 340px; }
+  .topbar { gap: 11px; }
+  .top-actions { justify-content: flex-start; }
+}
+@media (max-width: 480px) {
+  .topbar { padding: 12px; }
+  .brand { width: 100%; }
+  .top-actions { gap: 3px; }
+  .top-actions button { font-size: 11px; padding-inline: 8px; }
+  .top-actions .primary { margin-left: 2px; }
+  .workspace-head { padding: 13px; flex-wrap: wrap; }
+  .workspace-meta { justify-content: flex-start; }
+  .board { padding: 14px; }
+  .empty { margin-top: 42px; padding: 22px 16px; }
+  .canvas-footer { padding: 9px 12px; }
+  .panel { padding: 19px 13px; }
+  .item-add { grid-template-columns: minmax(0,1fr) 56px 38px auto; }
+  .settings-panel { padding: 0; }
+  .form-grid { grid-template-columns: 1fr; }
+  .field-full { grid-column: 1; }
+}
+@media print {
+  @page { size: landscape; margin: 11mm; }
+  html, body { height: auto !important; overflow: visible !important; color: #111 !important; background: white !important; }
+  body { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  .app, .modal, .toast { display: none !important; }
+  .print-sheet { display: block; color: #111; font: 11pt Arial, sans-serif; }
+  .print-head { display: flex; justify-content: space-between; align-items: flex-end; padding-bottom: 4mm; margin-bottom: 5mm; border-bottom: 1px solid #ccc; }
+  .print-head h1 { margin: 0; font-size: 18pt; }
+  .print-head p { margin: 1mm 0 0; font-size: 9pt; color: #555; }
+  .print-map-wrap { text-align: center; }
+  .print-map-stage { display: inline-block; position: relative; max-width: 100%; line-height: 0; }
+  .print-map-stage img { display: block; width: auto; height: auto; max-width: 100%; max-height: 165mm; }
+  .print-map-stage svg { position: absolute; inset: 0; width: 100%; height: 100%; }
+  .print-legend-section { break-before: page; page-break-before: always; }
+  .print-legend-section h2 { margin: 0 0 5mm; font-size: 16pt; }
+  .print-table { width: 100%; border-collapse: collapse; font-size: 10pt; }
+  .print-table th, .print-table td { padding: 2.5mm 3mm; border-bottom: 1px solid #ddd; text-align: left; vertical-align: top; }
+  .print-table th { border-bottom: 2px solid #888; }
+  .print-number { display: inline-grid; place-items: center; width: 7mm; height: 7mm; border: 1px solid #111; border-radius: 50%; font-size: 8pt; font-weight: 700; }
+  .print-muted { color: #555; font-size: 9pt; }
+}
+
+  </style>
+</head>
+<body>
+  <div class="app">
+    <header class="topbar">
+      <div class="brand">
+        <div class="logo" aria-hidden="true">M</div>
+        <div>
+          <h1>Marker Studio</h1>
+          <p>Label any image, plan, or map</p>
+        </div>
+      </div>
+      <nav class="top-actions" aria-label="Project actions">
+        <button id="themeToggle" class="theme-toggle" type="button" aria-label="Switch to light mode" title="Switch appearance">☀ Light mode</button>
+        <button id="newBtn" class="ghost" title="Start a blank project">New</button>
+        <button id="importBtn" class="ghost" title="Open a saved project file">Open project</button>
+        <button id="exportBtn" title="Save a portable JSON project backup">Save project</button>
+        <button id="printBtn" class="ghost" title="Print the marked image and legend">Print</button>
+        <button id="uploadBtn" class="primary">Upload image</button>
+      </nav>
+    </header>
+
+    <main class="layout">
+      <section class="workspace" aria-labelledby="workspaceHeading">
+        <div class="workspace-head">
+          <div>
+            <span class="eyebrow">Your canvas</span>
+            <h2 id="workspaceHeading">Untitled project</h2>
+          </div>
+          <div class="workspace-meta">
+            <span class="chip" id="imageChip">No image</span>
+            <span class="chip" id="countChip">0 markers</span>
+            <span id="placementTools" hidden><button id="exitPlaceBtn" class="subtle">Stop placing ×</button></span>
+          </div>
+        </div>
+        <div class="canvas-outer">
+          <div class="board" id="board">
+            <div class="stage" id="stage" hidden>
+              <img id="canvasImage" alt="Uploaded background for marking" draggable="false">
+              <svg id="markerLayer" xmlns="http://www.w3.org/2000/svg" aria-label="Image markers"></svg>
+            </div>
+            <div class="empty" id="emptyCanvas">
+              <div class="hero-symbol" aria-hidden="true">⌖</div>
+              <h3>Start with an image</h3>
+              <p>Upload a floor plan, photo, or diagram. Then add items and click anywhere to place numbered markers.</p>
+              <button class="primary" id="emptyUploadBtn">Choose an image</button>
+              <p class="drop-hint">or drag and drop an image here</p>
+            </div>
+          </div>
+        </div>
+        <footer class="canvas-footer">
+          <span id="canvasHint">Upload an image to get started.</span>
+          <div class="zoom-controls" aria-label="Canvas zoom controls">
+            <button id="zoomOutBtn" aria-label="Zoom out">−</button>
+            <span class="zoom-readout" id="zoomValue">—</span>
+            <button id="zoomInBtn" aria-label="Zoom in">+</button>
+            <button id="fitBtn">Fit</button>
+            <button id="actualBtn">1:1</button>
+          </div>
+        </footer>
+      </section>
+
+      <aside class="sidebar" aria-label="Marker editor">
+        <section class="panel" aria-labelledby="itemsHeading">
+          <div class="panel-head">
+            <div>
+              <h2 id="itemsHeading">Items</h2>
+              <p class="panel-sub">Add a label, then select Place to pin it.</p>
+            </div>
+            <span class="section-count" id="itemCountChip">0 items</span>
+          </div>
+          <form id="addItemForm" class="item-add">
+            <input id="newItemName" type="text" maxlength="100" required placeholder="Item name" aria-label="New item name">
+            <input id="newItemNumber" type="number" min="1" max="99999" step="1" required value="1" title="Item number" aria-label="Assigned item number">
+            <input id="newItemColor" type="color" value="#7dd3fc" title="Item color" aria-label="Item color">
+            <button class="primary" type="submit">Add</button>
+          </form>
+          <div id="itemList" class="item-scroll" aria-live="polite"></div>
+          <div class="sub-actions"><button id="bulkAddBtn" class="small ghost">+ Add multiple items</button></div>
+        </section>
+
+        <section class="panel" aria-labelledby="markersHeading">
+          <div class="panel-head">
+            <div>
+              <h2 id="markersHeading">Markers</h2>
+              <p class="panel-sub">Click a marker to edit or change its status.</p>
+            </div>
+          </div>
+          <div id="selectionEmpty" class="mini-empty">No marker selected.</div>
+          <div id="selectedPanel" class="selection-box" hidden>
+            <div class="selection-top">
+              <div class="pin-chip" id="selectedBadge">1</div>
+              <div>
+                <div id="selectedItemName" class="selection-name"></div>
+                <div id="selectedPosition" class="selection-detail"></div>
+              </div>
+            </div>
+            <div class="selection-actions">
+              <button id="editMarkerBtn">Edit</button>
+              <button id="centerMarkerBtn">Center view</button>
+              <button id="quickStatusBtn">Mark complete</button>
+              <button id="deleteMarkerBtn" class="danger">Delete</button>
+            </div>
+          </div>
+          <input class="marker-search" id="markerSearch" type="search" placeholder="Search markers…" aria-label="Search markers">
+          <details class="filter-details">
+            <summary>Filter &amp; sort</summary>
+            <div class="list-filters">
+              <select id="statusFilter" aria-label="Filter by status">
+                <option value="all">All statuses</option>
+                <option value="none">Not marked</option>
+                <option value="complete">Complete</option>
+                <option value="attention">Needs attention</option>
+              </select>
+              <select id="sortFilter" aria-label="Sort markers">
+                <option value="number">By number</option>
+                <option value="name">By item name</option>
+                <option value="position">Top to bottom</option>
+              </select>
+            </div>
+          </details>
+          <div id="placedList" class="placed-list"></div>
+        </section>
+
+        <details class="panel settings-panel">
+          <summary>Project settings</summary>
+          <div class="settings-inner">
+            <div class="setting-block">
+              <label for="projectTitle">Project name</label>
+              <input id="projectTitle" type="text" maxlength="120" placeholder="e.g. Building inspection">
+            </div>
+            <div class="setting-block">
+              <div class="mode-setting">
+                <div>
+                  <strong>Reuse item numbers</strong>
+                  <small id="numberingModeDescription">Off: each new location gets the next number.</small>
+                </div>
+                <label class="switch" title="Toggle between sequential and shared item numbers">
+                  <input id="sharedNumbers" type="checkbox" role="switch" aria-label="Reuse the same number at every location of an item">
+                  <span class="switch-track" aria-hidden="true"></span>
+                </label>
+              </div>
+              <p class="numbering-info">On: every placement of the same item shares its item number.</p>
+            </div>
+            <div class="setting-block">
+              <div class="setting-row">
+                <label for="markerSize">Marker size</label>
+                <strong class="setting-value" id="markerSizeValue">1.8%</strong>
+              </div>
+              <input id="markerSize" type="range" min="0.6" max="4" step="0.1" value="1.8">
+            </div>
+            <div class="setting-block">
+              <label class="inline-toggle"><input id="showStatus" type="checkbox" checked> Show status on markers</label>
+              <label class="inline-toggle"><input id="includeLegend" type="checkbox" checked> Include a legend when printing</label>
+            </div>
+          </div>
+        </details>
+        <div class="autosave-note">Autosaved in this browser when space allows. Use <strong>Save project</strong> to keep a portable backup that includes the image.</div>
+      </aside>
+    </main>
+  </div>
+
+  <input type="file" class="file-input" id="imageFile" accept="image/*">
+  <input type="file" class="file-input" id="jsonFile" accept=".json,application/json">
+  <div aria-labelledby="itemDialogTitle" aria-modal="true" class="modal" id="itemDialog" role="dialog">
+   <div class="dialog">
+    <h2 id="itemDialogTitle">
+     Edit item
+    </h2>
+    <form class="form-grid" id="editItemForm">
+     <div class="field-full">
+      <label for="editItemName">
+       Item name
+      </label>
+      <input id="editItemName" maxlength="100" required="" type="text"/>
+     </div>
+     <div>
+      <label for="editItemNumber">
+       Item number
+      </label>
+      <input id="editItemNumber" max="99999" min="1" required="" step="1" type="number"/>
+     </div>
+     <div>
+      <label for="editItemColor">
+       Marker color
+      </label>
+      <input id="editItemColor" type="color"/>
+     </div>
+     <div class="field-full">
+      <label for="editItemNotes">
+       Description / notes (optional)
+      </label>
+      <textarea id="editItemNotes" maxlength="1000" placeholder="Information about this kind of item" rows="3"></textarea>
+     </div>
+     <div class="field-full dialog-actions">
+      <button id="cancelItemEdit" type="button">
+       Cancel
+      </button>
+      <button class="primary" type="submit">
+       Save item
+      </button>
+     </div>
+    </form>
+   </div>
+  </div>
+  <div aria-labelledby="markerDialogTitle" aria-modal="true" class="modal" id="markerDialog" role="dialog">
+   <div class="dialog">
+    <h2 id="markerDialogTitle">
+     Edit marker
+    </h2>
+    <form class="form-grid" id="editMarkerForm">
+     <div id="markerNumberWrap">
+      <label for="editMarkerNumber">
+       Marker number
+      </label>
+      <input id="editMarkerNumber" max="99999" min="1" required="" step="1" type="number"/>
+     </div>
+     <div class="field-full marker-number-note" hidden="" id="markerNumberNote">
+      In shared-number mode, this location uses the number assigned to its item. Edit the item in the library to change the number at every location.
+     </div>
+     <div>
+      <label for="editMarkerItem">
+       Represents
+      </label>
+      <select id="editMarkerItem" required="">
+      </select>
+     </div>
+     <div class="field-full">
+      <label for="editMarkerStatus">
+       Status (optional)
+      </label>
+      <select id="editMarkerStatus">
+       <option value="none">
+        Not marked
+       </option>
+       <option value="complete">
+        Complete
+       </option>
+       <option value="attention">
+        Needs attention
+       </option>
+      </select>
+     </div>
+     <div class="field-full">
+      <label for="editMarkerNote">
+       Location-specific note (optional)
+      </label>
+      <textarea id="editMarkerNote" maxlength="1000" placeholder="Details about this specific marker" rows="3"></textarea>
+     </div>
+     <div class="field-full dialog-actions">
+      <button id="cancelMarkerEdit" type="button">
+       Cancel
+      </button>
+      <button class="primary" type="submit">
+       Save marker
+      </button>
+     </div>
+    </form>
+   </div>
+  </div>
+  <div aria-labelledby="bulkDialogTitle" aria-modal="true" class="modal" id="bulkDialog" role="dialog">
+   <div class="dialog">
+    <h2 id="bulkDialogTitle">
+     Add items from a list
+    </h2>
+    <p class="muted-note">
+     One item per line. Optionally set its number with
+     <strong>
+      3: Stairs
+     </strong>
+     . Names without numbers get the next available item number.
+    </p>
+    <form id="bulkForm">
+     <label for="bulkNames">
+      Item names
+     </label>
+     <textarea id="bulkNames" maxlength="16000" placeholder="3: Stairs\n5: Elevator\nFire extinguisher\nEmergency exit" required="" rows="8"></textarea>
+     <div class="form-grid" style="margin-top:11px">
+      <div>
+       <label for="bulkColor">
+        Marker color
+       </label>
+       <input id="bulkColor" type="color" value="#a5b4fc"/>
+      </div>
+     </div>
+     <div class="dialog-actions">
+      <button id="cancelBulk" type="button">
+       Cancel
+      </button>
+      <button class="primary" type="submit">
+       Add items
+      </button>
+     </div>
+    </form>
+   </div>
+  </div>
+  <div aria-live="polite" class="toast" id="toast" role="status">
+  </div>
+  <div class="print-sheet" id="printSheet">
+   <div class="print-head">
+    <div>
+     <h1 id="printTitle">
+      Marker Studio
+     </h1>
+     <p id="printSubtitle">
+     </p>
+    </div>
+    <span class="print-muted">
+     Marker Studio
+    </span>
+   </div>
+   <div class="print-map-wrap">
+    <div class="print-map-stage">
+     <img alt="Image with numbered markers" id="printImage"/>
+     <svg id="printSvg" xmlns="http://www.w3.org/2000/svg">
+     </svg>
+    </div>
+   </div>
+   <section class="print-legend-section" id="printLegendSection">
+    <h2>
+     Marker list
+    </h2>
+    <table class="print-table">
+     <thead>
+      <tr>
+       <th>
+        #
+       </th>
+       <th>
+        Item
+       </th>
+       <th id="printColThree">
+        Status
+       </th>
+       <th id="printColFour">
+        Notes
+       </th>
+      </tr>
+     </thead>
+     <tbody id="printRows">
+     </tbody>
+    </table>
+   </section>
+  </div>
+  <script>
+(() => {
+    'use strict';
+    const $ = id => document.getElementById(id);
+    const KEY = 'marker_studio_project_v1';
+    const SVG = 'http://www.w3.org/2000/svg';
+    const MIN_ZOOM = .2, MAX_ZOOM = 8;
+    const els = { board: $('board'), stage: $('stage'), image: $('canvasImage'), svg: $('markerLayer'), empty: $('emptyCanvas') };
+    const blank = () => ({ kind: 'marker-studio-project', version: 2, title: 'Untitled project', image: null, items: [], markers: [], settings: { markerSize: 1.8, showStatus: true, includeLegend: true, numberingMode: 'sequential' } });
+    let project = blank(), selectedId = null, placingItemId = null, editingItemId = null, editingMarkerId = null;
+    let fitScale = 1, zoom = 1, drag = null, saveTimer = null, toastTimer = null, autosaveWarned = false;
+    const id = () => window.crypto?.randomUUID?.() || 'id-' + Date.now() + '-' + Math.random().toString(36).slice(2);
+    const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+    const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+    const itemById = id => project.items.find(x => x.id === id);
+    const markerById = id => project.markers.find(x => x.id === id);
+    const selected = () => markerById(selectedId);
+    const displayNumber = m => project.settings.numberingMode === 'item' ? (itemById(m.itemId)?.number ?? m.number) : m.number;
+    const numbered = () => [...project.markers].sort((a, b) => displayNumber(a) - displayNumber(b) || a.number - b.number || a.id.localeCompare(b.id));
+    const itemCount = id => project.markers.filter(m => m.itemId === id).length;
+    function textOn(hex) { let rgb = [1, 3, 5].map(i => parseInt(hex.slice(i, i + 2), 16) / 255).map(c => c <= .04045 ? c / 12.92 : ((c + .055) / 1.055) ** 2.4); return rgb[0] * .2126 + rgb[1] * .7152 + rgb[2] * .0722 > .43 ? '#101827' : '#fff'; }
+    function toast(message) { $('toast').textContent = message; $('toast').classList.add('show'); clearTimeout(toastTimer); toastTimer = setTimeout(() => $('toast').classList.remove('show'), 2900); }
+    function save() { try {
+        localStorage.setItem(KEY, JSON.stringify(project));
+        autosaveWarned = false;
+    }
+    catch (e) {
+        if (!autosaveWarned) {
+            toast('Browser storage is full. Use Save JSON to back up your project.');
+            autosaveWarned = true;
+        }
+    } }
+    function saveSoon() { clearTimeout(saveTimer); saveTimer = setTimeout(save, 300); }
+    function snapshot() { return JSON.stringify(project); }
+    function loadLocal() { try {
+        const raw = localStorage.getItem(KEY);
+        if (!raw)
+            return;
+        project = normalize(JSON.parse(raw));
+    }
+    catch (e) {
+        project = blank();
+        if (e?.name !== 'SecurityError')
+            toast('Could not restore the browser copy. Open a saved JSON file instead.');
+    } }
+    function normalize(data) {
+        if (!data || data.kind !== 'marker-studio-project' || ![1, 2].includes(data.version) || !Array.isArray(data.items) || !Array.isArray(data.markers))
+            throw Error('Unsupported project file');
+        const obj = blank();
+        obj.title = String(data.title || 'Untitled project').slice(0, 120);
+        if (data.image) {
+            if (typeof data.image.data !== 'string' || !/^data:image\/(png|jpeg|jpg|webp|gif|bmp);base64,/i.test(data.image.data))
+                throw Error('The image in this file is invalid');
+            const w = Number(data.image.width), h = Number(data.image.height);
+            if (!Number.isFinite(w) || !Number.isFinite(h) || w <= 0 || h <= 0 || w > 60000 || h > 60000)
+                throw Error('The image dimensions are invalid');
+            obj.image = { data: data.image.data, name: String(data.image.name || 'Image').slice(0, 160), width: w, height: h };
+        }
+        const itemIds = new Set(), itemNumbers = new Set();
+        for (const x of data.items.slice(0, 5000)) {
+            let itemId = String(x.id || '');
+            if (!itemId || itemIds.has(itemId))
+                continue;
+            let color = /^#[0-9a-f]{6}$/i.test(x.color) ? x.color : '#7dd3fc';
+            let number = Number(x.number);
+            if (!Number.isInteger(number) || number < 1 || number > 99999 || itemNumbers.has(number)) {
+                number = 1;
+                while (itemNumbers.has(number))
+                    number++;
+            }
+            obj.items.push({ id: itemId, name: String(x.name || 'Unnamed item').slice(0, 100), number, color, notes: String(x.notes || '').slice(0, 1000) });
+            itemIds.add(itemId);
+            itemNumbers.add(number);
+        }
+        const markerIds = new Set(), numbers = new Set();
+        for (const m of data.markers.slice(0, 30000)) {
+            let n = Number(m.number), x = Number(m.x), y = Number(m.y), mid = String(m.id || '');
+            if (!mid || markerIds.has(mid) || !itemIds.has(String(m.itemId)) || !Number.isInteger(n) || n < 1 || numbers.has(n) || !Number.isFinite(x) || !Number.isFinite(y))
+                continue;
+            obj.markers.push({ id: mid, number: n, itemId: String(m.itemId), x: clamp(x, 0, 1), y: clamp(y, 0, 1), status: ['complete', 'attention'].includes(m.status) ? m.status : 'none', note: String(m.note || '').slice(0, 1000) });
+            markerIds.add(mid);
+            numbers.add(n);
+        }
+        obj.settings.markerSize = clamp(Number(data.settings?.markerSize) || 1.8, .6, 4);
+        obj.settings.showStatus = data.settings?.showStatus !== false;
+        obj.settings.includeLegend = data.settings?.includeLegend !== false;
+        obj.settings.numberingMode = data.settings?.numberingMode === 'item' ? 'item' : 'sequential';
+        return obj;
+    }
+    function updateControls() { $('projectTitle').value = project.title; $('markerSize').value = project.settings.markerSize; $('markerSizeValue').textContent = project.settings.markerSize.toFixed(1) + '%'; $('showStatus').checked = project.settings.showStatus; $('includeLegend').checked = project.settings.includeLegend; $('sharedNumbers').checked = project.settings.numberingMode === 'item'; updateNumberingUi(); $('newItemNumber').value = nextItemNumber(); }
+    function loadImage() {
+        if (!project.image) {
+            els.stage.hidden = true;
+            els.empty.hidden = false;
+            els.image.removeAttribute('src');
+            fitScale = 1;
+            zoom = 1;
+            updateZoom();
+            renderAll();
+            return;
+        }
+        els.image.onload = () => { fitStage(true); renderMarkers(); };
+        els.image.onerror = () => toast('The image could not be displayed.');
+        els.image.src = project.image.data;
+        els.stage.hidden = false;
+        els.empty.hidden = true;
+        fitStage(true);
+        renderAll();
+    }
+    function fitStage(reset = false) { if (!project.image)
+        return; const { width, height } = project.image; const availW = Math.max(120, els.board.clientWidth - 58), availH = Math.max(120, els.board.clientHeight - 58); fitScale = clamp(Math.min(availW / width, availH / height), .005, 5); if (reset)
+        zoom = 1; updateZoom(); }
+    function updateZoom() { if (project.image) {
+        els.stage.style.width = (project.image.width * fitScale * zoom) + 'px';
+        els.svg.setAttribute('viewBox', `0 0 ${project.image.width} ${project.image.height}`);
+        $('zoomValue').textContent = Math.round(fitScale * zoom * 100) + '%';
+    }
+    else
+        $('zoomValue').textContent = '—'; for (const k of ['zoomInBtn', 'zoomOutBtn', 'fitBtn', 'actualBtn'])
+        $(k).disabled = !project.image; }
+    function setZoom(next) { if (!project.image)
+        return; const r = els.svg.getBoundingClientRect(), b = els.board.getBoundingClientRect(); const cx = (b.left + b.width / 2 - r.left) / Math.max(1, r.width), cy = (b.top + b.height / 2 - r.top) / Math.max(1, r.height); zoom = clamp(next, MIN_ZOOM, MAX_ZOOM); updateZoom(); requestAnimationFrame(() => { const nr = els.svg.getBoundingClientRect(); els.board.scrollLeft += (nr.left + cx * nr.width) - (b.left + b.width / 2); els.board.scrollTop += (nr.top + cy * nr.height) - (b.top + b.height / 2); }); }
+    function nextNumber() { let n = 1, used = new Set(project.markers.map(m => m.number)); while (used.has(n))
+        n++; return n; }
+    function nextItemNumber(items = project.items) { let n = 1, used = new Set(items.map(x => x.number)); while (used.has(n))
+        n++; return n; }
+    function validItemNumber(num, excludeId = null) { return Number.isInteger(num) && num >= 1 && num <= 99999 && !project.items.some(x => x.id !== excludeId && x.number === num); }
+    function updateNumberingUi() { const fixed = project.settings.numberingMode === 'item'; $('numberingModeDescription').textContent = fixed ? 'On: all locations share their item number (Stairs = #3)' : 'Off: each new location gets the next number (1, 2, 3…)'; $('markerNumberWrap').hidden = fixed; $('markerNumberNote').hidden = !fixed; $('editMarkerNumber').required = !fixed; }
+    function addItem(name, color = '#7dd3fc', notes = '', number = nextItemNumber()) { name = name.trim().slice(0, 100); if (!name)
+        return null; if (!validItemNumber(number)) {
+        toast('Choose a unique item number between 1 and 99999.');
+        return null;
+    } const item = { id: id(), name, number, color, notes }; project.items.push(item); $('newItemNumber').value = nextItemNumber(); saveSoon(); renderAll(); return item; }
+    function armItem(itemId) { if (!itemById(itemId))
+        return; placingItemId = placingItemId === itemId ? null : itemId; renderAll(); if (placingItemId && !project.image)
+        toast('Add an image to begin placing markers.');
+    else if (placingItemId)
+        toast('Click or tap the image to place this item. Esc to stop.'); }
+    function stopPlacing() { placingItemId = null; renderAll(); }
+    function addMarkerAt(x, y) { const item = itemById(placingItemId); if (!item)
+        return; const marker = { id: id(), number: nextNumber(), itemId: item.id, x: clamp(x, 0, 1), y: clamp(y, 0, 1), status: 'none', note: '' }; project.markers.push(marker); selectedId = marker.id; saveSoon(); renderAll(); toast(`Marker #${displayNumber(marker)}: ${item.name}`); }
+    function selectMarker(markerId, center = false) { selectedId = markerById(markerId) ? markerId : null; renderMarkers(); renderSelected(); renderPlaced(); if (center && selectedId)
+        centerOn(markerById(selectedId)); }
+    function centerOn(m) { if (!project.image)
+        return; const r = els.svg.getBoundingClientRect(), b = els.board.getBoundingClientRect(); els.board.scrollLeft += r.left + m.x * r.width - (b.left + b.width / 2); els.board.scrollTop += r.top + m.y * r.height - (b.top + b.height / 2); }
+    function deleteMarker(markerId) { const m = markerById(markerId); if (!m)
+        return; if (!confirm(`Delete marker #${displayNumber(m)} (${itemById(m.itemId)?.name || 'Item'})?`))
+        return; project.markers = project.markers.filter(x => x.id !== markerId); if (selectedId === markerId)
+        selectedId = null; saveSoon(); renderAll(); toast('Marker deleted.'); }
+    function deleteItem(itemId) { const item = itemById(itemId); if (!item)
+        return; const count = itemCount(itemId); const msg = count ? `Delete "${item.name}" and its ${count} placed marker${count === 1 ? '' : 's'}? This cannot be undone.` : `Delete "${item.name}" from the item library?`; if (!confirm(msg))
+        return; project.items = project.items.filter(x => x.id !== itemId); project.markers = project.markers.filter(x => x.itemId !== itemId); if (placingItemId === itemId)
+        placingItemId = null; if (!markerById(selectedId))
+        selectedId = null; saveSoon(); renderAll(); }
+    function markerStyle(m) { const color = itemById(m.itemId)?.color || '#7dd3fc'; return { color, text: textOn(color) }; }
+    function svgNode(tag, attrs = {}, parent = null) { const node = document.createElementNS(SVG, tag); for (const [k, v] of Object.entries(attrs))
+        node.setAttribute(k, String(v)); if (parent)
+        parent.appendChild(node); return node; }
+    function drawPins(svg, isPrint = false) {
+        svg.replaceChildren();
+        if (!project.image)
+            return;
+        const { width, height } = project.image;
+        svg.setAttribute('viewBox', `0 0 ${width} ${height}`);
+        const d = width * project.settings.markerSize / 100, r = d / 2, ordered = numbered();
+        // Reuse the accurately centered onscreen glyph positions for printed markers.
+        const printPositions = isPrint ? new Map([...els.svg.querySelectorAll('g[data-marker-id]')].map(group => {
+            const number = group.querySelector('.marker-number');
+            return [group.dataset.markerId, number ? { x: number.getAttribute('x'), y: number.getAttribute('y') } : null];
+        })) : null;
+        for (const m of ordered) {
+            const { color, text } = markerStyle(m), cx = m.x * width, cy = m.y * height;
+            let g = svgNode('g', { transform: `translate(${cx} ${cy})`, class: `marker-node${m.id === selectedId && !isPrint ? ' selected' : ''}${!isPrint && !passesFilters(m) ? ' muted' : ''}`, ...(!isPrint ? { 'data-marker-id': m.id, tabindex: 0, role: 'button', 'aria-label': `Marker ${displayNumber(m)}: ${itemById(m.itemId)?.name || 'Item'}` } : {}) }, svg);
+            if (!isPrint)
+                svgNode('circle', { class: 'select-ring', r: r * 1.28 }, g);
+            svgNode('circle', { class: 'marker-circle', r, fill: color, stroke: '#162134', 'stroke-width': isPrint ? 1.1 : 1.9 }, g);
+            const shown = displayNumber(m);
+            const fontSize = d * (String(shown).length > 4 ? .22 : String(shown).length > 3 ? .28 : String(shown).length > 2 ? .39 : .53);
+            const numberText = svgNode('text', { class: 'marker-number', x: 0, y: fontSize * .35, 'font-size': fontSize, fill: text }, g);
+            numberText.textContent = shown;
+            // Center the actual painted glyphs, not the font's baseline or advance width.
+            // Print SVG is hidden until printing; the initial y value is its safe fallback.
+            if (!isPrint) {
+                const bounds = numberText.getBBox();
+                if (bounds.width > 0 && bounds.height > 0) {
+                    numberText.setAttribute('x', -(bounds.x + bounds.width / 2));
+                    numberText.setAttribute('y', fontSize * .35 - (bounds.y + bounds.height / 2));
+                }
+            } else {
+                const aligned = printPositions.get(m.id);
+                if (aligned) {
+                    numberText.setAttribute('x', aligned.x);
+                    numberText.setAttribute('y', aligned.y);
+                }
+            }
+            if (project.settings.showStatus && m.status !== 'none') {
+                const sx = r * .72, sy = -r * .73, sr = r * .31;
+                svgNode('circle', { cx: sx, cy: sy, r: sr, fill: m.status === 'complete' ? '#16855b' : '#bb5934', stroke: '#fff', 'stroke-width': Math.max(.7, r * .08) }, g);
+                svgNode('text', { class: 'status-icon', x: sx, y: sy, 'font-size': sr * 1.45, fill: '#fff' }, g).textContent = m.status === 'complete' ? '✓' : '!';
+            }
+        }
+    }
+    function statusLabel(s) { return s === 'complete' ? 'Complete' : s === 'attention' ? 'Needs attention' : 'Not marked'; }
+    function renderHeader() {
+        const title = project.title.trim() || 'Untitled project';
+        $('workspaceHeading').textContent = title;
+        $('imageChip').textContent = project.image ? project.image.name : 'No image';
+        $('countChip').textContent = `${project.markers.length} marker${project.markers.length === 1 ? '' : 's'}`;
+        $('itemCountChip').textContent = `${project.items.length} item${project.items.length === 1 ? '' : 's'}`;
+        $('placementTools').hidden = !placingItemId;
+        $('printBtn').disabled = !project.image;
+        $('canvasHint').textContent = placingItemId ? `Placing: ${itemById(placingItemId)?.name || 'Item'}${project.settings.numberingMode === 'item' ? ' (#' + itemById(placingItemId)?.number + ')' : ''} — tap or click the image (Esc to stop)` : (project.image ? (project.items.length ? 'Choose Place beside an item, then click the image.' : 'Add an item to the library to start marking.') : 'Upload an image to start.');
+        $('canvasHint').classList.toggle('placement-hint', !!placingItemId);
+        els.svg.classList.toggle('placing', !!placingItemId);
+    }
+    function renderItems() {
+        const root = $('itemList');
+        root.replaceChildren();
+        if (!project.items.length) {
+            root.innerHTML = '<div class="mini-empty">No items yet. Add one above to get started.</div>';
+            return;
+        }
+        for (const item of project.items) {
+            const row = document.createElement('div');
+            row.className = 'item-row' + (placingItemId === item.id ? ' armed' : '');
+            row.innerHTML = `<span class="item-color" style="background:${item.color}"></span><div><div class="item-name">${esc(item.name)} <span class="item-number-tag">#${item.number}</span></div><div class="item-meta">${itemCount(item.id)} placed${item.notes ? ' · ' + esc(item.notes.slice(0, 40)) + (item.notes.length > 40 ? '…' : '') : ''}</div></div><div class="item-actions"><button type="button" class="small ${placingItemId === item.id ? 'primary' : ''}" data-action="place" data-id="${esc(item.id)}">${placingItemId === item.id ? 'Stop' : 'Place'}</button><button type="button" class="icon-btn ghost" aria-label="Edit ${esc(item.name)}" title="Edit item" data-action="edit" data-id="${esc(item.id)}">✎</button><button type="button" class="icon-btn ghost" aria-label="Delete ${esc(item.name)}" title="Delete item" data-action="delete" data-id="${esc(item.id)}">×</button></div>`;
+            root.append(row);
+        }
+    }
+    function renderMarkers() { drawPins(els.svg); }
+    function renderSelected() { const m = selected(); $('selectionEmpty').hidden = !!m; $('selectedPanel').hidden = !m; if (!m)
+        return; const item = itemById(m.itemId), st = markerStyle(m); $('selectedBadge').textContent = displayNumber(m); $('selectedBadge').style.background = st.color; $('selectedBadge').style.color = st.text; $('selectedItemName').textContent = item?.name || 'Unnamed item'; $('selectedPosition').textContent = `#${displayNumber(m)} · ${statusLabel(m.status)} · ${Math.round(m.x * 100)}% across, ${Math.round(m.y * 100)}% down`; $('quickStatusBtn').textContent = m.status === 'complete' ? 'Clear complete' : 'Mark complete'; }
+    function passesFilters(m) { const term = $('markerSearch').value.trim().toLowerCase(), filter = $('statusFilter').value; if (filter !== 'all' && m.status !== filter)
+        return false; if (!term)
+        return true; const item = itemById(m.itemId); return [String(displayNumber(m)), '#' + displayNumber(m), item?.name, item?.notes, m.note].some(s => String(s || '').toLowerCase().includes(term)); }
+    function renderPlaced() {
+        let list = project.markers.filter(passesFilters);
+        const sort = $('sortFilter').value;
+        if (sort === 'name')
+            list.sort((a, b) => (itemById(a.itemId)?.name || '').localeCompare(itemById(b.itemId)?.name || '') || displayNumber(a) - displayNumber(b));
+        else if (sort === 'position')
+            list.sort((a, b) => a.y - b.y || a.x - b.x);
+        else
+            list.sort((a, b) => displayNumber(a) - displayNumber(b) || a.number - b.number);
+        const root = $('placedList');
+        root.replaceChildren();
+        if (!project.markers.length) {
+            root.innerHTML = '<div class="mini-empty">No markers yet. Choose Place, then click on the image.</div>';
+            return;
+        }
+        if (!list.length) {
+            root.innerHTML = '<div class="mini-empty">No markers match these filters.</div>';
+            return;
+        }
+        for (const m of list) {
+            const item = itemById(m.itemId), st = markerStyle(m), row = document.createElement('div');
+            row.className = 'placed-row' + (selectedId === m.id ? ' selected' : '');
+            row.setAttribute('role', 'button');
+            row.tabIndex = 0;
+            row.dataset.id = m.id;
+            row.innerHTML = `<span class="pin-chip" style="width:29px;height:29px;min-width:29px;background:${st.color};color:${st.text};font-size:10px">${displayNumber(m)}</span><div class="placed-description"><div class="placed-title">${esc(item?.name || 'Unnamed item')}</div><div class="placed-sub">${m.note ? esc(m.note.slice(0, 55)) : 'Marker #' + displayNumber(m)}</div></div><span class="status-pill ${m.status}">${statusLabel(m.status)}</span>`;
+            root.append(row);
+        }
+    }
+    function renderAll() { renderHeader(); renderItems(); renderMarkers(); renderSelected(); renderPlaced(); }
+    function openModal(name) { const dialog = $(name); dialog.classList.add('open'); const input = dialog.querySelector('input[type=text],input[type=number],textarea,select'); setTimeout(() => input?.focus(), 10); }
+    function closeModal(name) { $(name).classList.remove('open'); }
+    function openItemEdit(itemId) { const it = itemById(itemId); if (!it)
+        return; editingItemId = itemId; $('editItemName').value = it.name; $('editItemNumber').value = it.number; $('editItemColor').value = it.color; $('editItemNotes').value = it.notes; openModal('itemDialog'); }
+    function openMarkerEdit(markerId) { const m = markerById(markerId); if (!m)
+        return; editingMarkerId = markerId; $('editMarkerNumber').value = displayNumber(m); updateNumberingUi(); $('editMarkerItem').innerHTML = project.items.map(x => `<option value="${esc(x.id)}">${esc(x.name)}</option>`).join(''); $('editMarkerItem').value = m.itemId; $('editMarkerStatus').value = m.status; $('editMarkerNote').value = m.note; openModal('markerDialog'); }
+    function exportJSON() { const raw = JSON.stringify(project, null, 2); const blob = new Blob([raw], { type: 'application/json' }), url = URL.createObjectURL(blob), a = document.createElement('a'); a.href = url; a.download = (project.title.trim() || 'marker-project').replace(/[^a-z0-9 _-]/gi, '').trim().replace(/\s+/g, '_').slice(0, 60) + '.json'; a.click(); setTimeout(() => URL.revokeObjectURL(url), 1500); toast('Project JSON saved, including the image.'); }
+    async function processImage(file) {
+        if (!file?.type.startsWith('image/'))
+            throw Error('Please choose an image file.');
+        const data = await new Promise((resolve, reject) => { const reader = new FileReader(); reader.onload = () => resolve(reader.result); reader.onerror = () => reject(Error('Could not read image')); reader.readAsDataURL(file); });
+        const image = new Image();
+        await new Promise((resolve, reject) => { image.onload = resolve; image.onerror = () => reject(Error('Unsupported or damaged image')); image.src = data; });
+        const ow = image.naturalWidth, oh = image.naturalHeight;
+        if (!ow || !oh)
+            throw Error('Image has no dimensions');
+        // Compress very large images so one self-contained JSON backup can hold the picture.
+        const maxSide = 3200, scale = Math.min(1, maxSide / Math.max(ow, oh)), w = Math.max(1, Math.round(ow * scale)), h = Math.max(1, Math.round(oh * scale));
+        let result = data;
+        if (file.size > 1600000 || scale < 1) {
+            const canvas = document.createElement('canvas');
+            canvas.width = w;
+            canvas.height = h;
+            const ctx = canvas.getContext('2d');
+            ctx.drawImage(image, 0, 0, w, h);
+            let webp = canvas.toDataURL('image/webp', .87);
+            result = webp.startsWith('data:image/webp') ? webp : canvas.toDataURL('image/jpeg', .88);
+        }
+        return { data: result, name: file.name.slice(0, 160), width: w, height: h };
+    }
+    function renderPrint() {
+        if (!project.image)
+            return;
+        $('printTitle').textContent = project.title || 'Untitled project';
+        $('printSubtitle').textContent = `${project.image.name} · ${project.markers.length} markers · ${project.items.length} item types`;
+        $('printImage').src = project.image.data;
+        drawPins($('printSvg'), true);
+        $('printLegendSection').hidden = !project.settings.includeLegend || !project.markers.length;
+        const tbody = $('printRows');
+        tbody.replaceChildren();
+        const fixed = project.settings.numberingMode === 'item';
+        $('printLegendSection').querySelector('h2').textContent = fixed ? 'Item legend' : 'Marker list';
+        $('printColThree').textContent = fixed ? 'Locations' : 'Status';
+        $('printColFour').textContent = fixed ? 'Status summary' : 'Notes';
+        if (fixed) {
+            const used = project.items.filter(it => itemCount(it.id) > 0).sort((a, b) => a.number - b.number);
+            for (const item of used) {
+                const markers = project.markers.filter(m => m.itemId === item.id), counts = { none: 0, complete: 0, attention: 0 };
+                for (const m of markers)
+                    counts[m.status]++;
+                const summary = [counts.complete && `${counts.complete} complete`, counts.attention && `${counts.attention} need attention`, counts.none && `${counts.none} unmarked`].filter(Boolean).join(' · ');
+                const tr = document.createElement('tr');
+                tr.innerHTML = `<td><span class="print-number" style="background:${item.color};color:${textOn(item.color)}">${item.number}</span></td><td><strong>${esc(item.name)}</strong>${item.notes ? '<div class="print-muted">' + esc(item.notes) + '</div>' : ''}</td><td>${markers.length}</td><td>${esc(summary)}</td>`;
+                tbody.append(tr);
+            }
+        }
+        else {
+            for (const m of numbered()) {
+                const item = itemById(m.itemId), st = markerStyle(m), tr = document.createElement('tr');
+                tr.innerHTML = `<td><span class="print-number" style="background:${st.color};color:${st.text}">${m.number}</span></td><td><strong>${esc(item?.name || 'Item')}</strong>${item?.notes ? '<div class="print-muted">' + esc(item.notes) + '</div>' : ''}</td><td>${esc(statusLabel(m.status))}</td><td>${esc(m.note)}</td>`;
+                tbody.append(tr);
+            }
+        }
+    }
+    function pointerPoint(e) { const b = els.svg.getBoundingClientRect(); return { x: clamp((e.clientX - b.left) / b.width, 0, 1), y: clamp((e.clientY - b.top) / b.height, 0, 1) }; }
+    els.svg.addEventListener('pointerdown', e => { if (e.button !== 0)
+        return; const node = e.target.closest('[data-marker-id]'); const p = pointerPoint(e); drag = { pointer: e.pointerId, kind: node ? 'marker' : placingItemId ? 'place' : 'pan', markerId: node?.dataset.markerId || null, startX: e.clientX, startY: e.clientY, initialX: node ? (markerById(node.dataset.markerId)?.x ?? p.x) : p.x, initialY: node ? (markerById(node.dataset.markerId)?.y ?? p.y) : p.y, scrollX: els.board.scrollLeft, scrollY: els.board.scrollTop, moved: false }; if (node) {
+        selectedId = drag.markerId;
+        renderSelected();
+        renderPlaced();
+        renderMarkers();
+    } els.svg.setPointerCapture(e.pointerId); if (drag.kind === 'pan')
+        els.svg.classList.add('panning'); e.preventDefault(); });
+    els.svg.addEventListener('pointermove', e => { if (!drag || drag.pointer !== e.pointerId)
+        return; const dx = e.clientX - drag.startX, dy = e.clientY - drag.startY; if (Math.hypot(dx, dy) > 3)
+        drag.moved = true; if (drag.kind === 'marker') {
+        if (!drag.moved)
+            return;
+        const m = markerById(drag.markerId);
+        if (!m)
+            return;
+        const rect = els.svg.getBoundingClientRect();
+        m.x = clamp(drag.initialX + dx / rect.width, 0, 1);
+        m.y = clamp(drag.initialY + dy / rect.height, 0, 1);
+        renderMarkers();
+        renderSelected();
+    }
+    else if (drag.kind === 'pan') {
+        els.board.scrollLeft = drag.scrollX - dx;
+        els.board.scrollTop = drag.scrollY - dy;
+    } });
+    function finishPointer(e, canceled = false) { if (!drag || drag.pointer !== e.pointerId)
+        return; const curr = drag; drag = null; els.svg.classList.remove('panning'); try {
+        els.svg.releasePointerCapture(e.pointerId);
+    }
+    catch { } if (curr.kind === 'place' && !curr.moved && !canceled) {
+        const p = pointerPoint(e);
+        addMarkerAt(p.x, p.y);
+    }
+    else if (curr.kind === 'pan' && !curr.moved && !canceled) {
+        selectMarker(null);
+    }
+    else if (curr.kind === 'marker') {
+        if (curr.moved)
+            saveSoon();
+        renderAll();
+    } }
+    els.svg.addEventListener('pointerup', e => finishPointer(e));
+    els.svg.addEventListener('pointercancel', e => finishPointer(e, true));
+    els.svg.addEventListener('lostpointercapture', e => { if (drag?.pointer === e.pointerId)
+        finishPointer(e, true); });
+    els.svg.addEventListener('keydown', e => { const g = e.target.closest('[data-marker-id]'); if (g && (e.key === 'Enter' || e.key === ' ')) {
+        e.preventDefault();
+        selectMarker(g.dataset.markerId, true);
+    }
+    else if (e.key === 'Escape')
+        stopPlacing(); });
+    $('itemList').addEventListener('click', e => { const btn = e.target.closest('button[data-action]'); if (!btn)
+        return; const itemId = btn.dataset.id; if (btn.dataset.action === 'place')
+        armItem(itemId);
+    else if (btn.dataset.action === 'edit')
+        openItemEdit(itemId);
+    else if (btn.dataset.action === 'delete')
+        deleteItem(itemId); });
+    $('placedList').addEventListener('click', e => { const row = e.target.closest('[data-id]'); if (row)
+        selectMarker(row.dataset.id, true); });
+    $('placedList').addEventListener('keydown', e => { if ((e.key === 'Enter' || e.key === ' ') && e.target.dataset.id) {
+        e.preventDefault();
+        selectMarker(e.target.dataset.id, true);
+    } });
+    $('addItemForm').addEventListener('submit', e => { e.preventDefault(); const n = Number($('newItemNumber').value); const item = addItem($('newItemName').value, $('newItemColor').value, '', n); if (item) {
+        $('newItemName').value = '';
+        $('newItemName').focus();
+        toast(`Added ${item.name}. Press Place to mark it.`);
+    } });
+    $('editItemForm').addEventListener('submit', e => { e.preventDefault(); const item = itemById(editingItemId); if (!item)
+        return; const name = $('editItemName').value.trim(), number = Number($('editItemNumber').value); if (!name)
+        return; if (!validItemNumber(number, item.id)) {
+        toast('That item number is already taken or invalid.');
+        return;
+    } item.number = number; item.name = name; item.color = $('editItemColor').value; item.notes = $('editItemNotes').value.trim(); closeModal('itemDialog'); saveSoon(); renderAll(); toast('Item updated across all its markers.'); });
+    $('editMarkerForm').addEventListener('submit', e => { e.preventDefault(); const m = markerById(editingMarkerId); if (!m)
+        return; if (!itemById($('editMarkerItem').value))
+        return; if (project.settings.numberingMode === 'sequential') {
+        const num = Number($('editMarkerNumber').value);
+        if (!Number.isInteger(num) || num < 1 || num > 99999 || project.markers.some(x => x.id !== m.id && x.number === num)) {
+            toast('Marker number must be a unique positive whole number.');
+            return;
+        }
+        m.number = num;
+    } m.itemId = $('editMarkerItem').value; m.status = $('editMarkerStatus').value; m.note = $('editMarkerNote').value.trim(); closeModal('markerDialog'); saveSoon(); renderAll(); toast('Marker updated.'); });
+    $('bulkForm').addEventListener('submit', e => { e.preventDefault(); const lines = $('bulkNames').value.split(/\r?\n/).map(s => s.trim()).filter(Boolean); if (!lines.length)
+        return; if (lines.length > 500) {
+        toast('Paste up to 500 items at a time.');
+        return;
+    } const reserved = new Set(project.items.map(x => x.number)), items = []; for (const line of lines) {
+        const match = line.match(/^(\d+)\s*:\s*(.+)$/), num = match ? Number(match[1]) : null, name = (match ? match[2] : line).trim().slice(0, 100);
+        let n = num;
+        if (n === null) {
+            n = 1;
+            while (reserved.has(n))
+                n++;
+        }
+        if (!name || !Number.isInteger(n) || n < 1 || n > 99999 || reserved.has(n)) {
+            toast(`Invalid or duplicate item number on line: ${line.slice(0, 55)}`);
+            return;
+        }
+        reserved.add(n);
+        items.push({ id: id(), name, number: n, color: $('bulkColor').value, notes: '' });
+    } project.items.push(...items); $('newItemNumber').value = nextItemNumber(); closeModal('bulkDialog'); $('bulkNames').value = ''; saveSoon(); renderAll(); toast(`${items.length} items added.`); });
+    $('uploadBtn').onclick = () => $('imageFile').click();
+    $('emptyUploadBtn').onclick = () => $('imageFile').click();
+    async function setBackgroundImage(file) {
+        if (!file)
+            return;
+        if (project.image && !confirm('Replace the background image? Existing markers will stay at their relative positions.'))
+            return;
+        try {
+            const image = await processImage(file);
+            project.image = image;
+            if (project.title === 'Untitled project')
+                project.title = file.name.replace(/\.[^.]+$/, '').slice(0, 120);
+            updateControls();
+            loadImage();
+            saveSoon();
+            toast('Image added. Pick an item to start placing markers.');
+        }
+        catch (error) {
+            toast(error.message || 'Could not load image.');
+        }
+    }
+    $('imageFile').addEventListener('change', e => {
+        const file = e.target.files[0];
+        e.target.value = '';
+        void setBackgroundImage(file);
+    });
+    // Drag an image directly onto the canvas to open it.
+    for (const type of ['dragenter', 'dragover'])
+        els.board.addEventListener(type, e => {
+            if (e.dataTransfer?.types?.includes('Files')) {
+                e.preventDefault();
+                els.board.classList.add('drag-over');
+            }
+        });
+    for (const type of ['dragleave', 'drop'])
+        els.board.addEventListener(type, e => {
+            e.preventDefault();
+            els.board.classList.remove('drag-over');
+            if (type === 'drop')
+                void setBackgroundImage([...e.dataTransfer.files].find(f => f.type.startsWith('image/')));
+        });
+    $('importBtn').onclick = () => $('jsonFile').click();
+    $('jsonFile').addEventListener('change', async (e) => { const file = e.target.files[0]; e.target.value = ''; if (!file)
+        return; try {
+        const data = normalize(JSON.parse(await file.text()));
+        if (!confirm('Open this project and replace the current one? Export your current project first if you want to keep it.'))
+            return;
+        project = data;
+        selectedId = null;
+        placingItemId = null;
+        updateControls();
+        loadImage();
+        saveSoon();
+        toast('Project opened.');
+    }
+    catch (err) {
+        toast('Could not open JSON: ' + (err.message || 'invalid file'));
+    } });
+    $('exportBtn').onclick = exportJSON;
+    $('printBtn').onclick = () => { renderPrint(); window.print(); };
+    $('newBtn').onclick = () => { if (!confirm('Start a new project? Export your current project first to keep a backup.'))
+        return; project = blank(); selectedId = null; placingItemId = null; updateControls(); loadImage(); save(); toast('New project created.'); };
+    $('exitPlaceBtn').onclick = stopPlacing;
+    $('zoomInBtn').onclick = () => setZoom(zoom * 1.25);
+    $('zoomOutBtn').onclick = () => setZoom(zoom / 1.25);
+    $('fitBtn').onclick = () => { zoom = 1; updateZoom(); els.board.scrollLeft = 0; els.board.scrollTop = 0; };
+    $('actualBtn').onclick = () => setZoom(1 / fitScale);
+    $('projectTitle').addEventListener('input', e => { project.title = e.target.value; renderHeader(); saveSoon(); });
+    $('markerSize').addEventListener('input', e => { project.settings.markerSize = Number(e.target.value); $('markerSizeValue').textContent = project.settings.markerSize.toFixed(1) + '%'; renderMarkers(); saveSoon(); });
+    $('showStatus').addEventListener('change', e => { project.settings.showStatus = e.target.checked; renderMarkers(); saveSoon(); });
+    $('includeLegend').addEventListener('change', e => { project.settings.includeLegend = e.target.checked; saveSoon(); });
+    $('sharedNumbers').addEventListener('change', e => { project.settings.numberingMode = e.target.checked ? 'item' : 'sequential'; updateNumberingUi(); saveSoon(); renderAll(); toast(e.target.checked ? 'All placements now show their item numbers.' : 'Showing each marker’s sequential number.'); });
+    $('markerSearch').addEventListener('input', () => { renderMarkers(); renderPlaced(); });
+    $('statusFilter').addEventListener('change', () => { renderMarkers(); renderPlaced(); });
+    $('sortFilter').addEventListener('change', renderPlaced);
+    $('editMarkerBtn').onclick = () => { if (selectedId)
+        openMarkerEdit(selectedId); };
+    $('centerMarkerBtn').onclick = () => { if (selected())
+        centerOn(selected()); };
+    $('deleteMarkerBtn').onclick = () => { if (selectedId)
+        deleteMarker(selectedId); };
+    $('quickStatusBtn').onclick = () => { const m = selected(); if (!m)
+        return; m.status = m.status === 'complete' ? 'none' : 'complete'; saveSoon(); renderAll(); };
+    $('bulkAddBtn').onclick = () => openModal('bulkDialog');
+    for (const [button, modal] of [['cancelItemEdit', 'itemDialog'], ['cancelMarkerEdit', 'markerDialog'], ['cancelBulk', 'bulkDialog']])
+        $(button).onclick = () => closeModal(modal);
+    for (const modal of document.querySelectorAll('.modal'))
+        modal.addEventListener('pointerdown', e => { if (e.target === modal)
+            modal.classList.remove('open'); });
+    document.addEventListener('keydown', e => { if (e.key !== 'Escape')
+        return; const open = [...document.querySelectorAll('.modal.open')]; if (open.length)
+        open[open.length - 1].classList.remove('open');
+    else if (placingItemId)
+        stopPlacing(); });
+    window.addEventListener('beforeprint', renderPrint);
+    if (window.ResizeObserver) {
+        new ResizeObserver(() => { if (project.image)
+            fitStage(false); }).observe(els.board);
+    }
+    else
+        window.addEventListener('resize', () => fitStage(false));
+    const THEME_KEY = 'marker_studio_theme_v1';
+    function applyTheme(theme, persist = true) {
+        const dark = theme !== 'light';
+        document.documentElement.dataset.theme = dark ? 'dark' : 'light';
+        const button = $('themeToggle');
+        button.textContent = dark ? '☀ Light mode' : '☾ Dark mode';
+        button.setAttribute('aria-label', dark ? 'Switch to light mode' : 'Switch to dark mode');
+        document.querySelector('meta[name="theme-color"]').content = dark ? '#0d1829' : '#ffffff';
+        if (persist) { try { localStorage.setItem(THEME_KEY, dark ? 'dark' : 'light'); } catch (_) {} }
+    }
+    $('themeToggle').addEventListener('click', () => applyTheme(document.documentElement.dataset.theme === 'dark' ? 'light' : 'dark'));
+    applyTheme(document.documentElement.dataset.theme === 'light' ? 'light' : 'dark', false);
+    loadLocal();
+    updateControls();
+    loadImage();
+    renderAll();
+})();
+  </script>
+</body>
+</html>
