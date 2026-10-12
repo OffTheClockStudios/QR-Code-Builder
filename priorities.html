@@ -1,48 +1,391 @@
 <!doctype html>
-<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Run Order Planner</title>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Run Order Planner — Shipment Date Priority</title>
 <style>
-:root{font-family:system-ui,-apple-system,Segoe UI,sans-serif;color-scheme:dark;--bg:#0c1423;--panel:#142238;--panel2:#1a2b43;--line:#31445f;--text:#ecf3fc;--muted:#a8bad1;--blue:#64b5ff;--green:#61d6a7;--red:#ff8d98;--amber:#ffd38b}*{box-sizing:border-box}body{background:var(--bg);color:var(--text);margin:0;padding:22px}main{max-width:1450px;margin:auto}h1{margin:0;font-size:1.75rem}h2{font-size:1.05rem;margin:0 0 12px}p{color:var(--muted);line-height:1.45}.top{display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;margin-bottom:15px}.tag{border:1px solid var(--line);border-radius:30px;color:var(--muted);padding:6px 12px;font-size:.8rem}.panel{background:var(--panel);padding:18px;border:1px solid var(--line);border-radius:15px;margin:13px 0}.controls{display:flex;gap:12px;align-items:end;flex-wrap:wrap}label{display:flex;flex-direction:column;gap:6px;color:var(--muted);font-size:.82rem}input,select,textarea,button{font:inherit}input,select,textarea{color:var(--text);background:#0d1a2c;border:1px solid var(--line);border-radius:8px;padding:9px}input[type=number]{width:95px}input[type=date]{width:155px}textarea{width:100%;height:160px;resize:vertical;font-family:ui-monospace,monospace;font-size:.81rem}button{background:#294969;color:var(--text);border:1px solid #466684;border-radius:8px;padding:9px 13px;cursor:pointer}button:hover{background:#335b80}button.primary{background:#1475bb;border-color:#279fea}button.danger{background:#59303b;border-color:#96505f}button.small{padding:5px 9px}button:disabled{opacity:.4;cursor:default}.summary{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:10px}.metric{background:var(--panel2);padding:13px;border-radius:10px}.metric strong{display:block;font-size:1.45rem;margin-top:5px}.metric span{color:var(--muted);font-size:.8rem}.tablewrap{overflow-x:auto}table{width:100%;border-collapse:collapse;white-space:nowrap;font-size:.88rem}th,td{padding:10px 9px;text-align:left;border-bottom:1px solid var(--line)}th{color:var(--muted);font-size:.76rem;position:sticky;top:0;background:var(--panel)}.num{text-align:right;font-variant-numeric:tabular-nums}.lot{display:inline-flex;gap:5px;align-items:center}.lot button{padding:4px 9px}.lot input{width:65px;text-align:center;padding:6px 2px}.planned-control{display:flex;align-items:center;gap:10px;white-space:nowrap}.planned-parts{color:var(--green);font-weight:700;font-variant-numeric:tabular-nums;font-size:.82rem;min-width:92px}.part{font-weight:700;color:#e1eeff}.muted{color:var(--muted)}.bad{color:var(--red)}.good{color:var(--green)}.warn{color:var(--amber)}.chip{display:inline-block;padding:4px 8px;border-radius:6px;background:#283a52}.smalltext{font-size:.8rem}.inlineinput{width:80px!important}.note{border-left:3px solid var(--amber);padding:8px 12px;background:#302b24;color:#eadac4;margin-top:12px}.pill{color:var(--blue);font-size:.78rem}.secondaryrow{background:#182940}.hidden{display:none}.checkbox{display:flex;align-items:center;gap:7px}.checkbox input{accent-color:#43aaf2}@media(max-width:650px){body{padding:10px}.panel{padding:12px}h1{font-size:1.35rem}}
-</style></head><body><main>
-<div class="top"><div><h1>Run Order Planner</h1><p style="margin:5px 0">Shipment-based priorities • full-lot planning • live completion tracking</p></div><span class="tag">Offline • saved on this device</span></div>
-<section class="panel"><h2>1. Paste shipment report</h2><textarea id="paste" placeholder="Paste the full report from Excel, or a Markdown table, including Part Number, Quantity, and shipment date columns..."></textarea><div class="controls" style="margin-top:12px"><button class="primary" id="import">Import report</button><button id="example">Load example</button><label>Default lot size<input id="defaultLot" type="number" min="1" step="1" value="144"></label><label>Report date / priority reference<input id="asOf" type="date"></label><button id="save">Save plan</button><button id="load">Load saved plan</button><button class="danger" id="reset">Clear all</button></div><p class="smalltext">The Quantity column is available inventory. Date columns are daily shipments. Parenthesized shortages are informative only; this tool recalculates cumulative shortages from quantities and shipments. On a fresh report import, choose whether to replace or carry forward completed production to avoid double-counting.</p><div id="message" role="status" class="pill"></div></section>
-<section class="summary" id="summary"></section>
-<section class="panel"><div class="top"><h2>2. Run priority & lot plan</h2><div class="controls"><label>Sort by<select id="sort"><option value="date">Earliest uncovered ship date</option><option value="gap">Largest uncovered shortage</option><option value="manual">My run order</option><option value="part">Part number</option></select></label><label class="checkbox"><input type="checkbox" id="showAll" checked>Show covered parts</label><button id="auto">Set lots to cover all dates</button><button id="csv">Export CSV</button></div></div><p class="smalltext">Use ↑/↓ to set your own sequence. <b>Planned lots</b> are future lots you intend to run; use <b>Complete 1 lot</b> as each lot finishes to add pieces to available stock and subtract one remaining planned lot. Use +/− to adjust planned remaining lots. The green parts count shows <b>remaining planned lots × lot size</b> and updates as you edit. Changes recheck all shipment dates.</p><div class="tablewrap"><table><thead><tr><th>Order</th><th>Part / process</th><th class="num">Inventory</th><th>Lot size</th><th>First uncovered date</th><th class="num">Short then</th><th class="num">Required lots*</th><th>Remaining planned lots / parts</th><th>Run progress</th><th>Move</th></tr></thead><tbody id="rows"></tbody></table></div><div class="note smalltext">*Required lots = lots needed to cover <b>all shown shipment dates</b> assuming no further receipts. A run order is a planning aid, not proof shipments can be met: production capacity, changeovers, inspection/release status, and pickup cutoffs are not modeled. Overdue dates are sorted first. Confirm inventory and lot conventions with your plant's system.</div></section>
-<section class="panel"><h2>3. Shipment coverage by part and date</h2><p class="smalltext">Projected balances include available inventory, completed lots entered here, and remaining planned lots. Red negative balances indicate a shortage even if all remaining planned lots finish before that shipment. This is a <b>coverage check</b>, not a time-phased schedule.</p><div class="tablewrap" id="coverage"></div></section>
-</main><script>
+:root{font-family:system-ui,-apple-system,"Segoe UI",sans-serif;color-scheme:dark;--bg:#0b1523;--panel:#142238;--panel2:#1b2e48;--line:#324761;--text:#edf4ff;--muted:#afbed3;--blue:#80c6ff;--green:#72dfb0;--red:#ffa0a6;--amber:#ffd38b}
+*{box-sizing:border-box}body{margin:0;padding:20px;background:var(--bg);color:var(--text)}main{max-width:1550px;margin:auto}
+h1{font-size:1.85rem;margin:0}h2{margin:0;font-size:1.12rem}p{color:var(--muted);line-height:1.48;margin:10px 0}.top,.sectionhead{display:flex;align-items:center;justify-content:space-between;gap:15px;flex-wrap:wrap}.top{margin-bottom:14px}.sectionhead{margin-bottom:13px}
+.tag{border:1px solid var(--line);border-radius:28px;padding:7px 13px;color:var(--muted);font-size:.84rem}.panel{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:18px;margin:14px 0}.controls{display:flex;flex-wrap:wrap;align-items:end;gap:11px}.field{display:flex;flex-direction:column;gap:6px;color:var(--muted);font-size:.83rem}
+input,select,textarea,button{font:inherit}input,select,textarea{background:#0d1a2c;color:var(--text);border:1px solid var(--line);border-radius:8px;padding:9px}input:focus,select:focus,textarea:focus,button:focus-visible{outline:2px solid var(--blue);outline-offset:2px}input[type=number]{width:96px}input[type=date]{width:160px}select{min-width:145px}textarea{width:100%;height:153px;resize:vertical;font-family:ui-monospace,SFMono-Regular,Consolas,monospace;font-size:.81rem}
+button{background:#2a4869;color:var(--text);border:1px solid #526d8b;border-radius:9px;padding:9px 12px;cursor:pointer}button:hover{background:#355d83}button:disabled{opacity:.44;cursor:default}button.primary{background:#1573b3;border-color:#4dadf1;font-weight:650}button.danger{background:#59303b;border-color:#93505f}button.small{padding:5px 8px;font-size:.84rem}button.selected{background:#165f87;border-color:var(--blue);box-shadow:inset 0 0 0 1px var(--blue)}.quick{display:flex;gap:7px;flex-wrap:wrap}
+.summary{display:grid;grid-template-columns:repeat(auto-fit,minmax(165px,1fr));gap:10px}.metric{background:var(--panel2);padding:13px;border-radius:11px}.metric span{display:block;color:var(--muted);font-size:.80rem}.metric strong{display:block;margin-top:5px;font-size:1.50rem;font-variant-numeric:tabular-nums}.metric em{display:block;font-size:.75rem;font-style:normal;color:var(--muted);margin-top:4px}
+.priority{border:1px solid #496e91;border-radius:13px;background:#172f49;padding:16px}.priority .controls{align-items:end}.priority label{font-weight:650}.priority select{min-width:175px}.priority-summary{margin-top:13px;padding:10px 12px;border-radius:8px;background:#0d2034;color:#dbeeff;line-height:1.5}.priority-summary strong{color:var(--green)}
+.tablewrap{overflow:auto;max-width:100%}table{border-collapse:collapse;width:100%;font-size:.86rem;white-space:nowrap}th,td{padding:10px 9px;border-bottom:1px solid var(--line);text-align:left}th{color:var(--muted);font-weight:650;font-size:.75rem;background:var(--panel)}.num{text-align:right;font-variant-numeric:tabular-nums}.part{font-weight:750;color:#e3efff}.muted{color:var(--muted)}.bad{color:var(--red)}.good{color:var(--green)}.warn{color:var(--amber)}.smalltext{font-size:.83rem}.chip{border-radius:7px;padding:5px 9px;background:#283d59;display:inline-block}.inlineinput{width:79px!important}.lot{display:inline-flex;align-items:center;gap:5px}.lot button{padding:5px 10px}.lot input{width:68px;text-align:center;padding:6px 3px}.planned-control{display:flex;align-items:center;gap:10px}.planned-parts{color:var(--green);font-variant-numeric:tabular-nums;font-size:.84rem;font-weight:750;min-width:98px}.row-alert{background:#202a3e}.checkbox{display:flex;align-items:center;gap:6px;color:var(--muted);font-size:.83rem}.checkbox input{accent-color:#4bb3fa}.note{border-left:3px solid var(--amber);background:#2b2925;padding:10px 12px;color:#ebddc7;margin-top:12px}.pill{min-height:21px;font-size:.84rem;color:var(--blue);margin-top:10px}.scope-head{background:#234b67!important;color:#e3f7ff!important}.later-head{color:#95a2b7!important}.cutoff-edge{border-right:2px solid var(--blue)!important}.hidden{display:none}.scope-label{font-size:.75rem;color:var(--muted);margin-bottom:10px}.footer{color:var(--muted);text-align:center;font-size:.75rem;margin:18px 0}
+@media(max-width:680px){body{padding:10px}h1{font-size:1.45rem}.panel{padding:12px}.priority{padding:12px}.controls>*{max-width:100%}}
+</style>
+</head>
+<body>
+<main>
+<div class="top">
+  <div><h1>Run Order Planner</h1><p style="margin:5px 0">Prioritize a chosen shipment date • plan in full lots • update parts as you run</p></div>
+  <span class="tag">Single-file HTML · offline · saved in this browser</span>
+</div>
+
+<section class="panel" aria-labelledby="step1">
+  <h2 id="step1">1. Paste your shipment report</h2>
+  <p class="smalltext">Accepts your Excel tab-separated report or the Markdown table format. <strong>Quantity</strong> is good inventory; each date column is daily shipment demand. Parentheses show cumulative shortages in the original report, which the planner recalculates.</p>
+  <textarea id="paste" aria-label="Paste orders" placeholder="Paste the entire table with Part Number, Process Code, Quantity and dated shipment columns..."></textarea>
+  <div class="controls" style="margin-top:12px">
+    <button id="import" class="primary">Import report</button>
+    <button id="example">Load example</button>
+    <label class="field">Default lot size<input type="number" min="1" step="1" id="defaultLot" value="144"></label>
+    <label class="field">Report year reference<input type="date" id="asOf" title="Used to interpret shipment date columns without a year, such as 10/12"></label>
+    <button id="save">Save plan</button>
+    <button id="load">Load saved plan</button>
+    <button id="reset" class="danger">Clear all</button>
+  </div>
+  <div class="pill" id="message" role="status" aria-live="polite"></div>
+</section>
+
+<section class="panel" aria-labelledby="step2">
+  <h2 id="step2">2. Choose how far ahead to cover</h2>
+  <p class="smalltext">Pick the <strong>last shipping date to include</strong>, or choose the first 2 or 5 dates from the report. Each option counts <strong>shipment-date columns</strong>, not calendar days—so weekends or missing dates are skipped. Earlier requirements are always included in cumulative shortages.</p>
+  <div class="priority">
+    <div class="controls">
+      <label class="field">Prioritize shipments through
+        <select id="throughDate" disabled aria-label="Prioritize shipments through date"><option value="">Import a report first</option></select>
+      </label>
+      <div class="field"><span>Quick selection</span>
+        <div class="quick">
+          <button id="first2" data-days="2" disabled>First 2 ship dates</button>
+          <button id="first5" data-days="5" disabled>First 5 ship dates</button>
+          <button id="allDates" data-days="all" disabled>All listed dates</button>
+        </div>
+      </div>
+      <button class="primary" id="auto" disabled>Set planned lots to cover cutoff</button>
+    </div>
+    <div id="prioritySummary" class="priority-summary" role="status">Import a report to select your shipment coverage date.</div>
+  </div>
+</section>
+
+<section class="summary" id="summary" aria-label="Planning summary"></section>
+
+<section class="panel" aria-labelledby="step3">
+  <div class="sectionhead">
+    <h2 id="step3">3. Recommended run order &amp; adjustable lots</h2>
+    <div class="controls">
+      <label class="field">Sort by
+        <select id="sort"><option value="date">Earliest shortage by cutoff</option><option value="gap">Largest shortage by cutoff</option><option value="manual">My run order</option><option value="part">Part number</option></select>
+      </label>
+      <label class="checkbox"><input id="showAll" type="checkbox" checked> Show covered parts</label>
+      <button id="csv">Export CSV</button>
+    </div>
+  </div>
+  <p class="smalltext"><strong>Recommended lots</strong> covers shipments through your chosen date only. Use <strong>Set planned lots to cover cutoff</strong> to fill in a recommended plan, then change any number with +/− or by typing. The green number beside the lots is <strong>the equivalent number of parts</strong>. Click <strong>Complete 1 lot</strong> each time a full lot is finished: remaining lots decrease and available good inventory increases.</p>
+  <div class="tablewrap"><table>
+    <thead><tr>
+      <th>Rank</th><th>Part / process</th><th class="num">Available</th><th>Lot size</th>
+      <th>First shortage<br>by cutoff</th><th class="num">Short by<br>cutoff</th><th class="num">Recommended<br>lots</th>
+      <th>Remaining planned lots = parts</th><th class="num">Still short<br>after plan</th><th>Progress</th><th>Move</th>
+    </tr></thead><tbody id="rows"><tr><td colspan="11">Import your report to see the recommended runs.</td></tr></tbody>
+  </table></div>
+  <div class="note smalltext">The selected cutoff limits recommendations, <strong>not</strong> the displayed shipment coverage table. Later shipments remain visible but are not automatically planned. Planned production is assumed ready before the relevant shipment; this tool does not yet account for cycle times, changeovers, inspection release, or truck pickup cutoffs. Confirm actual available inventory before using the plan.</div>
+</section>
+
+<section class="panel" aria-labelledby="step4">
+  <h2 id="step4">4. Shipment coverage — selected dates highlighted</h2>
+  <p class="smalltext">Projected balances subtract shipments cumulatively from inventory plus all remaining planned production. Red = shortage. Blue headers = dates included in your priority window; grey headers = later dates. This is a quantity check, not a time-based guarantee.</p>
+  <div id="coverage" class="tablewrap">No report imported.</div>
+</section>
+<div class="footer">Plans are stored in this browser only. Export CSV if you need a separate record.</div>
+</main>
+<script>
 (()=>{'use strict';
-const $=id=>document.getElementById(id);const STORAGE='runOrderPlanner_v1';const today=()=>{let d=new Date();return [d.getFullYear(),String(d.getMonth()+1).padStart(2,'0'),String(d.getDate()).padStart(2,'0')].join('-')};$('asOf').value=today();
-let state={parts:[],dates:[],manual:[],defaultLot:144,asOf:today()};
-const escapeHTML=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));const fmt=x=>Math.round(x).toLocaleString();const integer=x=>{let n=Number(String(x??'').trim().replace(/,/g,''));return Number.isFinite(n)?Math.trunc(n):NaN};const n0=x=>Number.isFinite(x)?Math.max(0,x):0;
-function parseDate(str){let s=String(str).trim().replaceAll('**','').replace(/[\u00a0]/g,' ');if(/^\d{4}-\d{2}-\d{2}$/.test(s))return s;let m=s.match(/^(\d{1,2})\/(\d{1,2})(?:\/(\d{2,4}))?$/);if(!m)return null;let y=m[3]?Number(m[3]):Number($('asOf').value.slice(0,4));if(y<100)y+=2000;let date=new Date(y,Number(m[1])-1,Number(m[2]));return date.getFullYear()===y&&date.getMonth()===Number(m[1])-1&&date.getDate()===Number(m[2])?`${y}-${String(m[1]).padStart(2,'0')}-${String(m[2]).padStart(2,'0')}`:null}
-function parseCell(s){let m=String(s).replace(/\*\*/g,'').trim().match(/^(-?[\d,]+)/);return m?integer(m[1]):0}
-function parse(text){let lines=text.trim().split(/\r?\n/).filter(x=>x.trim());let separator=lines.some(x=>x.includes('\t'))?'tab':'pipe';let cells=line=>separator==='tab'?line.split('\t').map(s=>s.trim()):line.trim().replace(/^\|/,'').replace(/\|$/,'').split('|').map(s=>s.trim());let rows=lines.map(cells).filter(r=>!r.every(v=>/^[-:\s]+$/.test(v)));if(!rows.length)throw Error('No table found');let headers=rows[0].map(s=>s.replace(/\*\*/g,'').trim());let idx=needle=>headers.findIndex(h=>h.toLowerCase().replace(/\s+/g,' ').includes(needle));let partIdx=idx('part number'),qtyIdx=idx('quantity'),processIdx=idx('process code');if(partIdx<0||qtyIdx<0)throw Error('Expected Part Number and Quantity columns');let dates=headers.map((h,i)=>({date:parseDate(h),i})).filter(o=>o.date);if(!dates.length)throw Error('No shipment date columns found (example: 10/12)');let unique=new Set(dates.map(x=>x.date));if(unique.size!==dates.length)throw Error('Duplicate shipment dates detected; select the report year in Report date first');dates.sort((a,b)=>a.date.localeCompare(b.date));let parts=[];let seen=new Set();for(let r of rows.slice(1)){let name=String(r[partIdx]||'').replace(/\*\*/g,'').trim();if(!name||name.startsWith('#')||/^[-:]+$/.test(name))continue;if(seen.has(name))throw Error('Duplicate part number: '+name);seen.add(name);let qty=integer(r[qtyIdx]);if(!Number.isFinite(qty))throw Error('Invalid Quantity for '+name);let ship={};for(let d of dates)ship[d.date]=n0(parseCell(r[d.i]||'0'));parts.push({name,process:processIdx>=0?String(r[processIdx]||'').trim():'',inventory:qty,ship,lot:null,planned:0,completed:0});}if(!parts.length)throw Error('No part rows found');return{parts,dates:dates.map(d=>d.date)}}
-function lot(p){return Math.max(1,p.lot||state.defaultLot)}function sum(p){return state.dates.reduce((acc,d)=>acc+n0(p.ship[d]||0),0)}function calc(p){let cumulative=0,first=null,gap=0;for(let d of state.dates){cumulative+=n0(p.ship[d]||0);let s=Math.max(0,cumulative-p.inventory);if(s>0&&!first)first=d;if(s>gap)gap=s}let required=Math.ceil(gap/lot(p));let afterPlan=p.inventory+p.planned*lot(p);let shortAfter=Math.max(0,cumulative-afterPlan);return{first,gap,required,shortAfter,total:cumulative}}function niceDate(d){if(!d)return 'Covered';let [y,m,day]=d.split('-');return m+'/'+day+'/'+y.slice(2)}
-function persist(){try{localStorage.setItem(STORAGE,JSON.stringify(state));$('message').textContent='Saved locally on this browser.'}catch(e){$('message').textContent='Could not save locally: '+e.message}}
-function restore(){try{let d=JSON.parse(localStorage.getItem(STORAGE));if(!d||!Array.isArray(d.parts)||!Array.isArray(d.dates))throw Error('No saved plan found');state=d;$('defaultLot').value=state.defaultLot;$('asOf').value=state.asOf;render();$('message').textContent='Loaded saved plan.'}catch(e){$('message').textContent=e.message}}
-function render(){let metrics=state.parts.map(p=>({p,...calc(p)})),atRisk=metrics.filter(r=>r.gap>0),uncovered=metrics.filter(r=>r.shortAfter>0),totalLots=state.parts.reduce((s,p)=>s+p.planned,0),totalPlannedParts=state.parts.reduce((s,p)=>s+p.planned*lot(p),0),completed=state.parts.reduce((s,p)=>s+p.completed,0);$('summary').innerHTML=[['Part numbers',state.parts.length],['Parts needing production',atRisk.length],['Parts still uncovered by plan',uncovered.length],['Remaining planned lots',totalLots],['Remaining planned parts',totalPlannedParts],['Completed lots tracked',completed]].map(([label,val])=>`<div class="metric"><span>${label}</span><strong>${fmt(val)}</strong></div>`).join('');let rows=[...metrics];let sort=$('sort').value;rows.sort((a,b)=>{if(sort==='manual')return state.manual.indexOf(a.p.name)-state.manual.indexOf(b.p.name);if(sort==='part')return a.p.name.localeCompare(b.p.name);if(sort==='gap')return b.gap-a.gap||String(a.first||'z').localeCompare(String(b.first||'z'));return String(a.first||'z').localeCompare(String(b.first||'z'))||b.gap-a.gap});if(!$('showAll').checked)rows=rows.filter(r=>r.gap>0||r.p.planned>0);$('rows').innerHTML=rows.map((r,i)=>{let p=r.p,id=state.parts.indexOf(p);return `<tr class="${r.shortAfter>0?'secondaryrow':''}"><td><span class="chip">${i+1}</span></td><td><div class="part">${escapeHTML(p.name)}</div><div class="muted smalltext">${escapeHTML(p.process)}</div></td><td class="num">${fmt(p.inventory)}</td><td><input aria-label="Lot size for ${escapeHTML(p.name)}" class="inlineinput" type="number" min="1" step="1" data-i="${id}" data-field="lot" value="${lot(p)}"></td><td class="${r.first?'bad':'good'}">${niceDate(r.first)}</td><td class="num ${r.gap?'bad':''}">${fmt(r.gap)}</td><td class="num">${fmt(r.required)}</td><td><div class="planned-control"><div class="lot"><button data-action="minus" data-i="${id}" title="Decrease remaining planned lots">−</button><input aria-label="Remaining planned lots for ${escapeHTML(p.name)}" type="number" min="0" step="1" data-i="${id}" data-field="planned" value="${p.planned}"><button data-action="plus" data-i="${id}" title="Add planned lot">+</button></div><span class="planned-parts" data-parts-for="${id}">= ${fmt(p.planned*lot(p))} parts</span></div></td><td><button class="small" data-action="complete" data-i="${id}" ${p.planned<1?'disabled':''}>✓ Complete 1 lot</button><div class="smalltext muted">${fmt(p.completed)} lots done</div></td><td><button class="small" data-action="up" data-i="${id}" title="Move up in my run order">↑</button> <button class="small" data-action="down" data-i="${id}" title="Move down in my run order">↓</button></td></tr>`}).join('')||'<tr><td colspan="10">Nothing to display yet. Import a report.</td></tr>';
-let dates=state.dates;$('coverage').innerHTML=!state.parts.length?'No report imported.':`<table><thead><tr><th>Part</th><th>Balance after all planned lots</th>${dates.map(d=>`<th class="num">${niceDate(d)}</th>`).join('')}</tr></thead><tbody>${[...state.parts].sort((a,b)=>a.name.localeCompare(b.name)).map(p=>{let bal=p.inventory+p.planned*lot(p);let td=dates.map(d=>{bal-=n0(p.ship[d]||0);return `<td class="num ${bal<0?'bad':'good'}" title="Shipment: ${p.ship[d]||0}">${fmt(bal)}</td>`}).join('');return `<tr><td class="part">${escapeHTML(p.name)}</td><td>${fmt(p.inventory+p.planned*lot(p))} available</td>${td}</tr>`}).join('')}</tbody></table>`;
+const $ = id => document.getElementById(id);
+const STORAGE = 'runOrderPlanner_v1'; // Reuse older plan storage so v2 data can be loaded.
+const dateToday = () => {
+  const d = new Date();
+  return [d.getFullYear(),String(d.getMonth()+1).padStart(2,'0'),String(d.getDate()).padStart(2,'0')].join('-');
+};
+const escapeHTML = s => String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const fmt = n => Number(n||0).toLocaleString('en-US',{maximumFractionDigits:0});
+const intValue = x => {const n=Number(String(x??'').trim().replaceAll(',',''));return Number.isFinite(n)?Math.trunc(n):NaN};
+const nonnegative = n => Number.isFinite(n)?Math.max(0,n):0;
+const niceDate = d => d ? d.slice(5,7)+'/'+d.slice(8,10)+'/'+d.slice(2,4) : 'Covered';
+const fresh = () => ({parts:[],dates:[],manual:[],defaultLot:144,asOf:dateToday(),throughDate:null});
+let state = fresh();
+$('asOf').value=state.asOf;
+
+function parseDate(raw){
+  const s=String(raw).trim().replaceAll('**','').replaceAll('\u00a0',' ');
+  if(/^\d{4}-\d{2}-\d{2}$/.test(s))return s;
+  const m=s.match(/^(\d{1,2})\/(\d{1,2})(?:\/(\d{2,4}))?$/);
+  if(!m)return null;
+  let y=m[3]?Number(m[3]):Number(($('asOf').value||dateToday()).slice(0,4));
+  if(y<100)y+=2000;
+  const month=Number(m[1]),day=Number(m[2]);
+  const d=new Date(y,month-1,day);
+  return d.getFullYear()===y&&d.getMonth()===month-1&&d.getDate()===day
+    ? `${y}-${String(month).padStart(2,'0')}-${String(day).padStart(2,'0')}` : null;
 }
-function touch(){render();persist()}$('import').onclick=()=>{try{let parsed=parse($('paste').value);let keep=false;if(state.parts.length){keep=confirm('Import new report?\n\nOK: Preserve existing LOT SIZE overrides only; reset completed/planned lots (recommended for fresh inventory snapshots).\nCancel: Stop import.');if(!keep)return;}let old=new Map(state.parts.map(p=>[p.name,p]));for(let p of parsed.parts){let existing=old.get(p.name);if(existing)p.lot=existing.lot}state={parts:parsed.parts,dates:parsed.dates,manual:parsed.parts.map(p=>p.name),defaultLot:Math.max(1,integer($('defaultLot').value)||144),asOf:$('asOf').value};$('message').textContent=`Imported ${state.parts.length} parts and ${state.dates.length} shipment dates.`;touch()}catch(e){$('message').textContent='Import error: '+e.message}};
-$('defaultLot').onchange=()=>{state.defaultLot=Math.max(1,integer($('defaultLot').value)||144);$('defaultLot').value=state.defaultLot;touch()};$('asOf').onchange=()=>{state.asOf=$('asOf').value;persist()};$('sort').onchange=render;$('showAll').onchange=render;
-$('rows').addEventListener('input',ev=>{let t=ev.target;if(t.dataset.field!=='lot'&&t.dataset.field!=='planned')return;let row=t.closest('tr'),lotsField=row.querySelector('[data-field=planned]'),sizeField=row.querySelector('[data-field=lot]'),output=row.querySelector('[data-parts-for]');if(!lotsField||!sizeField||!output)return;let numberOfLots=n0(integer(lotsField.value)),lotSize=Math.max(1,integer(sizeField.value)||state.defaultLot);output.textContent='= '+fmt(numberOfLots*lotSize)+' parts';});
-$('rows').addEventListener('change',ev=>{let t=ev.target;if(!t.dataset.field)return;let p=state.parts[Number(t.dataset.i)];let v=integer(t.value);if(t.dataset.field==='lot')p.lot=Math.max(1,v||state.defaultLot);if(t.dataset.field==='planned')p.planned=n0(v);touch()});
-$('rows').addEventListener('click',ev=>{let t=ev.target.closest('button');if(!t)return;let i=Number(t.dataset.i),p=state.parts[i],action=t.dataset.action;if(action==='plus')p.planned++;if(action==='minus')p.planned=Math.max(0,p.planned-1);if(action==='complete'&&p.planned>0){p.planned--;p.completed++;p.inventory+=lot(p)}if(action==='up'||action==='down'){let index=state.manual.indexOf(p.name);let next=index+(action==='up'?-1:1);if(next>=0&&next<state.manual.length){[state.manual[index],state.manual[next]]=[state.manual[next],state.manual[index]];$('sort').value='manual'}}touch()});
-$('auto').onclick=()=>{if(!state.parts.length)return; if(!confirm('Replace all REMAINING planned lots with the minimum lots required to cover all shown shipment dates? Completed lots and adjusted inventory are preserved.'))return;for(let p of state.parts)p.planned=calc(p).required;touch()};$('save').onclick=persist;$('load').onclick=restore;$('reset').onclick=()=>{if(!confirm('Clear the report and ALL saved tracking on this device?'))return;state={parts:[],dates:[],manual:[],defaultLot:144,asOf:$('asOf').value};localStorage.removeItem(STORAGE);$('paste').value='';$('defaultLot').value=144;render();$('message').textContent='Cleared.'};
-$('csv').onclick=()=>{if(!state.parts.length)return;let ordered=[...state.parts];if($('sort').value==='manual')ordered.sort((a,b)=>state.manual.indexOf(a.name)-state.manual.indexOf(b.name));else if($('sort').value==='part')ordered.sort((a,b)=>a.name.localeCompare(b.name));else if($('sort').value==='gap')ordered.sort((a,b)=>calc(b).gap-calc(a).gap||String(calc(a).first||'z').localeCompare(String(calc(b).first||'z')));else ordered.sort((a,b)=>String(calc(a).first||'z').localeCompare(String(calc(b).first||'z'))||calc(b).gap-calc(a).gap);let headers=['Rank','Part Number','Process','Inventory','Lot Size','First Short Date','Maximum Cumulative Shortage','Required Lots','Remaining Planned Lots','Remaining Planned Parts','Completed Lots',...state.dates.map(d=>'Shipment '+d)];let data=[headers,...ordered.map((p,i)=>{let c=calc(p);return[i+1,p.name,p.process,p.inventory,lot(p),c.first||'',c.gap,c.required,p.planned,p.planned*lot(p),p.completed,...state.dates.map(d=>p.ship[d]||0)]})];let csv=data.map(a=>a.map(v=>'"'+String(v).replace(/"/g,'""')+'"').join(',')).join('\r\n');let blob=new Blob(['\ufeff'+csv],{type:'text/csv;charset=utf-8'}),url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download='run-order-plan.csv';a.click();setTimeout(()=>URL.revokeObjectURL(url),1000)};
-$('example').onclick=()=>{$('paste').value=`| Part Number | Process Code | Min | Max | Quantity | 10/07 | 10/08 | 10/09 | 10/10 | 10/12 | 10/13 | 10/14 | 10/15 |
+function numberFromReport(cell){
+  // E.g. "1,357 (-2139)" means 1357 daily shipments, not 2139.
+  const match=String(cell??'').replaceAll('**','').trim().match(/^(-?[\d,]+)/);
+  return match?nonnegative(intValue(match[1])):0;
+}
+function parseReport(text){
+  let lines=text.trim().split(/\r?\n/).filter(x=>x.trim());
+  if(lines.length<2)throw Error('Paste a header row and at least one part row.');
+  const tabs=lines.some(x=>x.includes('\t'));
+  const split=line=>tabs?line.split('\t').map(s=>s.trim()):line.trim().replace(/^\|/,'').replace(/\|$/,'').split('|').map(s=>s.trim());
+  const rows=lines.map(split).filter(r=>!r.every(x=>/^[-:\s]+$/.test(x)));
+  const headers=rows[0].map(x=>x.replaceAll('**','').trim());
+  const findCol=name=>headers.findIndex(x=>x.toLowerCase().replace(/\s+/g,' ').includes(name));
+  const partCol=findCol('part number'),qtyCol=findCol('quantity'),procCol=findCol('process code');
+  if(partCol<0||qtyCol<0)throw Error('Expected Part Number and Quantity columns.');
+  const dateCols=headers.map((h,i)=>({i,date:parseDate(h)})).filter(d=>d.date).sort((a,b)=>a.date.localeCompare(b.date));
+  if(!dateCols.length)throw Error('No shipment date columns found. Expected dates such as 10/12.');
+  if(new Set(dateCols.map(d=>d.date)).size!==dateCols.length)throw Error('Duplicate shipment dates found. Check Report year reference.');
+  const seen=new Set(),parts=[];
+  for(const r of rows.slice(1)){
+    const name=String(r[partCol]??'').replaceAll('**','').trim();
+    if(!name||/^[-:]+$/.test(name)||name.startsWith('#'))continue;
+    if(seen.has(name))throw Error('Duplicate part number: '+name);
+    seen.add(name);
+    const inventory=intValue(r[qtyCol]);
+    if(!Number.isFinite(inventory)||inventory<0)throw Error('Invalid inventory quantity for '+name);
+    const ship={};
+    for(const d of dateCols)ship[d.date]=numberFromReport(r[d.i]||'0');
+    parts.push({name,process:procCol>=0?String(r[procCol]||'').trim():'',inventory,ship,lot:null,planned:0,completed:0});
+  }
+  if(!parts.length)throw Error('No valid part rows found.');
+  return {parts,dates:dateCols.map(d=>d.date)};
+}
+function lot(p){return Math.max(1,intValue(p.lot)||state.defaultLot||144)}
+function activeDates(){return state.dates.filter(d=>!state.throughDate||d<=state.throughDate)}
+function chosenDate(){return state.throughDate||state.dates[state.dates.length-1]||null}
+function calc(p){
+  let cumulative=0,first=null,firstGap=0,gap=0;
+  for(const d of activeDates()){
+    cumulative += nonnegative(p.ship[d]||0);
+    const short=Math.max(0,cumulative-p.inventory);
+    if(short>0&&!first){first=d;firstGap=short;}
+    gap=Math.max(gap,short);
+  }
+  const required=Math.ceil(gap/lot(p));
+  const afterPlan=p.inventory+p.planned*lot(p);
+  return {first,firstGap,gap,required,shortAfter:Math.max(0,cumulative-afterPlan),total:cumulative};
+}
+function setMessage(message){$('message').textContent=message}
+function persist(message){
+  try{localStorage.setItem(STORAGE,JSON.stringify(state));if(message)setMessage(message)}
+  catch(e){setMessage('Saving failed: '+e.message)}
+}
+function validateState(saved){
+  if(!saved||!Array.isArray(saved.parts)||!Array.isArray(saved.dates))throw Error('No saved plan found.');
+  const d=fresh();
+  d.parts=saved.parts.filter(p=>p&&typeof p.name==='string').map(p=>({
+    name:p.name,process:String(p.process||''),inventory:nonnegative(intValue(p.inventory)),
+    ship:p.ship||{},lot:Number.isFinite(intValue(p.lot))&&intValue(p.lot)>0?intValue(p.lot):null,
+    planned:nonnegative(intValue(p.planned)),completed:nonnegative(intValue(p.completed))
+  }));
+  d.dates=[...new Set(saved.dates.filter(x=>/^\d{4}-\d{2}-\d{2}$/.test(x)))].sort();
+  d.defaultLot=Math.max(1,intValue(saved.defaultLot)||144);
+  d.manual=Array.isArray(saved.manual)?saved.manual.filter(n=>d.parts.some(p=>p.name===n)):[];
+  d.manual.push(...d.parts.map(p=>p.name).filter(n=>!d.manual.includes(n)));
+  d.asOf=saved.asOf||dateToday();
+  // v2 plans did not have a cutoff; default old saved plans to all dates so their existing meaning is preserved.
+  d.throughDate=d.dates.includes(saved.throughDate)?saved.throughDate:(d.dates.at(-1)||null);
+  return d;
+}
+function restore(){
+  try{state=validateState(JSON.parse(localStorage.getItem(STORAGE)));$('defaultLot').value=state.defaultLot;$('asOf').value=state.asOf;render();setMessage('Loaded saved plan.');}
+  catch(e){setMessage(e.message)}
+}
+function setThrough(date){
+  if(!state.dates.includes(date))return;
+  state.throughDate=date;
+  render();persist();
+}
+function pickFirst(count){
+  if(!state.dates.length)return;
+  setThrough(state.dates[Math.min(count,state.dates.length)-1]);
+}
+function sortedMetrics(){
+  const records=state.parts.map(p=>({p,...calc(p)}));
+  const sort=$('sort').value;
+  records.sort((a,b)=>{
+    if(sort==='manual')return state.manual.indexOf(a.p.name)-state.manual.indexOf(b.p.name);
+    if(sort==='part')return a.p.name.localeCompare(b.p.name);
+    if(sort==='gap')return b.gap-a.gap||String(a.first||'z').localeCompare(String(b.first||'z'));
+    return String(a.first||'z').localeCompare(String(b.first||'z'))||b.gap-a.gap;
+  });
+  return records;
+}
+function render(){
+  const dates=activeDates(),cutoff=chosenDate(),included=dates.length;
+  $('throughDate').disabled=!state.dates.length;
+  $('auto').disabled=!state.parts.length;
+  for(const id of ['first2','first5','allDates'])$(id).disabled=!state.dates.length;
+  $('throughDate').innerHTML=state.dates.length
+    ? state.dates.map((d,i)=>`<option value="${d}">${niceDate(d)} (${i+1} of ${state.dates.length})</option>`).join('')
+    : '<option value="">Import a report first</option>';
+  if(cutoff)$('throughDate').value=cutoff;
+  $('first2').classList.toggle('selected',included===2&&state.dates.length>=2);
+  $('first5').classList.toggle('selected',included===5&&state.dates.length>=5);
+  $('allDates').classList.toggle('selected',!!state.dates.length&&included===state.dates.length);
+  $('prioritySummary').innerHTML=state.dates.length
+    ? `Planning shipments from <strong>${niceDate(state.dates[0])}</strong> through <strong>${niceDate(cutoff)}</strong> — <strong>${included} of ${state.dates.length} shipping dates</strong> included. Dates after ${niceDate(cutoff)} are visible for reference but do not affect recommended lots.`
+    : 'Import a report to select your shipment coverage date.';
+
+  const metrics=state.parts.map(p=>({p,...calc(p)}));
+  const risk=metrics.filter(r=>r.gap>0),uncovered=metrics.filter(r=>r.shortAfter>0);
+  const lots=state.parts.reduce((s,p)=>s+p.planned,0);
+  const parts=state.parts.reduce((s,p)=>s+p.planned*lot(p),0);
+  const recommended=metrics.reduce((s,r)=>s+r.required,0);
+  const completed=state.parts.reduce((s,p)=>s+p.completed,0);
+  const summary=[
+    ['Shipment dates covered',included,`${state.dates.length} dates listed`],
+    ['Parts short by cutoff',risk.length,'Before adding planned lots'],
+    ['Parts still short after plan',uncovered.length,'Through chosen date'],
+    ['Recommended total lots',recommended,'To cover chosen date'],
+    ['Remaining planned lots',lots,'Editable below'],
+    ['Remaining planned parts',parts,'All part-specific lot sizes'],
+    ['Completed lots',completed,'Recorded on this report']
+  ];
+  $('summary').innerHTML=summary.map(([label,value,sub])=>`<div class="metric"><span>${escapeHTML(label)}</span><strong>${fmt(value)}</strong><em>${escapeHTML(sub)}</em></div>`).join('');
+
+  let records=sortedMetrics();
+  if(!$('showAll').checked)records=records.filter(r=>r.gap>0||r.p.planned>0);
+  $('rows').innerHTML=records.map((r,i)=>{
+    const p=r.p,id=state.parts.indexOf(p);
+    return `<tr class="${r.shortAfter>0?'row-alert':''}">
+      <td><span class="chip">${i+1}</span></td>
+      <td><div class="part">${escapeHTML(p.name)}</div><div class="muted smalltext">${escapeHTML(p.process)}</div></td>
+      <td class="num"><input type="number" min="0" step="1" class="inlineinput" aria-label="Available inventory for ${escapeHTML(p.name)}" data-i="${id}" data-field="inventory" value="${p.inventory}"></td>
+      <td><input type="number" min="1" step="1" class="inlineinput" aria-label="Lot size for ${escapeHTML(p.name)}" data-i="${id}" data-field="lot" value="${lot(p)}"></td>
+      <td class="${r.first?'bad':'good'}">${niceDate(r.first)}</td>
+      <td class="num ${r.gap>0?'bad':''}">${fmt(r.gap)}</td>
+      <td class="num">${fmt(r.required)}</td>
+      <td><div class="planned-control"><div class="lot"><button type="button" data-action="minus" data-i="${id}" title="Decrease remaining planned lots for ${escapeHTML(p.name)}">−</button><input type="number" min="0" step="1" data-i="${id}" data-field="planned" aria-label="Remaining planned lots for ${escapeHTML(p.name)}" value="${p.planned}"><button type="button" data-action="plus" data-i="${id}" title="Increase remaining planned lots for ${escapeHTML(p.name)}">+</button></div><span class="planned-parts" data-parts-for="${id}">= ${fmt(p.planned*lot(p))} parts</span></div></td>
+      <td class="num ${r.shortAfter>0?'bad':'good'}">${fmt(r.shortAfter)}</td>
+      <td><button type="button" class="small" data-action="complete" data-i="${id}" ${p.planned===0?'disabled':''}>✓ Complete 1 lot</button><div class="muted smalltext">${fmt(p.completed)} lots done</div></td>
+      <td><button type="button" class="small" data-action="up" data-i="${id}" title="Move up in custom run order">↑</button> <button type="button" class="small" data-action="down" data-i="${id}" title="Move down in custom run order">↓</button></td>
+    </tr>`;
+  }).join('') || '<tr><td colspan="11">No matching parts. Import a report or enable “Show covered parts.”</td></tr>';
+
+  if(!state.parts.length){$('coverage').textContent='No report imported.';return}
+  const cols=state.dates.map(d=>{
+    const active=d<=cutoff,edge=d===cutoff;
+    return `<th class="num ${active?'scope-head':'later-head'} ${edge?'cutoff-edge':''}" title="${active?'Included in plan':'Beyond planning cutoff'}">${niceDate(d)}${active?' ✓':''}</th>`;
+  }).join('');
+  const body=[...state.parts].sort((a,b)=>a.name.localeCompare(b.name)).map(p=>{
+    let balance=p.inventory+p.planned*lot(p);
+    const cells=state.dates.map(d=>{
+      balance-=nonnegative(p.ship[d]||0);
+      return `<td class="num ${balance<0?'bad':'good'} ${d===cutoff?'cutoff-edge':''}" title="Shipments on ${niceDate(d)}: ${fmt(p.ship[d]||0)}">${fmt(balance)}</td>`;
+    }).join('');
+    return `<tr><td class="part">${escapeHTML(p.name)}</td><td class="num">${fmt(p.inventory+p.planned*lot(p))}</td>${cells}</tr>`;
+  }).join('');
+  $('coverage').innerHTML=`<table><thead><tr><th>Part</th><th class="num">Available + planned parts</th>${cols}</tr></thead><tbody>${body}</tbody></table>`;
+}
+function touch(){render();persist()}
+
+$('import').addEventListener('click',()=>{
+  try{
+    const parsed=parseReport($('paste').value);
+    if(state.parts.length&&!confirm('Replace the current report?\n\nThis starts a fresh inventory snapshot. Planned lots and completed lots reset to 0 to avoid counting parts twice. Per-part lot sizes are preserved.\n\nCancel keeps your current plan.'))return;
+    const prev=new Map(state.parts.map(p=>[p.name,p]));
+    for(const p of parsed.parts){const old=prev.get(p.name);if(old&&old.lot)p.lot=old.lot;}
+    state={...fresh(),parts:parsed.parts,dates:parsed.dates,manual:parsed.parts.map(p=>p.name),defaultLot:Math.max(1,intValue($('defaultLot').value)||144),asOf:$('asOf').value||dateToday(),throughDate:parsed.dates[Math.min(2,parsed.dates.length)-1]};
+    touch();setMessage(`Imported ${state.parts.length} parts and ${state.dates.length} shipment dates. First ${Math.min(2,state.dates.length)} ship dates selected. Choose a later cutoff if desired.`);
+  }catch(e){setMessage('Import error: '+e.message)}
+});
+$('throughDate').addEventListener('change',e=>setThrough(e.target.value));
+$('first2').addEventListener('click',()=>pickFirst(2));
+$('first5').addEventListener('click',()=>pickFirst(5));
+$('allDates').addEventListener('click',()=>pickFirst(state.dates.length));
+$('auto').addEventListener('click',()=>{
+  if(!state.parts.length)return;
+  if(!confirm(`Replace all REMAINING planned lots with the minimum full lots needed to cover shipments through ${niceDate(chosenDate())}?\n\nCompleted lots and available inventory stay unchanged. Dates after the cutoff are not included.`))return;
+  for(const p of state.parts)p.planned=calc(p).required;
+  touch();setMessage('Planned lots updated to cover shipments through '+niceDate(chosenDate())+'.');
+});
+$('defaultLot').addEventListener('change',()=>{state.defaultLot=Math.max(1,intValue($('defaultLot').value)||144);$('defaultLot').value=state.defaultLot;touch()});
+$('asOf').addEventListener('change',()=>{state.asOf=$('asOf').value;persist('Report year reference updated. Re-import if you need to re-interpret date column years.');});
+$('sort').addEventListener('change',render);
+$('showAll').addEventListener('change',render);
+$('rows').addEventListener('input',ev=>{
+  const t=ev.target;
+  if(t.dataset.field!=='lot'&&t.dataset.field!=='planned')return;
+  const row=t.closest('tr');
+  const lots=row.querySelector('[data-field="planned"]'),size=row.querySelector('[data-field="lot"]'),display=row.querySelector('[data-parts-for]');
+  if(!lots||!size||!display)return;
+  display.textContent='= '+fmt(nonnegative(intValue(lots.value))*Math.max(1,intValue(size.value)||state.defaultLot))+' parts';
+});
+$('rows').addEventListener('change',ev=>{
+  const t=ev.target;
+  if(!['planned','lot','inventory'].includes(t.dataset.field))return;
+  const p=state.parts[Number(t.dataset.i)];if(!p)return;
+  const n=intValue(t.value);
+  if(t.dataset.field==='planned')p.planned=nonnegative(n);
+  if(t.dataset.field==='lot')p.lot=Math.max(1,n||state.defaultLot);
+  if(t.dataset.field==='inventory')p.inventory=nonnegative(n);
+  touch();
+});
+$('rows').addEventListener('click',ev=>{
+  const t=ev.target.closest('button');if(!t)return;
+  const i=Number(t.dataset.i),p=state.parts[i];if(!p)return;
+  switch(t.dataset.action){
+    case 'plus':p.planned++;break;
+    case 'minus':p.planned=Math.max(0,p.planned-1);break;
+    case 'complete':
+      if(p.planned<1)return;
+      p.planned--;p.completed++;p.inventory+=lot(p);
+      break;
+    case 'up':case 'down':{
+      if($('sort').value!=='manual')state.manual=sortedMetrics().map(r=>r.p.name);
+      const index=state.manual.indexOf(p.name),other=index+(t.dataset.action==='up'?-1:1);
+      if(other>=0&&other<state.manual.length)[state.manual[index],state.manual[other]]=[state.manual[other],state.manual[index]];
+      $('sort').value='manual';break;
+    }
+    default:return;
+  }
+  touch();
+});
+$('save').addEventListener('click',()=>persist('Saved plan in this browser.'));
+$('load').addEventListener('click',restore);
+$('reset').addEventListener('click',()=>{
+  if(!confirm('Clear this report, planned and completed lots, and saved tracking from this browser?'))return;
+  state=fresh();localStorage.removeItem(STORAGE);$('paste').value='';$('defaultLot').value=state.defaultLot;$('asOf').value=state.asOf;render();setMessage('Cleared report and locally saved plan.');
+});
+$('csv').addEventListener('click',()=>{
+  if(!state.parts.length){setMessage('Import a report before exporting.');return}
+  const cutoff=chosenDate(),records=sortedMetrics();
+  const headers=['Rank','Priority Through','Part Number','Process Code','Available Inventory','Lot Size','First Short Date by Cutoff','Short by Cutoff','Recommended Lots by Cutoff','Remaining Planned Lots','Remaining Planned Parts','Still Short After Plan by Cutoff','Completed Lots',...state.dates.map(d=>'Shipment '+d)];
+  const recordsCSV=records.map((r,i)=>{const p=r.p;return[i+1,cutoff,p.name,p.process,p.inventory,lot(p),r.first||'',r.gap,r.required,p.planned,p.planned*lot(p),r.shortAfter,p.completed,...state.dates.map(d=>p.ship[d]||0)]});
+  const csv=[headers,...recordsCSV].map(row=>row.map(v=>'"'+String(v).replaceAll('"','""')+'"').join(',')).join('\r\n');
+  const url=URL.createObjectURL(new Blob(['\ufeff'+csv],{type:'text/csv;charset=utf-8'}));
+  const a=document.createElement('a');a.href=url;a.download='run-order-plan-through-'+cutoff+'.csv';document.body.append(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),3000);
+});
+$('example').addEventListener('click',()=>{
+  $('paste').value=document.getElementById('sample').content.textContent.trim();
+  setMessage('Example loaded into the paste box. Click Import report.');
+});
+try{
+  if(localStorage.getItem(STORAGE))restore();else render();
+}catch(e){render();setMessage('Unable to load previously saved data: '+e.message)}
+})();
+</script>
+<template id="sample">
+| Part Number | Process Code | Min | Max | Quantity | 10/07 | 10/08 | 10/09 | 10/10 | 10/12 | 10/13 | 10/14 | 10/15 |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| TN999999-99991T | J999 | | | 28 | 0 | 0 | 0 | 0 | 1 | 2 | 1 | 2 |
-| TN999999-99992T | J999 | | | 180 | 0 | 0 | 36 | 0 | 0 | 51 | 51 | 51 (-9) |
-| TN999999-99993H | J999 | | | 33 | 0 | 0 | 0 | 0 | 1 | 1 | 0 | 0 |
-| TN999999-99994H | J999 | | | 180 | 0 | 0 | 0 | 0 | 11 | 11 | 10 | 10 |
-| TN999999-99995T | J999 | | | 1613 | 0 | 0 | 792 | 0 | 0 | 804 | 803 (-786) | 803 (-1589) |
-| TN999999-99996G | J999 | | | 4104 | 0 | 936 | 1332 | 1260 | 1358 (-782) | 1357 (-2139) | 1357 (-3496) | 1356 (-4852) |
-| TN999999-99997T | J999 | | | 1440 | 0 | 0 | 720 | 0 | 695 | 695 (-670) | 695 (-1365) | 695 (-2060) |
-| TN999999-99998T | J999 | | | 3348 | 0 | 900 | 0 | 0 | 1789 | 889 (-230) | 889 (-1119) | 889 (-2008) |
-| TN999999-99999T | J999 | | | 165 | 0 | 0 | 0 | 0 | 35 | 35 | 35 | 41 |
-| TN999999-99990T | J999 | | | 2196 | 0 | 0 | 0 | 0 | 0 | 3888 (-1692) | 0 (-1692) | 0 (-1692) |
-| TN999999-99991Q | J999 | | | 1872 | 0 | 432 | 612 | 0 | 432 | 1008 (-612) | 585 (-1197) | 574 (-1771) |
-| TN999999-99991B | J999 | | | 12 | 0 | 0 | 0 | 0 | 2 | 4 | 2 | 2 |
-| TN999999-99991F | J999 | | | 2340 | 0 | 0 | 0 | 0 | 0 | 3996 (-1656) | 0 (-1656) | 0 (-1656) |`; $('message').textContent='Example loaded into paste box. Click Import report.'};
-try{if(localStorage.getItem(STORAGE))restore();else render()}catch(e){render()}
-})();</script></body></html>
+| TN999999-99999A | J739 | | | 28 | 0 | 0 | 0 | 0 | 1 | 2 | 1 | 2 |
+| TN999999-99999B | J739 | | | 180 | 0 | 0 | 36 | 0 | 0 | 51 | 51 | 51 (-9) |
+| TN999999-99999C | J739 | | | 33 | 0 | 0 | 0 | 0 | 1 | 1 | 0 | 0 |
+| TN999999-99999D | J739 | | | 180 | 0 | 0 | 0 | 0 | 11 | 11 | 10 | 10 |
+| TN999999-99999E | J739 | | | 1613 | 0 | 0 | 792 | 0 | 0 | 804 | 803 (-786) | 803 (-1589) |
+| TN999999-99999F | J739 | | | 4104 | 0 | 936 | 1332 | 1260 | 1358 (-782) | 1357 (-2139) | 1357 (-3496) | 1356 (-4852) |
+| TN999999-99999G | J739 | | | 1440 | 0 | 0 | 720 | 0 | 695 | 695 (-670) | 695 (-1365) | 695 (-2060) |
+| TN999999-99999H | J739 | | | 3348 | 0 | 900 | 0 | 0 | 1789 | 889 (-230) | 889 (-1119) | 889 (-2008) |
+| TN999999-99999I | J739 | | | 165 | 0 | 0 | 0 | 0 | 35 | 35 | 35 | 41 |
+| TN999999-99999J | J739 | | | 2196 | 0 | 0 | 0 | 0 | 0 | 3888 (-1692) | 0 (-1692) | 0 (-1692) |
+| TN999999-99999K | J739 | | | 1872 | 0 | 432 | 612 | 0 | 432 | 1008 (-612) | 585 (-1197) | 574 (-1771) |
+| TN999999-99999L | J739 | | | 12 | 0 | 0 | 0 | 0 | 2 | 4 | 2 | 2 |
+| TN999999-99999M | J739 | | | 2340 | 0 | 0 | 0 | 0 | 0 | 3996 (-1656) | 0 (-1656) | 0 (-1656) |
+</template>
+</body>
+</html>
