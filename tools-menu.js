@@ -112,9 +112,78 @@
       }
     }
 
+    /* Notification popup above the Other Tools button */
+    #otcs-tools-notice {
+      position: fixed;
+      bottom: 80px;
+      right: 20px;
+      width: min(280px, calc(100vw - 40px));
+      padding: 18px 35px 18px 18px;
+      background: white;
+      color: #1f2937;
+      border: 2px solid #2563eb;
+      border-radius: 12px;
+      box-shadow: 0 6px 24px #0003;
+      font: 14px Arial, sans-serif;
+      z-index: 10000;
+      animation: otcs-notice-in 0.4s ease-out;
+    }
+
+    #otcs-tools-notice strong {
+      display: block;
+      margin-bottom: 8px;
+      color: #2563eb;
+      font-size: 16px;
+    }
+
+    #otcs-tools-notice p {
+      margin: 0;
+      line-height: 1.5;
+    }
+
+    /* Small arrow pointing toward the button */
+    #otcs-tools-notice::after {
+      content: "";
+      position: absolute;
+      bottom: -10px;
+      right: 35px;
+      border-left: 10px solid transparent;
+      border-right: 10px solid transparent;
+      border-top: 10px solid #2563eb;
+    }
+
+    #otcs-notice-close {
+      position: absolute;
+      top: 8px;
+      right: 10px;
+      background: transparent;
+      border: none;
+      font-size: 20px;
+      color: #6b7280;
+      cursor: pointer;
+    }
+
+    @keyframes otcs-notice-in {
+      from {
+        opacity: 0;
+        transform: translateY(15px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    @media print {
+      #otcs-tools-notice {
+        display: none !important;
+      }
+    }
+
     @media print {
       #otcs-tools-button,
-      #otcs-tools-dialog {
+      #otcs-tools-dialog,
+      #otcs-tools-notice {
         display: none !important;
       }
     }
@@ -164,4 +233,37 @@
   dialog.addEventListener("click", (event) => {
     if (event.target === dialog) dialog.close();
   });
+  // Show notification when the page loads
+  const notice = document.createElement("div");
+  notice.id = "otcs-tools-notice";
+  notice.setAttribute("role", "status");
+
+  notice.innerHTML = `
+    <button id="otcs-notice-close"
+            type="button"
+            aria-label="Dismiss notification">×</button>
+    <strong>✨ Discover More Tools!</strong>
+    <p>
+      Did you know OffTheClockStudios has more tools available?
+      Click the <b>☰ Other Tools</b> button below
+      to explore them!
+    </p>
+  `;
+
+  document.body.appendChild(notice);
+
+  // Function to dismiss the notification
+  const hideNotice = () => notice.remove();
+
+  // Close notification with X
+  document
+    .getElementById("otcs-notice-close")
+    .addEventListener("click", hideNotice);
+
+  // Dismiss notification when Other Tools is clicked
+  button.addEventListener("click", hideNotice);
+
+  // Automatically dismiss after 8 seconds
+  setTimeout(hideNotice, 8000);
+
 })();
