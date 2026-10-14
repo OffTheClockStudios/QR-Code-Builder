@@ -35,7 +35,7 @@ button{background:#2a4869;color:var(--text);border:1px solid #526d8b;border-radi
     <label class="field">Report year reference<input type="date" id="asOf" title="Used to interpret shipment date columns without a year, such as 10/12"></label>
     <button id="save">Save plan</button>
     <button id="load">Load saved plan</button>
-    <button id="reset" class="danger">Clear all</button>
+    <button id="reset" class="danger">Reset plan (keep report text)</button>
   </div>
   <div class="pill" id="message" role="status" aria-live="polite"></div>
 </section>
@@ -349,8 +349,23 @@ $('rows').addEventListener('click',ev=>{
 $('save').addEventListener('click',()=>persist('Saved plan in this browser.'));
 $('load').addEventListener('click',restore);
 $('reset').addEventListener('click',()=>{
-  if(!confirm('Clear this report, planned and completed lots, and saved tracking from this browser?'))return;
-  state=fresh();localStorage.removeItem(STORAGE);$('paste').value='';$('defaultLot').value=state.defaultLot;$('asOf').value=state.asOf;render();setMessage('Cleared report and locally saved plan.');
+  if(!confirm('Reset the imported report, planned and completed lots, and saved tracking?\n\nThe report input and default lot size will be kept.'))return;
+
+  // Keep the current default lot size
+  const savedLot = $('defaultLot').value;
+
+  // Reset everything else
+  state=fresh();
+  localStorage.removeItem(STORAGE);
+
+  // Restore the default lot size
+  state.defaultLot = Math.max(1, parseInt(savedLot, 10) || 144);
+  $('defaultLot').value = state.defaultLot;
+
+  $('asOf').value=state.asOf;
+  render();
+
+  setMessage('Plan and tracking reset. Report input and default lot size were kept.');
 });
 $('csv').addEventListener('click',()=>{
   if(!state.parts.length){setMessage('Import a report before exporting.');return}
