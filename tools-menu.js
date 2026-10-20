@@ -11,7 +11,8 @@
     ["FishBone Diagram", "tunaBone.html"],
     ["Interrelationship Digraph", "interrelationshipDigraph.html"],
     ["Marker Studio", "markerStudio.html"],
-    ["Priorities", "priorities.html"]
+    ["Priorities", "priorities.html"],
+    ["Priorities (lite)", "prioritiesLite.html"]
   ];
 
   // CSS shared by every page
