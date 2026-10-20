@@ -1,0 +1,646 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#143b48" id="browserThemeColor">
+  <script>
+    try { document.documentElement.dataset.theme = localStorage.getItem('runPlanner.theme') || (matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'); }
+    catch (_) { document.documentElement.dataset.theme = 'light'; }
+  </script>
+  <title>Production Run Planner</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --ink: #172c39; --muted: #6a7d88; --line: #e2e9ed;
+      --surface: #ffffff; --canvas: #f4f7f8; --deep: #143b48;
+      --teal: #087f7b; --teal-soft: #e3f4f0;
+      --amber: #b85e17; --amber-soft: #fff1df;
+      --shadow: 0 10px 38px rgba(28, 60, 71, .055);
+    }
+    * { box-sizing: border-box; }
+    body { margin: 0; color: var(--ink); background: radial-gradient(ellipse 820px 460px at 10% -7%, #dcefed 0%, transparent 72%), var(--canvas); font-family: Inter, ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; line-height: 1.45; }
+    button, textarea, select, input { font: inherit; }
+    button { cursor: pointer; }
+    button:disabled { opacity: .34; cursor: not-allowed; }
+    :focus-visible { outline: 3px solid #52bbb0; outline-offset: 3px; }
+    .shell { max-width: 1310px; margin: auto; padding: 29px 28px 65px; }
+    .topbar { display: flex; align-items: center; justify-content: space-between; gap: 18px; margin-bottom: 24px; }
+    .brand { display: flex; align-items: center; gap: 10px; font-size: 12px; font-weight: 850; letter-spacing: .14em; text-transform: uppercase; color: #385762; }
+    .brand-icon { width: 35px; height: 35px; display: grid; align-content: center; gap: 4px; padding: 9px; background: var(--deep); border-radius: 10px; }
+    .brand-icon i { height: 3px; border-radius: 2px; background: #8fe1cc; }
+    .brand-icon i:nth-child(2) { width: 70%; }
+    .brand-icon i:nth-child(3) { width: 85%; }
+    .top-actions { display: flex; align-items: center; gap: 10px; }
+    .theme-toggle { display: inline-flex; gap: 8px; align-items: center; border: 1px solid var(--line); background: var(--surface); color: var(--ink); border-radius: 999px; padding: 8px 13px; font-size: 12px; font-weight: 750; white-space: nowrap; }
+    .theme-toggle:hover { border-color: var(--teal); }
+    .theme-icon { font-size: 16px; line-height: 1; }
+    .top-chip { background: #e6eeef; color: #47636d; border: 1px solid #d8e5e7; border-radius: 999px; padding: 7px 12px; font-size: 12px; font-weight: 700; }
+    .hero { display: flex; align-items: end; justify-content: space-between; gap: 24px; margin-bottom: 29px; }
+    .eyebrow { color: var(--teal); text-transform: uppercase; font-size: 11px; font-weight: 850; letter-spacing: .16em; margin: 0 0 9px; }
+    h1 { font-size: clamp(30px, 4.3vw, 48px); letter-spacing: -.055em; margin: 0; line-height: 1.06; font-weight: 800; }
+    .hero p:last-child { color: var(--muted); max-width: 630px; margin: 12px 0 0; font-size: 15px; }
+    .hero-aside { display: flex; align-items: center; gap: 9px; background: #e7f3f0; border: 1px solid #d3e9e2; color: #24675f; border-radius: 12px; padding: 12px 14px; flex-shrink: 0; font-size: 12px; font-weight: 720; }
+    .dot { height: 8px; width: 8px; border-radius: 50%; background: #31ad8b; box-shadow: 0 0 0 4px #c5e8db; }
+    .workspace { display: grid; grid-template-columns: minmax(0, 1.62fr) minmax(300px, .85fr); gap: 18px; align-items: stretch; }
+    .panel { background: var(--surface); border: 1px solid var(--line); border-radius: 19px; box-shadow: var(--shadow); min-width: 0; }
+    .paste-panel { padding: 22px; }
+    .settings-panel { padding: 22px; display: flex; flex-direction: column; }
+    .panel-header { display: flex; justify-content: space-between; gap: 12px; align-items: start; margin-bottom: 13px; }
+    .panel-heading { font-size: 17px; letter-spacing: -.025em; font-weight: 780; margin: 0; }
+    .panel-sub { font-size: 12.5px; color: var(--muted); margin: 4px 0 0; }
+    .step-label { background: #e9f4f2; color: #33827b; border-radius: 8px; font-size: 11px; font-weight: 850; padding: 5px 8px; white-space: nowrap; }
+    textarea { width: 100%; height: 165px; display: block; overflow: auto; resize: vertical; background: #f7fafb; color: #2a4754; border: 1px solid #dce7e8; border-radius: 11px; padding: 14px; font: 12px/1.55 ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; white-space: pre; tab-size: 4; }
+    .paste-actions { display: flex; gap: 12px; justify-content: space-between; align-items: center; flex-wrap: wrap; margin-top: 13px; }
+    .input-hint { color: var(--muted); font-size: 12px; }
+    .btn { border: 1px solid transparent; border-radius: 10px; padding: 10px 15px; font-size: 13px; font-weight: 750; transition: background .15s, transform .15s, border-color .15s; white-space: nowrap; }
+    .btn:active:not(:disabled) { transform: translateY(1px); }
+    .btn-primary { background: var(--deep); color: white; }
+    .btn-primary:hover { background: #215564; }
+    .btn-soft { background: #edf4f4; border-color: #e0ecec; color: #315f65; }
+    .btn-soft:hover { background: #e0eeec; }
+    .btn-outline { background: white; color: #385d67; border-color: #d9e5e7; }
+    .btn-outline:hover { background: #f2f7f8; }
+    .btn-small { padding: 8px 11px; font-size: 12px; }
+    .settings-grid { display: grid; grid-template-columns: minmax(0,1fr) minmax(0,.67fr); gap: 12px; margin-top: 7px; }
+    .field { display: flex; flex-direction: column; gap: 7px; }
+    .field label { color: #4b636e; font-weight: 740; font-size: 12px; }
+    .field select, .field input { min-width: 0; width: 100%; padding: 10px 11px; border: 1px solid #d7e3e6; border-radius: 10px; color: var(--ink); background: #f9fbfb; font-size: 14px; font-weight: 740; height: 43px; }
+    .settings-helper { color: var(--muted); font-size: 12px; line-height: 1.55; margin: 13px 0 0; }
+    .settings-bottom { margin-top: auto; padding-top: 17px; display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+    .status-inline { display: inline-flex; align-items: center; gap: 7px; color: #37766b; font-size: 12px; font-weight: 730; }
+    .status-inline:before { content: ''; width: 7px; height: 7px; background: #34aa88; border-radius: 50%; }
+    .link-button { border: 0; background: none; color: var(--teal); font-size: 12px; font-weight: 790; padding: 6px 0; }
+    .link-button:hover { text-decoration: underline; }
+    .error { background: #fff0ed; border: 1px solid #f4c7bb; color: #963e24; padding: 12px 15px; border-radius: 11px; margin-top: 13px; font-size: 13px; display: none; }
+    .error.show { display: block; }
+    .stats { display: grid; grid-template-columns: repeat(5, minmax(0,1fr)); gap: 15px; margin: 21px 0; }
+    .stat { padding: 19px 20px 17px; min-height: 127px; }
+    .stat-label { color: var(--muted); font-size: 11px; letter-spacing: .065em; text-transform: uppercase; font-weight: 800; }
+    .stat-number { margin: 8px 0 1px; font-size: clamp(23px, 2.5vw, 34px); font-weight: 820; letter-spacing: -.05em; font-variant-numeric: tabular-nums; line-height: 1.2; }
+    .stat-note { color: #7b8e98; font-size: 11.5px; }
+    .stat-highlight { background: #e7f4ef; border-color: #c9e7db; }
+    .stat-highlight .stat-number { color: #116d5e; }
+    .run-panel { padding: 0; overflow: hidden; }
+    .run-panel-top { padding: 23px 23px 18px; display: flex; justify-content: space-between; gap: 16px; align-items: center; }
+    .run-panel-title { margin: 0; font-size: 20px; font-weight: 800; letter-spacing: -.035em; }
+    .run-panel-subtitle { margin: 4px 0 0; font-size: 12.5px; color: var(--muted); }
+    .run-actions { display: flex; flex-wrap: wrap; justify-content: end; gap: 8px; }
+    .order-status { padding: 9px 23px 12px; font-size: 11.5px; color: #71858e; }
+    .order-status strong { color: #3d7074; }
+    .run-grid { display: grid; grid-template-columns: 48px minmax(220px, 1.9fr) minmax(108px,.83fr) minmax(94px,.72fr) minmax(158px,1.04fr) minmax(140px,.96fr) 73px; column-gap: 13px; align-items: center; }
+    .run-head { background: #f7fafb; border-top: 1px solid #e7edef; border-bottom: 1px solid #e7edef; padding: 11px 23px; color: #7c8f98; font-size: 10px; text-transform: uppercase; letter-spacing: .08em; font-weight: 850; }
+    .run-row { border-bottom: 1px solid #eaf0f1; padding: 15px 23px; transition: background .2s; }
+    .run-row:last-child { border-bottom: 0; }
+    .run-row:hover { background: #fbfdfd; }
+    .order-index { display: grid; place-items: center; border-radius: 9px; background: #eaf2f3; color: #60818b; font-size: 12px; font-weight: 820; height: 35px; width: 35px; font-variant-numeric: tabular-nums; }
+    .run-row:first-child .order-index { background: var(--deep); color: white; }
+    .part-number { font-weight: 800; letter-spacing: -.02em; font-size: 13px; white-space: normal; overflow-wrap: anywhere; }
+    .part-details { color: #84929b; font-size: 11.5px; margin-top: 4px; }
+    .value-number { font-size: 19px; font-weight: 810; letter-spacing: -.04em; font-variant-numeric: tabular-nums; }
+    .value-number.shortage { color: #a9521d; }
+    .value-number.quiet { color: #a6b3b9; }
+    .value-suffix { color: #8b9ba3; font-size: 11px; margin-top: 1px; }
+    .lot-actions { display: flex; gap: 7px; flex-wrap: wrap; align-items: center; margin-top: 7px; }
+    .complete-btn { border: 1px solid #b9e0d3; border-radius: 7px; color: #166b54; background: #e7f5ee; font-size: 11px; line-height: 1.2; font-weight: 820; padding: 7px 9px; white-space: nowrap; }
+    .complete-btn:hover:not(:disabled) { background: #cbead9; }
+    .undo-btn { border: 0; background: transparent; color: var(--muted); text-decoration: underline; font-size: 11px; padding: 5px 1px; }
+    .undo-btn:hover { color: var(--teal); }
+    .completed-tag { display: inline-block; border-radius: 5px; padding: 2px 6px; margin-top: 5px; color: #197961; background: #e0f4ea; font-size: 10.5px; font-weight: 800; }
+    .stepper { display: inline-flex; align-items: center; border: 1px solid #d8e4e5; border-radius: 10px; background: white; height: 38px; overflow: hidden; max-width: 150px; }
+    .stepper button { border: none; background: #f2f7f7; color: #35676e; font-weight: 700; font-size: 19px; width: 35px; height: 100%; }
+    .stepper button:hover:not(:disabled) { background: #dfeded; }
+    .stepper input { width: 65px; height: 100%; text-align: center; font-weight: 810; color: #224753; font-size: 15px; border: none; appearance: textfield; -moz-appearance: textfield; min-width: 0; background: white; padding: 0 2px; }
+    .stepper input::-webkit-outer-spin-button, .stepper input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+    .balance { font-size: 12.5px; font-weight: 790; display: inline-block; padding: 6px 9px; border-radius: 7px; background: var(--amber-soft); color: var(--amber); white-space: nowrap; }
+    .balance.ok { background: var(--teal-soft); color: #14836d; }
+    .balance.neutral { background: #f0f3f5; color: #70858d; }
+    .move { display: flex; gap: 6px; justify-content: flex-end; }
+    .move button { width: 31px; height: 32px; border: 1px solid #dbe6e8; border-radius: 8px; background: #fff; color: #466f79; font-size: 18px; line-height: 1; }
+    .move button:hover:not(:disabled) { background: #e7f2f2; border-color: #c4dcdb; }
+    .mobile-label { display: none; }
+    .plan-footer { background: #f9fbfb; border-top: 1px solid #e8eff0; padding: 21px 23px; display: flex; gap: 22px; align-items: center; justify-content: space-between; }
+    .plan-footer-info { min-width: 0; }
+    .plan-footer-info strong { font-size: 14px; }
+    .plan-footer-info p { color: var(--muted); font-size: 12px; margin: 3px 0 0; }
+    .progress-wrap { max-width: 370px; min-width: 160px; width: 35%; display: flex; flex-direction: column; gap: 7px; }
+    .progress-outer { width: 100%; height: 9px; background: #dfe9e9; border-radius: 99px; overflow: hidden; }
+    .progress-inner { background: linear-gradient(90deg, #1e9486, #5bbca8); height: 100%; border-radius: inherit; width: 0; transition: width .2s; }
+    .progress-text { color: #667e85; font-size: 11px; display: flex; justify-content: space-between; }
+    .explanation { margin-top: 17px; padding: 0 5px; }
+    .explanation details { color: #647e88; font-size: 12px; }
+    .explanation summary { color: #426a72; cursor: pointer; font-weight: 750; }
+    .explanation p { max-width: 950px; margin: 8px 0; line-height: 1.7; }
+    .empty { padding: 50px 24px; text-align: center; color: var(--muted); }
+    .toast { pointer-events: none; position: fixed; bottom: 25px; right: 25px; background: var(--deep); color: white; border-radius: 10px; padding: 11px 16px; box-shadow: 0 10px 30px #1b415033; opacity: 0; transform: translateY(8px); transition: all .2s; font-size: 13px; font-weight: 720; max-width: calc(100vw - 48px); z-index: 10; }
+    .toast.show { opacity: 1; transform: translateY(0); }
+    /* Dark theme: deep navy surfaces, legible inputs, and clear shortage/complete states. */
+    html[data-theme="dark"] {
+      color-scheme: dark;
+      --ink: #e9f3f6; --muted: #a1b5bf; --line: #2f4651;
+      --surface: #192c36; --canvas: #0e1c24; --deep: #26717a;
+      --teal: #70d7c7; --teal-soft: #173e3b;
+      --amber: #ffc18a; --amber-soft: #402e25;
+      --shadow: 0 12px 38px rgba(0,0,0,.22);
+    }
+    html[data-theme="dark"] body { background: radial-gradient(ellipse 780px 450px at 10% -7%, #1b3b40 0%, transparent 72%), var(--canvas); }
+    html[data-theme="dark"] .brand { color: #bdd1d8; }
+    html[data-theme="dark"] .brand-icon { background: #236972; }
+    html[data-theme="dark"] .brand-icon i { background: #b0efdf; }
+    html[data-theme="dark"] .top-chip { background: #203741; color: #b1cbd2; border-color: #304b56; }
+    html[data-theme="dark"] .hero-aside { background: #183a35; border-color: #29564c; color: #a2e4ce; }
+    html[data-theme="dark"] .dot { box-shadow: 0 0 0 4px #2a5f50; }
+    html[data-theme="dark"] .hero h1 span { color: #70d7c7 !important; }
+    html[data-theme="dark"] .step-label { background: #1e4845; color: #9be2d4; }
+    html[data-theme="dark"] textarea { background: #11222b; color: #d4e5e9; border-color: #304955; }
+    html[data-theme="dark"] .btn-primary { background: #247982; }
+    html[data-theme="dark"] .btn-primary:hover { background: #31909a; }
+    html[data-theme="dark"] .btn-soft { background: #203f44; border-color: #31565b; color: #b4e8db; }
+    html[data-theme="dark"] .btn-soft:hover { background: #2a5254; }
+    html[data-theme="dark"] .btn-outline { background: #1a343c; color: #c6dde2; border-color: #38515c; }
+    html[data-theme="dark"] .btn-outline:hover { background: #284650; }
+    html[data-theme="dark"] .field label { color: #b7cdd5; }
+    html[data-theme="dark"] .field select, html[data-theme="dark"] .field input { color: var(--ink); background: #10232b; border-color: #38515a; }
+    html[data-theme="dark"] .status-inline { color: #9bdece; }
+    html[data-theme="dark"] .error { background: #462a27; border-color: #844b40; color: #ffc7ac; }
+    html[data-theme="dark"] .stat-note { color: #92aab4; }
+    html[data-theme="dark"] .stat-highlight { background: #173c37; border-color: #2d6c59; }
+    html[data-theme="dark"] .stat-highlight .stat-number { color: #9bead1; }
+    html[data-theme="dark"] .run-head { background: #12252e; border-color: #30434c; color: #a8b9c1; }
+    html[data-theme="dark"] .run-row { border-color: #2b414a; }
+    html[data-theme="dark"] .run-row:hover { background: #213640; }
+    html[data-theme="dark"] .order-index { background: #25414a; color: #bdd1d7; }
+    html[data-theme="dark"] .run-row:first-child .order-index { background: #2b7880; color: white; }
+    html[data-theme="dark"] .part-details { color: #9cb0b8; }
+    html[data-theme="dark"] .value-number.shortage { color: #f5af78; }
+    html[data-theme="dark"] .value-number.quiet { color: #6e8790; }
+    html[data-theme="dark"] .value-suffix { color: #94abb4; }
+    html[data-theme="dark"] .stepper { background: #142932; border-color: #39545e; }
+    html[data-theme="dark"] .stepper button { background: #294750; color: #c4eee5; }
+    html[data-theme="dark"] .stepper button:hover:not(:disabled) { background: #35626a; }
+    html[data-theme="dark"] .stepper input { color: #e5f5f4; background: #152b34; }
+    html[data-theme="dark"] .balance.ok { background: #17483e; color: #9de5c7; }
+    html[data-theme="dark"] .balance.neutral { background: #2b3f46; color: #adbec5; }
+    html[data-theme="dark"] .complete-btn { background: #1c493e; border-color: #397765; color: #a6eed0; }
+    html[data-theme="dark"] .complete-btn:hover:not(:disabled) { background: #28614f; }
+    html[data-theme="dark"] .completed-tag { background: #245344; color: #a6eed0; }
+    html[data-theme="dark"] .move button { background: #203942; border-color: #3b5660; color: #c6e5e7; }
+    html[data-theme="dark"] .move button:hover:not(:disabled) { background: #2a535a; border-color: #407b7a; }
+    html[data-theme="dark"] .mobile-label { color: #9eb5be; }
+    html[data-theme="dark"] .plan-footer { background: #14252e; border-color: #2f4651; }
+    html[data-theme="dark"] .progress-outer { background: #354952; }
+    html[data-theme="dark"] .progress-text { color: #a1b6bd; }
+    html[data-theme="dark"] .explanation details { color: #a9bbc2; }
+    html[data-theme="dark"] .explanation summary { color: #a3e2d4; }
+    html[data-theme="dark"] .order-status { color: #a5bac2; }
+    html[data-theme="dark"] .order-status strong { color: #9be3d7; }
+    html[data-theme="dark"] .toast { background: #28757c; }
+    @media (max-width: 1130px) {
+      .run-grid { grid-template-columns: 37px minmax(190px,1.65fr) minmax(95px,.75fr) minmax(80px,.6fr) minmax(143px,1fr) minmax(115px,.85fr) 68px; gap: 9px; }
+      .run-head, .run-row { padding-left: 16px; padding-right: 16px; }
+      .part-number { font-size: 12px; }
+    }
+    @media (max-width: 900px) {
+      .workspace { grid-template-columns: 1fr; }
+      .settings-grid { max-width: 450px; }
+      .stats { grid-template-columns: repeat(2,minmax(0,1fr)); }
+      .stats .stat:last-child { grid-column: span 2; }
+      .hero-aside { display: none; }
+      .run-head { display: none; }
+      .run-grid { display: grid; grid-template-columns: 37px 1fr 1fr; gap: 12px 12px; }
+      .run-grid.run-head { display: none; }
+      .run-row { padding: 16px 18px; }
+      .run-row > .order-index { grid-column: 1; grid-row: 1; }
+      .run-row > .part-info { grid-column: 2 / 4; grid-row: 1; }
+      .run-row > .needed { grid-column: 2; }
+      .run-row > .lots-required { grid-column: 3; }
+      .run-row > .planned { grid-column: 2; }
+      .run-row > .after-plan { grid-column: 3; }
+      .run-row > .move { grid-column: 2 / 4; justify-content: start; }
+      .mobile-label { display: block; color: #879aa3; text-transform: uppercase; font-size: 10px; font-weight: 820; letter-spacing: .055em; margin-bottom: 4px; }
+      .move button { width: 42px; }
+    }
+    @media (max-width: 570px) {
+      .shell { padding: 18px 14px 43px; }
+      .topbar { margin-bottom: 19px; }
+      .top-chip { display: none; }
+      .theme-toggle { padding: 8px 11px; }
+      .hero { margin-bottom: 22px; }
+      .hero p:last-child { font-size: 13px; }
+      .paste-panel, .settings-panel { padding: 16px; }
+      .settings-grid { grid-template-columns: 1fr 1fr; }
+      .stats { gap: 10px; margin: 14px 0; }
+      .stat { min-height: 117px; padding: 16px; }
+      .stat-label { font-size: 10px; }
+      .run-panel-top { align-items: start; flex-direction: column; padding: 19px 17px 12px; }
+      .run-actions { justify-content: start; }
+      .order-status { padding: 5px 17px 14px; }
+      .plan-footer { flex-direction: column; align-items: stretch; }
+      .progress-wrap { width: 100%; max-width: none; }
+      .input-hint { width: 100%; }
+    }
+    @media print {
+      body { background: white !important; }
+      .shell { max-width: 100%; padding: 0; }
+      .workspace, .hero-aside, .topbar, .run-actions, .order-status, .move, .explanation, .toast, .lot-actions { display: none !important; }
+      html[data-theme="dark"] body { background: white !important; color: #172c39 !important; }
+      html[data-theme="dark"] .panel { background: white !important; border-color: #e2e9ed !important; }
+      html[data-theme="dark"] .run-head, html[data-theme="dark"] .plan-footer { background: #f7fafb !important; color: #172c39 !important; }
+      html[data-theme="dark"] .run-row { color: #172c39 !important; }
+      html[data-theme="dark"] .value-number, html[data-theme="dark"] .part-number { color: #172c39 !important; }
+      .hero { margin-bottom: 16px; }
+      .hero p { display: none; }
+      .stats { grid-template-columns: repeat(5,1fr); }
+      .panel { box-shadow: none; border-radius: 8px; }
+      .run-head { display: grid; }
+      .run-grid { display: grid; grid-template-columns: 40px minmax(175px,1.8fr) 95px 90px 125px 130px 0px; gap: 8px; }
+      .run-row > * { grid-column: auto !important; grid-row: auto !important; }
+      .mobile-label { display: none; }
+      .run-row { break-inside: avoid; }
+      .stepper { border: 0; }
+      .stepper button { display: none; }
+      .stepper input { text-align: left; }
+      .run-panel-top, .run-head, .run-row, .plan-footer { padding-left: 12px; padding-right: 12px; }
+      html[data-theme="dark"] .part-details, html[data-theme="dark"] .value-suffix, html[data-theme="dark"] .run-panel-subtitle { color: #647e88 !important; }
+      html[data-theme="dark"] .stat, html[data-theme="dark"] .stat-highlight { background: white !important; color: #172c39 !important; }
+    }
+  </style>
+</head>
+<body>
+  <main class="shell">
+    <div class="topbar">
+      <div class="brand"><div class="brand-icon" aria-hidden="true"><i></i><i></i><i></i></div><span>Line Operations</span></div>
+      <div class="top-actions"><button class="theme-toggle" id="themeBtn" type="button" aria-label="Switch to dark mode" aria-pressed="false"><span class="theme-icon" id="themeIcon" aria-hidden="true">☾</span><span id="themeLabel">Dark mode</span></button><div class="top-chip">Production planning workspace</div></div>
+    </div>
+    <section class="hero">
+      <div>
+        <p class="eyebrow">Daily manufacturing tools</p>
+        <h1>Production run planner<span style="color:#0d827c">.</span></h1>
+        <p>Turn a pasted demand report into a prioritized build list. Choose a deadline, plan lots, and fine-tune the run order.</p>
+      </div>
+      <div class="hero-aside"><span class="dot"></span> Works offline · Saves on this device</div>
+    </section>
+
+    <section class="workspace" aria-label="Plan settings">
+      <div class="panel paste-panel">
+        <div class="panel-header">
+          <div><h2 class="panel-heading">Paste your demand report</h2><p class="panel-sub">Copy the table directly from Excel or your production report.</p></div>
+          <span class="step-label">STEP 01</span>
+        </div>
+        <textarea id="pasteData" spellcheck="false" aria-label="Paste tab-separated production data"></textarea>
+        <div class="paste-actions">
+          <span class="input-hint" id="loadStatus">Example report loaded to get started.</span>
+          <div style="display:flex;gap:8px;flex-wrap:wrap">
+            <button class="btn btn-soft" id="exampleBtn" type="button">Load example</button>
+            <button class="btn btn-primary" id="parseBtn" type="button">Update run plan →</button>
+          </div>
+        </div>
+        <div id="dataError" class="error" role="alert"></div>
+      </div>
+      <div class="panel settings-panel">
+        <div class="panel-header"><div><h2 class="panel-heading">Set your target</h2><p class="panel-sub">All demand through your chosen date is included.</p></div><span class="step-label">STEP 02</span></div>
+        <div class="settings-grid">
+          <div class="field"><label for="cutoff">Goal cutoff date</label><select id="cutoff" aria-label="Goal cutoff date"></select></div>
+          <div class="field"><label for="lotSize">Parts per lot</label><input id="lotSize" aria-label="Parts per lot" type="number" min="1" step="1" value="144"></div>
+        </div>
+        <p class="settings-helper">The list initially ranks parts by <strong>pieces needed</strong> at the cutoff, highest first. Complete a planned lot to credit finished pieces and reduce the still-required amount.</p>
+        <div class="settings-bottom"><span class="status-inline" id="parsedStatus">7 parts ready</span><button class="link-button" id="resetLotsBtn" type="button">Reset planned lots</button></div>
+      </div>
+    </section>
+
+    <section class="stats" aria-label="Plan overview">
+      <div class="panel stat"><div class="stat-label">Part numbers short</div><div class="stat-number" id="shortPartCount">—</div><div class="stat-note" id="partsDetail">Need production by cutoff</div></div>
+      <div class="panel stat"><div class="stat-label">Pieces needed</div><div class="stat-number" id="shortPieces">—</div><div class="stat-note">After completed production</div></div>
+      <div class="panel stat"><div class="stat-label">Lots needed</div><div class="stat-number" id="requiredLots">—</div><div class="stat-note">After completed production</div></div>
+      <div class="panel stat stat-highlight"><div class="stat-label">Lots planned</div><div class="stat-number" id="plannedLots">—</div><div class="stat-note">Not yet completed</div></div>
+      <div class="panel stat"><div class="stat-label">Lots completed</div><div class="stat-number" id="completedLots">—</div><div class="stat-note" id="completedDetail">Finished pieces credited</div></div>
+    </section>
+
+    <section class="panel run-panel" aria-label="Recommended production run order">
+      <div class="run-panel-top">
+        <div><h2 class="run-panel-title">Recommended run order</h2><p id="listSummary" class="run-panel-subtitle">Sorted by shortage at the cutoff date.</p></div>
+        <div class="run-actions">
+          <button class="btn btn-outline btn-small" id="sortBtn" type="button">↕ Sort by need</button>
+          <button class="btn btn-outline btn-small" id="copyBtn" type="button">Copy order</button>
+          <button class="btn btn-soft btn-small" id="downloadBtn" type="button">↓ Export CSV</button>
+        </div>
+      </div>
+      <div id="orderStatus" class="order-status"><strong>Automatic priority:</strong> Highest parts needed first. Use the arrows to change your run sequence.</div>
+      <div class="run-grid run-head" aria-hidden="true"><div>Order</div><div>Part number</div><div>Still needed</div><div>Lots needed</div><div>Plan / complete</div><div>After plan</div><div style="text-align:right">Move</div></div>
+      <div id="runList" aria-live="polite"></div>
+      <div class="plan-footer">
+        <div class="plan-footer-info"><strong id="remainingTitle">0 pieces still needed</strong><p id="remainingDetail">Add planned lots to cover demand through your cutoff.</p></div>
+        <div class="progress-wrap"><div class="progress-text"><span>Shortage coverage</span><strong id="coverageText">0%</strong></div><div class="progress-outer" role="progressbar" aria-label="Shortage coverage" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" id="coverageTrack"><div class="progress-inner" id="coverageBar"></div></div></div>
+      </div>
+    </section>
+    <div class="explanation"><details><summary>How are parts needed and lots calculated?</summary><p>Each date cell is treated as <strong>daily demand</strong>; only its first number is used. A parenthesized number such as <code>123 (-30)</code> is an existing projected-shortage note and is not counted again. We add daily demand through the selected cutoff, subtract the row's <strong>Quantity</strong> (on-hand supply), then subtract <strong>completed pieces</strong> credited here. Parts still needed = max(0, demand − Quantity − completed pieces). Lots needed = round up(parts still needed ÷ current lot size). Planned lots reduce the <em>after plan</em> shortage, but they do not reduce <em>parts still needed</em> until you click <strong>Complete 1 lot</strong>. That action moves one planned lot to completed, crediting the current lot size; Undo reverses it. The app remembers each finished lot's size even if you change the lot size later. <strong>Important:</strong> if you paste a new report that already includes completed production in Quantity, updating the report clears this page's completion history to avoid double counting. The Min and Max columns are not used. Dates are evaluated in the order they appear in your pasted report.</p></details></div>
+  </main>
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<script>
+(() => {
+  'use strict';
+  const SAMPLE = `Part Number\tProcess Code\tMin\tMax\tQuantity\t10/19\t10/20\t10/21\t10/22\t10/23\t10/24\t10/26\t10/27
+TN230800-99991T\tJ739\t\t\t16\t0\t0\t2\t3\t2\t0\t1\t1
+TN230800-99992L\tJ739\t\t\t144\t51\t123 (-30)\t51 (-81)\t51 (-132)\t50 (-182)\t0 (-182)\t55 (-237)\t55 (-292)
+TN230800-99993T\tJ739\t\t\t33\t0\t0\t0\t0\t0\t0\t0\t1
+TN230800-99995T\tJ739\t\t\t27\t0\t0\t3\t3\t3\t0\t1\t0
+TN230800-99997T\tJ739\t\t\t108\t0\t0\t0\t7\t6\t6\t10\t10
+TN230800-99990L\tJ739\t\t\t2189\t808\t1564 (-183)\t807 (-990)\t807 (-1797)\t807 (-2604)\t0 (-2604)\t801 (-3405)\t801 (-4206)
+TN230800-99990T\tJ739\t\t\t2952\t0\t1404\t1368\t1393 (-1213)\t1392 (-2605)\t0 (-2605)\t1326 (-3931)\t1325 (-5256)`;
+  const $ = (id) => document.getElementById(id);
+  const fmt = new Intl.NumberFormat('en-US', { maximumFractionDigits: 2 });
+  const state = { parts: [], dates: [], cutoff: '', lotSize: 144, planned: {}, completed: {}, order: [], custom: false, lastLoadedRaw: null };
+  let toastTimeout;
+  function syncTheme() {
+    const dark = document.documentElement.dataset.theme === 'dark';
+    $('themeIcon').textContent = dark ? '☀' : '☾';
+    $('themeLabel').textContent = dark ? 'Light mode' : 'Dark mode';
+    $('themeBtn').setAttribute('aria-label', dark ? 'Switch to light mode' : 'Switch to dark mode');
+    $('themeBtn').setAttribute('aria-pressed', String(dark));
+    $('browserThemeColor').setAttribute('content', dark ? '#0e1c24' : '#143b48');
+  }
+  $('themeBtn').addEventListener('click', () => {
+    document.documentElement.dataset.theme = document.documentElement.dataset.theme === 'dark' ? 'light' : 'dark';
+    try { localStorage.setItem('runPlanner.theme', document.documentElement.dataset.theme); } catch (_) {}
+    syncTheme();
+  });
+  syncTheme();
+  const esc = (value) => String(value).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  const maxZero = (n) => Math.max(0, n);
+
+  function rowsFromPaste(raw) {
+    const content = raw.replace(/^\uFEFF/, '').replace(/\r\n?/g, '\n').trim();
+    if (!content) throw new Error('Paste a report to get started.');
+    const firstLine = content.split('\n', 1)[0];
+    const delimiter = firstLine.includes('\t') ? '\t' : ',';
+    if (!firstLine.includes(delimiter)) throw new Error('Could not find columns. Copy the original table from Excel, including the header row.');
+    const rows = []; let row = [], cell = '', quoted = false;
+    for (let i = 0; i < content.length; i++) {
+      const char = content[i];
+      if (char === '"') {
+        if (quoted && content[i+1] === '"') { cell += '"'; i++; }
+        else { quoted = !quoted; }
+      } else if (!quoted && char === delimiter) {
+        row.push(cell); cell = '';
+      } else if (!quoted && char === '\n') {
+        row.push(cell); rows.push(row); row = []; cell = '';
+      } else { cell += char; }
+    }
+    row.push(cell); rows.push(row);
+    return rows.filter(r => r.some(v => String(v).trim() !== ''));
+  }
+  function parseNumber(value, label) {
+    const s = String(value ?? '').trim().replace(/,/g, '');
+    if (!s) return 0;
+    const n = Number(s);
+    if (!Number.isFinite(n)) throw new Error(`Invalid ${label}: “${value}”.`);
+    return n;
+  }
+  function readDemand(value, part, date) {
+    const s = String(value ?? '').trim();
+    if (!s || s === '-' || s === '—') return 0;
+    // The first number is daily demand. Parenthesized balances are report annotations.
+    const m = s.match(/^([+-]?(?:\d[\d,]*(?:\.\d+)?|\.\d+))(?:\s|$|\()/);
+    if (!m) throw new Error(`Invalid demand for ${part}, ${date}: “${s}”.`);
+    return parseNumber(m[1], 'daily demand');
+  }
+  function parseReport(raw) {
+    const rows = rowsFromPaste(raw);
+    if (rows.length < 2) throw new Error('Include a header row and at least one part-number row.');
+    const header = rows[0].map(x => String(x).trim());
+    const normalize = x => x.toLowerCase().replace(/[\s_-]+/g, ' ').trim();
+    const findCol = label => header.findIndex(x => normalize(x) === label);
+    const partCol = findCol('part number');
+    const processCol = findCol('process code');
+    const quantityCol = findCol('quantity');
+    if (partCol < 0 || quantityCol < 0) throw new Error('Missing “Part Number” or “Quantity” column in the header.');
+    const dateCols = header.map((name, index) => ({name, index})).filter(x => /^(?:\d{1,2}\/\d{1,2}(?:\/\d{2,4})?|\d{4}-\d{2}-\d{2})$/.test(x.name));
+    if (!dateCols.length) throw new Error('No date columns found. Use headings such as 10/19, 10/20, or 2026-10-20.');
+    const uniqueIds = new Map();
+    const parts = rows.slice(1).filter(row => String(row[partCol] ?? '').trim()).map((row, rowNum) => {
+      const number = String(row[partCol]).trim();
+      const process = processCol >= 0 ? String(row[processCol] ?? '').trim() : '';
+      const base = number + '\u001f' + process;
+      const occurrence = (uniqueIds.get(base) || 0) + 1;
+      uniqueIds.set(base, occurrence);
+      const quantity = parseNumber(row[quantityCol], `Quantity for ${number}`);
+      const demand = dateCols.map(date => readDemand(row[date.index], number, date.name));
+      return { key: base + '\u001f' + occurrence, number, process, quantity, demand, originalIndex: rowNum };
+    });
+    if (!parts.length) throw new Error('No part numbers were found below the header.');
+    return { dates: dateCols.map(x => x.name), parts };
+  }
+  function needFor(part) {
+    const end = state.dates.indexOf(state.cutoff);
+    let demand = 0;
+    for (let i = 0; i <= end; i++) demand += part.demand[i] || 0;
+    const originalNeed = maxZero(demand - part.quantity);
+    const completedHistory = Array.isArray(state.completed[part.key]) ? state.completed[part.key] : [];
+    const completedLots = completedHistory.length;
+    const completedPieces = completedHistory.reduce((sum, pieces) => sum + pieces, 0);
+    const needed = maxZero(originalNeed - completedPieces);
+    const required = needed > 0 ? Math.ceil(needed / state.lotSize - 1e-10) : 0;
+    const planned = Math.max(0, state.planned[part.key] || 0);
+    const remaining = maxZero(needed - planned * state.lotSize);
+    return { demand, originalNeed, completedLots, completedPieces, needed, required, planned, remaining };
+  }
+  function sortByNeed() {
+    const details = new Map(state.parts.map(p => [p.key, needFor(p)]));
+    state.order = state.parts.slice().sort((a,b) => {
+      const aa = details.get(a.key), bb = details.get(b.key);
+      return bb.needed - aa.needed || bb.demand - aa.demand || a.originalIndex - b.originalIndex;
+    }).map(p => p.key);
+    state.custom = false;
+  }
+  function safelySave() {
+    try { localStorage.setItem('runPlanner.v1', JSON.stringify({raw: $('pasteData').value, cutoff: state.cutoff, lotSize: state.lotSize, planned: state.planned, completed: state.completed, order: state.order, custom: state.custom})); }
+    catch (_) { /* Works without storage, including privacy-restricted browsers. */ }
+  }
+  function showError(message = '') { $('dataError').textContent = message; $('dataError').classList.toggle('show', Boolean(message)); }
+  function toast(message) {
+    const el = $('toast'); el.textContent = message; el.classList.add('show');
+    clearTimeout(toastTimeout); toastTimeout = setTimeout(() => el.classList.remove('show'), 2600);
+  }
+  function loadPlan({ keepExisting = false, savedOrder = null, savedCustom = false } = {}) {
+    try {
+      const result = parseReport($('pasteData').value);
+      state.parts = result.parts;
+      state.dates = result.dates;
+      state.cutoff = result.dates.includes(state.cutoff) ? state.cutoff : result.dates[result.dates.length - 1];
+      if (!keepExisting) { state.planned = {}; state.completed = {}; }
+      const valid = new Set(state.parts.map(p => p.key));
+      state.planned = Object.fromEntries(Object.entries(state.planned).filter(([key]) => valid.has(key)));
+      state.completed = Object.fromEntries(Object.entries(state.completed).filter(([key, history]) => valid.has(key) && Array.isArray(history)).map(([key, history]) => [key, history.filter(p => Number.isSafeInteger(p) && p > 0)]));
+      sortByNeed();
+      if (savedCustom && Array.isArray(savedOrder)) {
+        const restored = savedOrder.filter(key => valid.has(key));
+        state.order = [...new Set(restored)].concat(state.order.filter(key => !restored.includes(key)));
+        state.custom = true;
+      }
+      state.lastLoadedRaw = $('pasteData').value;
+      showError(''); render(); safelySave();
+      $('loadStatus').textContent = `${state.parts.length} rows loaded · ${state.dates.length} dates available`;
+      return true;
+    } catch (error) { showError(error.message || 'Unable to read this report.'); return false; }
+  }
+  function render() {
+    if (!state.parts.length) return;
+    $('cutoff').innerHTML = state.dates.map(date => `<option value="${esc(date)}" ${date === state.cutoff ? 'selected' : ''}>${esc(date)}</option>`).join('');
+    $('lotSize').value = state.lotSize;
+    $('parsedStatus').textContent = `${fmt.format(state.parts.length)} parts ready`;
+    $('listSummary').textContent = `${state.parts.length} part numbers · Demand through ${state.cutoff} · ${fmt.format(state.lotSize)} pieces / lot`;
+    $('orderStatus').innerHTML = state.custom ? '<strong>Custom run order:</strong> Use the arrows to adjust priority, or choose “Sort by need” to restore the recommendation.' : '<strong>Automatic priority:</strong> Highest parts needed first. Use the arrows to change your run sequence.';
+    const lookup = new Map(state.parts.map(p => [p.key, p]));
+    const orderedParts = state.order.map(key => lookup.get(key)).filter(Boolean);
+    const summary = {shortParts:0, originalNeed:0, need:0, required:0, planned:0, completedLots:0, completedPieces:0, remaining:0, remainingLots:0};
+    let body = '';
+    orderedParts.forEach((part, index) => {
+      const { demand, originalNeed, completedLots, completedPieces, needed, required, planned, remaining } = needFor(part);
+      if (needed > 0) summary.shortParts++;
+      summary.originalNeed += originalNeed;
+      summary.need += needed; summary.required += required; summary.planned += planned;
+      summary.completedLots += completedLots; summary.completedPieces += completedPieces;
+      summary.remaining += remaining;
+      summary.remainingLots += remaining > 0 ? Math.ceil(remaining / state.lotSize - 1e-10) : 0;
+      const status = needed === 0 ? (originalNeed > 0 ? 'Demand met' : (planned ? `Extra +${fmt.format(planned * state.lotSize)}` : 'No shortage'))
+        : remaining > 0 ? `${fmt.format(remaining)} still needed` : 'Covered';
+      const statusClass = needed === 0 ? (originalNeed > 0 ? 'ok' : 'neutral') : remaining > 0 ? '' : 'ok';
+      body += `<div class="run-grid run-row" role="group" aria-label="Run position ${index+1}: ${esc(part.number)}">
+        <div class="order-index">${String(index+1).padStart(2,'0')}</div>
+        <div class="part-info"><div class="part-number">${esc(part.number)}</div><div class="part-details">${part.process ? `Process ${esc(part.process)} · ` : ''}On hand ${fmt.format(part.quantity)} · Demand ${fmt.format(demand)}</div>${completedLots ? `<div class="completed-tag">✓ ${fmt.format(completedLots)} finished · ${fmt.format(completedPieces)} pcs</div>` : ''}</div>
+        <div class="needed"><span class="mobile-label">Still needed</span><div class="value-number ${needed ? 'shortage' : 'quiet'}">${fmt.format(needed)}</div><div class="value-suffix">pieces</div></div>
+        <div class="lots-required"><span class="mobile-label">Lots needed</span><div class="value-number">${fmt.format(required)}</div><div class="value-suffix">lots</div></div>
+        <div class="planned"><span class="mobile-label">Plan / complete</span><div class="stepper"><button type="button" data-action="minus" data-row="${index}" aria-label="Remove a planned lot for ${esc(part.number)}" ${planned <= 0 ? 'disabled' : ''}>−</button><input type="number" min="0" max="999999" step="1" inputmode="numeric" value="${planned}" data-lots="${index}" aria-label="Planned lots for ${esc(part.number)}"><button type="button" data-action="plus" data-row="${index}" aria-label="Add a planned lot for ${esc(part.number)}">+</button></div><div class="lot-actions"><button type="button" class="complete-btn" data-action="complete" data-row="${index}" aria-label="Complete one planned lot for ${esc(part.number)}" title="Credit ${fmt.format(state.lotSize)} completed pieces" ${planned <= 0 ? 'disabled' : ''}>✓ Complete 1 lot</button>${completedLots ? `<button type="button" class="undo-btn" data-action="undo" data-row="${index}" aria-label="Undo last completed lot for ${esc(part.number)}">Undo</button>` : ''}</div></div>
+        <div class="after-plan"><span class="mobile-label">After plan</span><span class="balance ${statusClass}">${status}</span></div>
+        <div class="move"><button type="button" data-action="up" data-row="${index}" aria-label="Move ${esc(part.number)} earlier in the run order" title="Move up" ${index === 0 ? 'disabled' : ''}>↑</button><button type="button" data-action="down" data-row="${index}" aria-label="Move ${esc(part.number)} later in the run order" title="Move down" ${index === orderedParts.length - 1 ? 'disabled' : ''}>↓</button></div>
+      </div>`;
+    });
+    $('runList').innerHTML = body || '<div class="empty">No part numbers to display.</div>';
+    $('shortPartCount').textContent = fmt.format(summary.shortParts);
+    $('partsDetail').textContent = `of ${fmt.format(state.parts.length)} total part numbers`;
+    $('shortPieces').textContent = fmt.format(summary.need);
+    $('requiredLots').textContent = fmt.format(summary.required);
+    $('plannedLots').textContent = fmt.format(summary.planned);
+    $('completedLots').textContent = fmt.format(summary.completedLots);
+    $('completedDetail').textContent = `${fmt.format(summary.completedPieces)} finished pieces credited`;
+    $('remainingTitle').textContent = summary.remaining ? `${fmt.format(summary.remaining)} pieces still needed` : 'All shortages covered';
+    $('remainingDetail').textContent = summary.remaining ? `${fmt.format(summary.remainingLots)} additional lots needed to close remaining gaps.` : (summary.need ? 'Planned and completed lots cover the shortage at your cutoff.' : 'All needed production is completed, or no shortage exists.');
+    const percent = summary.originalNeed ? Math.max(0, Math.min(100, (1 - summary.remaining / summary.originalNeed)*100)) : 100;
+    $('coverageText').textContent = `${Math.round(percent)}%`;
+    $('coverageBar').style.width = `${percent}%`;
+    $('coverageTrack').setAttribute('aria-valuenow', String(Math.round(percent)));
+  }
+  function setPlanned(key, value) {
+    const parsed = Number(value);
+    state.planned[key] = Number.isFinite(parsed) ? Math.min(999999, Math.max(0, Math.floor(parsed))) : 0;
+    render(); safelySave();
+  }
+  function completeLot(key) {
+    const planned = Math.max(0, state.planned[key] || 0);
+    if (!planned) return;
+    state.planned[key] = planned - 1;
+    if (!Array.isArray(state.completed[key])) state.completed[key] = [];
+    state.completed[key].push(state.lotSize);
+    render(); safelySave();
+    toast(`${fmt.format(state.lotSize)} pieces completed · 1 planned lot removed`);
+  }
+  function undoCompletedLot(key) {
+    if (!Array.isArray(state.completed[key]) || !state.completed[key].length) return;
+    const pieces = state.completed[key].pop();
+    state.planned[key] = (state.planned[key] || 0) + 1;
+    render(); safelySave();
+    toast(`Undid ${fmt.format(pieces)} finished pieces · lot returned to plan`);
+  }
+  const exportHeader = ['Run Order','Part Number','Process Code','Cutoff','Current Parts per Lot','On Hand','Cumulative Demand','Original Shortage','Completed Lots','Completed Pieces','Parts Still Needed','Lots Still Needed','Planned Lots','Remaining After Plan'];
+  function exportRows() {
+    const byKey = new Map(state.parts.map(part => [part.key, part]));
+    return state.order.map((key, index) => {
+      const part = byKey.get(key);
+      const details = needFor(part);
+      return [index+1, part.number, part.process, state.cutoff, state.lotSize, part.quantity, details.demand, details.originalNeed, details.completedLots, details.completedPieces, details.needed, details.required, details.planned, details.remaining];
+    });
+  }
+  function csvCell(value) { const s = String(value); return /[",\n\r]/.test(s) ? '"' + s.replace(/"/g,'""') + '"' : s; }
+  function getCSV() {
+    return [exportHeader, ...exportRows()].map(row => row.map(csvCell).join(',')).join('\r\n');
+  }
+  function hasPlanProgress() {
+    return Object.values(state.planned).some(n => Number(n) > 0) || Object.values(state.completed).some(history => Array.isArray(history) && history.length > 0);
+  }
+  function confirmProgressReset() {
+    return !hasPlanProgress() || window.confirm('Loading a different report clears your planned and completed lots. Export your current run order first if you need a record. Continue?');
+  }
+  $('parseBtn').addEventListener('click', () => {
+    const changed = state.lastLoadedRaw !== $('pasteData').value;
+    if (changed && !confirmProgressReset()) return;
+    if (loadPlan({keepExisting: !changed, savedOrder: changed ? null : state.order, savedCustom: !changed && state.custom})) toast(changed ? 'New report loaded · lot progress reset' : 'Run plan refreshed · lot progress kept');
+  });
+  $('pasteData').addEventListener('keydown', e => { if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) { e.preventDefault(); $('parseBtn').click(); } });
+  $('pasteData').addEventListener('input', () => { $('loadStatus').textContent = 'Report edited · Click “Update run plan” to apply changes'; });
+  $('exampleBtn').addEventListener('click', () => { if (!confirmProgressReset()) return; $('pasteData').value = SAMPLE; state.cutoff = ''; state.lotSize = 144; $('lotSize').value = 144; loadPlan(); toast('Example report restored'); });
+  $('cutoff').addEventListener('change', () => { state.cutoff = $('cutoff').value; sortByNeed(); render(); safelySave(); });
+  $('lotSize').addEventListener('change', () => {
+    const value = Number($('lotSize').value);
+    if (!Number.isSafeInteger(value) || value < 1) { $('lotSize').value = state.lotSize; toast('Lot size must be a whole number greater than zero'); return; }
+    state.lotSize = value;
+    render(); safelySave();
+  });
+  $('sortBtn').addEventListener('click', () => { sortByNeed(); render(); safelySave(); toast('Sorted by parts needed'); });
+  $('resetLotsBtn').addEventListener('click', () => { state.planned = {}; render(); safelySave(); toast('Planned lots reset to zero'); });
+  $('runList').addEventListener('click', event => {
+    const btn = event.target.closest('button[data-action]'); if (!btn || btn.disabled) return;
+    const index = Number(btn.dataset.row); const key = state.order[index]; if (!key) return;
+    switch (btn.dataset.action) {
+      case 'plus': setPlanned(key, (state.planned[key] || 0) + 1); break;
+      case 'minus': setPlanned(key, (state.planned[key] || 0) - 1); break;
+      case 'complete': completeLot(key); break;
+      case 'undo': undoCompletedLot(key); break;
+      case 'up': if (index > 0) { [state.order[index-1], state.order[index]] = [state.order[index], state.order[index-1]]; state.custom = true; render(); safelySave(); } break;
+      case 'down': if (index < state.order.length-1) { [state.order[index+1], state.order[index]] = [state.order[index], state.order[index+1]]; state.custom = true; render(); safelySave(); } break;
+    }
+  });
+  $('runList').addEventListener('change', event => {
+    const field = event.target.closest('input[data-lots]'); if (!field) return;
+    const key = state.order[Number(field.dataset.lots)]; if (key) setPlanned(key, field.value);
+  });
+  $('runList').addEventListener('keydown', event => {
+    if (event.key === 'Enter' && event.target.matches('input[data-lots]')) { event.target.blur(); }
+  });
+  $('copyBtn').addEventListener('click', async () => {
+    const text = [exportHeader, ...exportRows()].map(row => row.map(value => String(value).replace(/[\t\r\n]/g, ' ')).join('\t')).join('\n');
+    try {
+      if (!navigator.clipboard || !navigator.clipboard.writeText) throw new Error('Clipboard unavailable');
+      await navigator.clipboard.writeText(text);
+      toast('Run order copied to clipboard');
+    } catch (_) {
+      const hidden = document.createElement('textarea'); hidden.value = text; hidden.style.position='fixed'; hidden.style.opacity='0'; document.body.appendChild(hidden); hidden.select();
+      try { if (document.execCommand('copy')) toast('Run order copied to clipboard'); else toast('Copy was blocked by your browser'); }
+      catch (_error) { toast('Copy was blocked by your browser'); }
+      hidden.remove();
+    }
+  });
+  $('downloadBtn').addEventListener('click', () => {
+    const blob = new Blob(['\uFEFF', getCSV()], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob); const link = document.createElement('a');
+    link.href = url; link.download = `production-run-${state.cutoff.replace(/\//g,'-')}.csv`;
+    document.body.appendChild(link); link.click(); link.remove(); setTimeout(() => URL.revokeObjectURL(url), 1000);
+    toast('Run order exported as CSV');
+  });
+  // Restore the operator's latest plan, or start with the supplied example.
+  let stored;
+  try { stored = JSON.parse(localStorage.getItem('runPlanner.v1') || 'null'); } catch (_) { stored = null; }
+  $('pasteData').value = typeof stored?.raw === 'string' ? stored.raw : SAMPLE;
+  state.cutoff = typeof stored?.cutoff === 'string' ? stored.cutoff : '';
+  state.lotSize = Number.isSafeInteger(stored?.lotSize) && stored.lotSize > 0 ? stored.lotSize : 144;
+  state.planned = stored?.planned && typeof stored.planned === 'object' && !Array.isArray(stored.planned) ? stored.planned : {};
+  state.completed = stored?.completed && typeof stored.completed === 'object' && !Array.isArray(stored.completed) ? stored.completed : {};
+  if (!loadPlan({keepExisting: true, savedOrder: stored?.order, savedCustom: stored?.custom === true})) {
+    $('pasteData').value = SAMPLE;
+    state.cutoff = ''; state.lotSize = 144; state.planned = {}; state.completed = {};
+    loadPlan();
+  }
+})();
+</script>
+</body>
+</html>
