@@ -248,9 +248,9 @@
       Did you know OffTheClockStudios has more tools available?
       Click the <b>☰ Other Tools</b> button below
       to explore them!
-
-      These tools mainly serve as a basis to spark ideas for better tools in the future.
-      Let me know if you have any ideas, whether for changes to existing tools or for new tools.
+      
+      These tools are here to help and also inspire new ideas and improvements.
+      If you have suggestions for existing tools or ideas for entirely new ones, I'd love to hear them!
     </p>
   `;
 
