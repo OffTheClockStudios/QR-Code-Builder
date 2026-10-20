@@ -248,6 +248,9 @@
       Did you know OffTheClockStudios has more tools available?
       Click the <b>☰ Other Tools</b> button below
       to explore them!
+
+      These tools mainly serve as a basis to spark ideas for better tools in the future.
+      Let me know if you have any ideas, whether for changes to existing tools or for new tools.
     </p>
   `;
 
