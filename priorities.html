@@ -13,7 +13,7 @@ input,select,textarea,button{font:inherit}input,select,textarea{background:#0d1a
 button{background:#2a4869;color:var(--text);border:1px solid #526d8b;border-radius:9px;padding:9px 12px;cursor:pointer}button:hover{background:#355d83}button:disabled{opacity:.44;cursor:default}button.primary{background:#1573b3;border-color:#4dadf1;font-weight:650}button.danger{background:#59303b;border-color:#93505f}button.small{padding:5px 8px;font-size:.84rem}button.selected{background:#165f87;border-color:var(--blue);box-shadow:inset 0 0 0 1px var(--blue)}.quick{display:flex;gap:7px;flex-wrap:wrap}
 .summary{display:grid;grid-template-columns:repeat(auto-fit,minmax(165px,1fr));gap:10px}.metric{background:var(--panel2);padding:13px;border-radius:11px}.metric span{display:block;color:var(--muted);font-size:.80rem}.metric strong{display:block;margin-top:5px;font-size:1.50rem;font-variant-numeric:tabular-nums}.metric em{display:block;font-size:.75rem;font-style:normal;color:var(--muted);margin-top:4px}
 .priority{border:1px solid #496e91;border-radius:13px;background:#172f49;padding:16px}.priority .controls{align-items:end}.priority label{font-weight:650}.priority select{min-width:175px}.priority-summary{margin-top:13px;padding:10px 12px;border-radius:8px;background:#0d2034;color:#dbeeff;line-height:1.5}.priority-summary strong{color:var(--green)}
-.tablewrap{overflow:auto;max-width:100%}table{border-collapse:collapse;width:100%;font-size:.86rem;white-space:nowrap}th,td{padding:10px 9px;border-bottom:1px solid var(--line);text-align:left}th{color:var(--muted);font-weight:650;font-size:.75rem;background:var(--panel)}.num{text-align:right;font-variant-numeric:tabular-nums}.part{font-weight:750;color:#e3efff}.muted{color:var(--muted)}.bad{color:var(--red)}.good{color:var(--green)}.warn{color:var(--amber)}.smalltext{font-size:.83rem}.chip{border-radius:7px;padding:5px 9px;background:#283d59;display:inline-block}.inlineinput{width:79px!important}.lot{display:inline-flex;align-items:center;gap:5px}.lot button{padding:5px 10px}.lot input{width:68px;text-align:center;padding:6px 3px}.planned-control{display:flex;align-items:center;gap:10px}.planned-parts{color:var(--green);font-variant-numeric:tabular-nums;font-size:.84rem;font-weight:750;min-width:98px}.row-alert{background:#202a3e}.checkbox{display:flex;align-items:center;gap:6px;color:var(--muted);font-size:.83rem}.checkbox input{accent-color:#4bb3fa}.note{border-left:3px solid var(--amber);background:#2b2925;padding:10px 12px;color:#ebddc7;margin-top:12px}.pill{min-height:21px;font-size:.84rem;color:var(--blue);margin-top:10px}.scope-head{background:#234b67!important;color:#e3f7ff!important}.later-head{color:#95a2b7!important}.cutoff-edge{border-right:2px solid var(--blue)!important}.hidden{display:none}.scope-label{font-size:.75rem;color:var(--muted);margin-bottom:10px}.footer{color:var(--muted);text-align:center;font-size:.75rem;margin:18px 0}
+.tablewrap{overflow:auto;max-width:100%}table{border-collapse:collapse;width:100%;font-size:.86rem;white-space:nowrap}th,td{padding:10px 9px;border-bottom:1px solid var(--line);text-align:left}th{color:var(--muted);font-weight:650;font-size:.75rem;background:var(--panel)}.num{text-align:right;font-variant-numeric:tabular-nums}.part{font-weight:750;color:#e3efff}.muted{color:var(--muted)}.bad{color:var(--red)}.good{color:var(--green)}.warn{color:var(--amber)}.smalltext{font-size:.83rem}.chip{border-radius:7px;padding:5px 9px;background:#283d59;display:inline-block}.inlineinput{width:79px!important}.lot{display:inline-flex;align-items:center;gap:5px}.lot button{padding:5px 10px}.lot input{width:68px;text-align:center;padding:6px 3px}.planned-control{display:flex;align-items:center;gap:10px}.planned-parts{color:var(--green);font-variant-numeric:tabular-nums;font-size:.84rem;font-weight:750;min-width:98px}.row-alert{background:#202a3e}.checkbox{display:flex;align-items:center;gap:6px;color:var(--muted);font-size:.83rem}.checkbox input{accent-color:#4bb3fa}.note{border-left:3px solid var(--amber);background:#2b2925;padding:10px 12px;color:#ebddc7;margin-top:12px}.pill{min-height:21px;font-size:.84rem;color:var(--blue);margin-top:10px}.scope-head{background:#234b67!important;color:#e3f7ff!important}.later-head{color:#95a2b7!important}.cutoff-edge{border-right:2px solid var(--blue)!important}.hidden{display:none}.order-status{font-size:.84rem;color:var(--green);background:#0e2931;border:1px solid #345c65;border-radius:9px;padding:9px 12px;margin:10px 0 14px}.order-status.dirty{color:var(--amber);background:#302c22;border-color:#6c5c36}.scope-label{font-size:.75rem;color:var(--muted);margin-bottom:10px}.footer{color:var(--muted);text-align:center;font-size:.75rem;margin:18px 0}
 @media(max-width:680px){body{padding:10px}h1{font-size:1.45rem}.panel{padding:12px}.priority{padding:12px}.controls>*{max-width:100%}}
 </style>
 </head>
@@ -70,14 +70,16 @@ button{background:#2a4869;color:var(--text);border:1px solid #526d8b;border-radi
       <label class="field">Sort by
         <select id="sort"><option value="date">Earliest shortage by cutoff</option><option value="gap">Largest shortage by cutoff</option><option value="manual">My run order</option><option value="part">Part number</option></select>
       </label>
+      <button id="updateOrder" class="primary" disabled>↻ Update Run Order</button>
       <label class="checkbox"><input id="showAll" type="checkbox" checked> Show covered parts</label>
       <button id="csv">Export CSV</button>
     </div>
   </div>
-  <p class="smalltext"><strong>Recommended lots</strong> covers shipments through your chosen date only. Use <strong>Set planned lots to cover cutoff</strong> to fill in a recommended plan, then change any number with +/− or by typing. The green number beside the lots is <strong>the equivalent number of parts</strong>. Click <strong>Complete 1 lot</strong> each time a full lot is finished: remaining lots decrease and available good inventory increases.</p>
+  <p class="smalltext"><strong>Recommended lots</strong> covers shipments through your chosen date only. Use <strong>Set planned lots to cover cutoff</strong> to fill in a recommended plan, then change any number with +/− or by typing. The green number beside the lots is <strong>the equivalent number of parts</strong>. Click <strong>Complete 1 lot</strong> each time a full lot is finished: remaining lots decrease and available good inventory increases. <strong>The rows stay in exactly the same order</strong> while you complete lots, even when their priority changes. Click <strong>Update Run Order</strong> when you want to re-rank them.</p>
+  <div id="orderStatus" class="order-status" role="status" aria-live="polite">Import a report to build your run order.</div>
   <div class="tablewrap"><table>
     <thead><tr>
-      <th>Rank</th><th>Part / process</th><th class="num">Available</th><th>Lot size</th>
+      <th>Fixed rank</th><th>Part / process</th><th class="num">Available</th><th>Lot size</th>
       <th>First shortage<br>by cutoff</th><th class="num">Short by<br>cutoff</th><th class="num">Recommended<br>lots</th>
       <th>Remaining planned lots = parts</th><th class="num">Still short<br>after plan</th><th>Progress</th><th>Move</th>
     </tr></thead><tbody id="rows"><tr><td colspan="11">Import your report to see the recommended runs.</td></tr></tbody>
@@ -105,7 +107,13 @@ const fmt = n => Number(n||0).toLocaleString('en-US',{maximumFractionDigits:0});
 const intValue = x => {const n=Number(String(x??'').trim().replaceAll(',',''));return Number.isFinite(n)?Math.trunc(n):NaN};
 const nonnegative = n => Number.isFinite(n)?Math.max(0,n):0;
 const niceDate = d => d ? d.slice(5,7)+'/'+d.slice(8,10)+'/'+d.slice(2,4) : 'Covered';
-const fresh = () => ({parts:[],dates:[],manual:[],defaultLot:144,asOf:dateToday(),throughDate:null});
+// displayOrder is a frozen snapshot of the rows. It only changes when the user
+// explicitly updates the order or uses the manual up/down controls.
+const fresh = () => ({
+  parts:[], dates:[], manual:[], displayOrder:[], displayScope:[],
+  sortMode:'date', orderDirty:false,
+  defaultLot:144, asOf:dateToday(), throughDate:null
+});
 let state = fresh();
 $('asOf').value=state.asOf;
 
@@ -186,27 +194,43 @@ function validateState(saved){
   d.defaultLot=Math.max(1,intValue(saved.defaultLot)||144);
   d.manual=Array.isArray(saved.manual)?saved.manual.filter(n=>d.parts.some(p=>p.name===n)):[];
   d.manual.push(...d.parts.map(p=>p.name).filter(n=>!d.manual.includes(n)));
+  const names=new Set(d.parts.map(p=>p.name));
+  d.displayOrder=Array.isArray(saved.displayOrder)
+    ? [...new Set(saved.displayOrder.filter(n=>names.has(n)))] : [];
+  d.displayScope=Array.isArray(saved.displayScope)
+    ? [...new Set(saved.displayScope.filter(n=>names.has(n)))] : [];
+  d.sortMode=['date','gap','manual','part'].includes(saved.sortMode)?saved.sortMode:'date';
+  d.orderDirty=Boolean(saved.orderDirty);
   d.asOf=saved.asOf||dateToday();
   // v2 plans did not have a cutoff; default old saved plans to all dates so their existing meaning is preserved.
   d.throughDate=d.dates.includes(saved.throughDate)?saved.throughDate:(d.dates.at(-1)||null);
   return d;
 }
 function restore(){
-  try{state=validateState(JSON.parse(localStorage.getItem(STORAGE)));$('defaultLot').value=state.defaultLot;$('asOf').value=state.asOf;render();setMessage('Loaded saved plan.');}
+    try{
+      state=validateState(JSON.parse(localStorage.getItem(STORAGE)));
+      $('defaultLot').value=state.defaultLot;
+      $('asOf').value=state.asOf;
+      $('sort').value=state.sortMode;
+      // Older saved plans lack an order snapshot; create one only once on load.
+      if(!state.displayOrder.length && state.parts.length)updateRunOrder();
+      render();setMessage('Loaded saved plan. Your run order is held in place.');
+    }
   catch(e){setMessage(e.message)}
 }
 function setThrough(date){
   if(!state.dates.includes(date))return;
   state.throughDate=date;
-  render();persist();
+  touch();
 }
 function pickFirst(count){
   if(!state.dates.length)return;
   setThrough(state.dates[Math.min(count,state.dates.length)-1]);
 }
+// Calculate the live priorities without changing the order displayed on screen.
 function sortedMetrics(){
   const records=state.parts.map(p=>({p,...calc(p)}));
-  const sort=$('sort').value;
+  const sort=state.sortMode;
   records.sort((a,b)=>{
     if(sort==='manual')return state.manual.indexOf(a.p.name)-state.manual.indexOf(b.p.name);
     if(sort==='part')return a.p.name.localeCompare(b.p.name);
@@ -215,15 +239,67 @@ function sortedMetrics(){
   });
   return records;
 }
+
+// ONLY run this after importing/loading a legacy report or when the operator
+// explicitly clicks Update Run Order (manual arrows are also explicit moves).
+function updateRunOrder(){
+  const ordered=sortedMetrics();
+  state.displayOrder=ordered.map(r=>r.p.name);
+  state.displayScope=ordered.filter(r=>r.gap>0||r.p.planned>0).map(r=>r.p.name);
+  state.orderDirty=false;
+}
+
+// Render current quantities/shortages in the saved sequence, NOT in a freshly
+// calculated priority sequence. This prevents Complete 1 lot from moving rows.
+function displayedMetrics(includeHidden=true){
+  const byName=new Map(state.parts.map(p=>[p.name,{p,...calc(p)}]));
+  const records=[];
+  for(const name of state.displayOrder){
+    if(byName.has(name)){
+      records.push(byName.get(name));
+      byName.delete(name);
+    }
+  }
+  // Defensive fallback if a legacy or damaged plan lacks a part in the snapshot.
+  records.push(...byName.values());
+  if(includeHidden||$('showAll').checked)return records;
+  const visible=new Set(state.displayScope);
+  return records.filter(r=>visible.has(r.p.name));
+}
+
+// Move by one *visible* row when Show covered parts is unchecked. Manual
+// movement takes effect immediately because it is an intentional move.
+function moveManually(partName,direction){
+  const visible=displayedMetrics(false).map(r=>r.p.name);
+  const from=visible.indexOf(partName),to=from+direction;
+  if(from<0||to<0||to>=visible.length)return;
+  const a=state.displayOrder.indexOf(visible[from]);
+  const b=state.displayOrder.indexOf(visible[to]);
+  if(a<0||b<0)return;
+  [state.displayOrder[a],state.displayOrder[b]]=[state.displayOrder[b],state.displayOrder[a]];
+  state.manual=state.displayOrder.slice();
+  state.sortMode='manual';
+  state.orderDirty=false;
+  $('sort').value='manual';
+}
+
 function render(){
   const dates=activeDates(),cutoff=chosenDate(),included=dates.length;
   $('throughDate').disabled=!state.dates.length;
   $('auto').disabled=!state.parts.length;
+  $('updateOrder').disabled=!state.parts.length;
   for(const id of ['first2','first5','allDates'])$(id).disabled=!state.dates.length;
   $('throughDate').innerHTML=state.dates.length
     ? state.dates.map((d,i)=>`<option value="${d}">${niceDate(d)} (${i+1} of ${state.dates.length})</option>`).join('')
     : '<option value="">Import a report first</option>';
   if(cutoff)$('throughDate').value=cutoff;
+  $('sort').value=state.sortMode;
+  $('orderStatus').classList.toggle('dirty',state.orderDirty);
+  $('orderStatus').textContent=!state.parts.length
+    ? 'Import a report to build your run order.'
+    : state.orderDirty
+      ? 'Run order is locked. Needs and quantities have changed, but all rows stay in place. Click Update Run Order when you are ready to re-rank.'
+      : 'Run order is locked in place. Complete multiple lots safely; no rows will move until you update the order or use the manual arrows.';
   $('first2').classList.toggle('selected',included===2&&state.dates.length>=2);
   $('first5').classList.toggle('selected',included===5&&state.dates.length>=5);
   $('allDates').classList.toggle('selected',!!state.dates.length&&included===state.dates.length);
@@ -248,8 +324,9 @@ function render(){
   ];
   $('summary').innerHTML=summary.map(([label,value,sub])=>`<div class="metric"><span>${escapeHTML(label)}</span><strong>${fmt(value)}</strong><em>${escapeHTML(sub)}</em></div>`).join('');
 
-  let records=sortedMetrics();
-  if(!$('showAll').checked)records=records.filter(r=>r.gap>0||r.p.planned>0);
+  // This also freezes which rows are shown with Show covered parts turned off.
+  // A part cannot disappear under the mouse after its final lot is finished.
+  const records=displayedMetrics(false);
   $('rows').innerHTML=records.map((r,i)=>{
     const p=r.p,id=state.parts.indexOf(p);
     return `<tr class="${r.shortAfter>0?'row-alert':''}">
@@ -262,7 +339,7 @@ function render(){
       <td class="num">${fmt(r.required)}</td>
       <td><div class="planned-control"><div class="lot"><button type="button" data-action="minus" data-i="${id}" title="Decrease remaining planned lots for ${escapeHTML(p.name)}">−</button><input type="number" min="0" step="1" data-i="${id}" data-field="planned" aria-label="Remaining planned lots for ${escapeHTML(p.name)}" value="${p.planned}"><button type="button" data-action="plus" data-i="${id}" title="Increase remaining planned lots for ${escapeHTML(p.name)}">+</button></div><span class="planned-parts" data-parts-for="${id}">= ${fmt(p.planned*lot(p))} parts</span></div></td>
       <td class="num ${r.shortAfter>0?'bad':'good'}">${fmt(r.shortAfter)}</td>
-      <td><button type="button" class="small" data-action="complete" data-i="${id}" ${p.planned===0?'disabled':''}>✓ Complete 1 lot</button><div class="muted smalltext">${fmt(p.completed)} lots done</div></td>
+      <td><button type="button" class="small" data-action="complete" data-i="${id}" title="Complete one lot of ${escapeHTML(p.name)}" aria-label="Complete one lot of ${escapeHTML(p.name)}" ${p.planned===0?'disabled':''}>✓ Complete 1 lot</button><div class="muted smalltext">${fmt(p.completed)} lots done</div></td>
       <td><button type="button" class="small" data-action="up" data-i="${id}" title="Move up in custom run order">↑</button> <button type="button" class="small" data-action="down" data-i="${id}" title="Move down in custom run order">↓</button></td>
     </tr>`;
   }).join('') || '<tr><td colspan="11">No matching parts. Import a report or enable “Show covered parts.”</td></tr>';
@@ -282,7 +359,7 @@ function render(){
   }).join('');
   $('coverage').innerHTML=`<table><thead><tr><th>Part</th><th class="num">Available + planned parts</th>${cols}</tr></thead><tbody>${body}</tbody></table>`;
 }
-function touch(){render();persist()}
+function touch(){state.orderDirty=Boolean(state.parts.length);render();persist()}
 
 $('import').addEventListener('click',()=>{
   try{
@@ -291,7 +368,8 @@ $('import').addEventListener('click',()=>{
     const prev=new Map(state.parts.map(p=>[p.name,p]));
     for(const p of parsed.parts){const old=prev.get(p.name);if(old&&old.lot)p.lot=old.lot;}
     state={...fresh(),parts:parsed.parts,dates:parsed.dates,manual:parsed.parts.map(p=>p.name),defaultLot:Math.max(1,intValue($('defaultLot').value)||144),asOf:$('asOf').value||dateToday(),throughDate:parsed.dates[Math.min(2,parsed.dates.length)-1]};
-    touch();setMessage(`Imported ${state.parts.length} parts and ${state.dates.length} shipment dates. First ${Math.min(2,state.dates.length)} ship dates selected. Choose a later cutoff if desired.`);
+    $('sort').value='date';
+    updateRunOrder();render();persist();setMessage(`Imported ${state.parts.length} parts and ${state.dates.length} shipment dates. First ${Math.min(2,state.dates.length)} ship dates selected. Choose a later cutoff if desired.`);
   }catch(e){setMessage('Import error: '+e.message)}
 });
 $('throughDate').addEventListener('change',e=>setThrough(e.target.value));
@@ -306,7 +384,15 @@ $('auto').addEventListener('click',()=>{
 });
 $('defaultLot').addEventListener('change',()=>{state.defaultLot=Math.max(1,intValue($('defaultLot').value)||144);$('defaultLot').value=state.defaultLot;touch()});
 $('asOf').addEventListener('change',()=>{state.asOf=$('asOf').value;persist('Report year reference updated. Re-import if you need to re-interpret date column years.');});
-$('sort').addEventListener('change',render);
+$('sort').addEventListener('change',e=>{
+  state.sortMode=e.target.value;
+  touch();
+  setMessage('Sort preference selected. Click Update Run Order to apply it; rows remain fixed until then.');
+});
+$('updateOrder').addEventListener('click',()=>{
+  if(!state.parts.length)return;
+  updateRunOrder();render();persist('Run order updated to current priorities. Rows will now remain fixed until you update it again.');
+});
 $('showAll').addEventListener('change',render);
 $('rows').addEventListener('input',ev=>{
   const t=ev.target;
@@ -336,12 +422,10 @@ $('rows').addEventListener('click',ev=>{
       if(p.planned<1)return;
       p.planned--;p.completed++;p.inventory+=lot(p);
       break;
-    case 'up':case 'down':{
-      if($('sort').value!=='manual')state.manual=sortedMetrics().map(r=>r.p.name);
-      const index=state.manual.indexOf(p.name),other=index+(t.dataset.action==='up'?-1:1);
-      if(other>=0&&other<state.manual.length)[state.manual[index],state.manual[other]]=[state.manual[other],state.manual[index]];
-      $('sort').value='manual';break;
-    }
+    case 'up':case 'down':
+      moveManually(p.name,t.dataset.action==='up'?-1:1);
+      render();persist();
+      return;
     default:return;
   }
   touch();
@@ -369,7 +453,7 @@ $('reset').addEventListener('click',()=>{
 });
 $('csv').addEventListener('click',()=>{
   if(!state.parts.length){setMessage('Import a report before exporting.');return}
-  const cutoff=chosenDate(),records=sortedMetrics();
+  const cutoff=chosenDate(),records=displayedMetrics(true);
   const headers=['Rank','Priority Through','Part Number','Process Code','Available Inventory','Lot Size','First Short Date by Cutoff','Short by Cutoff','Recommended Lots by Cutoff','Remaining Planned Lots','Remaining Planned Parts','Still Short After Plan by Cutoff','Completed Lots',...state.dates.map(d=>'Shipment '+d)];
   const recordsCSV=records.map((r,i)=>{const p=r.p;return[i+1,cutoff,p.name,p.process,p.inventory,lot(p),r.first||'',r.gap,r.required,p.planned,p.planned*lot(p),r.shortAfter,p.completed,...state.dates.map(d=>p.ship[d]||0)]});
   const csv=[headers,...recordsCSV].map(row=>row.map(v=>'"'+String(v).replaceAll('"','""')+'"').join(',')).join('\r\n');
@@ -402,7 +486,5 @@ try{
 | TN999999-99999L | J739 | | | 12 | 0 | 0 | 0 | 0 | 2 | 4 | 2 | 2 |
 | TN999999-99999M | J739 | | | 2340 | 0 | 0 | 0 | 0 | 0 | 3996 (-1656) | 0 (-1656) | 0 (-1656) |
 </template>
-</script>
-<script src="tools-menu.js"></script>
 </body>
 </html>
