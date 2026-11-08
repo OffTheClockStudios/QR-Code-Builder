@@ -254,7 +254,25 @@ cursor: default;
 
 .canvas-bg { fill: transparent; }
 
-.node { cursor: grab; }
+  /* Frames are visual grouping boundaries; their interiors intentionally let
+     item/relationship clicks and blank-space double-clicks pass through. */
+  .frame { cursor: grab; }
+  .frame.dragging { cursor: grabbing; }
+  .frame-fill, .frame-outline, .frame-label-background, .frame-label-text { pointer-events: none; }
+  .frame-outline { fill: none; vector-effect: non-scaling-stroke; stroke-linejoin: round; }
+  .frame-hit { fill: none; stroke: transparent; pointer-events: stroke; cursor: grab; }
+  .frame-label-hit { fill: transparent; pointer-events: all; cursor: grab; }
+  .frame.selected .frame-outline { filter: drop-shadow(0 0 4px rgba(37,99,235,.35)); }
+  .frame-resize-handle {
+    fill: #fff; stroke: #2563eb; stroke-width: 2;
+    vector-effect: non-scaling-stroke; pointer-events: all;
+  }
+  .frame-resize-handle[data-frame-handle="nw"],
+  .frame-resize-handle[data-frame-handle="se"] { cursor: nwse-resize; }
+  .frame-resize-handle[data-frame-handle="ne"],
+  .frame-resize-handle[data-frame-handle="sw"] { cursor: nesw-resize; }
+
+  .node { cursor: grab; }
 .node.dragging { cursor: grabbing; }
 .node .node-shape {
 stroke: #aab4c3;
@@ -386,11 +404,13 @@ background: #fff;
 box-shadow: var(--shadow);
 padding: 8px;
 }
-.context-menu.open { display: block; }
+  .context-menu.open { display: block; }
+  #frameMenu { width: 292px; max-height: calc(100vh - 16px); overflow-y: auto; overscroll-behavior: contain; }
+  .context-menu .menu-row label { min-width: 0; }
 .context-title { padding: 5px 7px 8px; font-size: 12px; font-weight: 750; color: #344054; }
 .context-menu .menu-row { display: grid; grid-template-columns: 1fr 100px; align-items: center; gap: 8px; padding: 5px 7px; }
 .context-menu .menu-row label { font-size: 12px; color: #475467; }
-.context-menu select, .context-menu input[type="number"] { width: 100%; height: 32px; border: 1px solid var(--line-strong); border-radius: 6px; padding: 4px 6px; background: #fff; }
+  .context-menu select, .context-menu input[type="number"], .context-menu input[type="text"] { width: 100%; height: 32px; border: 1px solid var(--line-strong); border-radius: 6px; padding: 4px 6px; background: #fff; }
 .context-menu input[type="color"] { width: 100%; height: 32px; border: 1px solid var(--line-strong); border-radius: 6px; padding: 2px; background: #fff; }
 .context-menu .menu-btn { width: 100%; text-align: left; border: 0; min-height: 34px; padding: 7px 8px; }
 .context-menu .menu-btn:hover { background: #f2f4f7; }
@@ -459,7 +479,8 @@ html[data-theme="dark"] .context-menu .menu-row label { color: #cbd0d5; }
 html[data-theme="dark"] .field input[type="number"],
 html[data-theme="dark"] .field select,
 html[data-theme="dark"] .context-menu select,
-html[data-theme="dark"] .context-menu input[type="number"] {
+  html[data-theme="dark"] .context-menu input[type="number"],
+  html[data-theme="dark"] .context-menu input[type="text"] {
   background: #4b4f54; color: #f3f4f6; border-color: #6b7077; color-scheme: dark;
 }
 html[data-theme="dark"] .field input[type="color"],
@@ -491,6 +512,8 @@ html[data-theme="dark"] .theme-toggle input:checked + .theme-switch { background
 .destructive-toolbar { font-size: 0; width: 36px; min-width: 36px; padding: 0; }
 #clearBtn::after { content: "⌫"; font-size: 16px; }
 #newBtn::after { content: "＋"; font-size: 18px; }
+#addFrameBtn { font-size: 0; width: 36px; min-width: 36px; padding: 0; }
+#addFrameBtn::after { content: "▣"; font-size: 17px; }
 }
 
 @media (max-width: 760px) {
@@ -511,6 +534,11 @@ row-gap: 6px;
 #clearBtn { order: 7; }
 #newBtn { order: 8; }
 .title-input { max-width: none; }
+.workspace-hint { white-space: normal; text-align: center; line-height: 1.35; border-radius: 12px; }
+}
+
+@media (max-width: 600px) {
+:root { --toolbar-h: 128px; }
 }
 
 @page { size: landscape; margin: 10mm; }
@@ -536,7 +564,8 @@ font-weight: 750;
 color: #111827;
 }
 .node .node-shape { filter: none !important; }
-.relationship-hover { display: none !important; }
+  .relationship-hover { display: none !important; }
+  .frame-resize-handle { display: none !important; }
 * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
 }
 </style>
@@ -552,7 +581,8 @@ color: #111827;
 
 <div class="toolbar-sep"></div>
 <div class="toolbar-actions" aria-label="Diagram actions">
-  <button id="addItemBtn" class="primary label-btn" title="Add a new item">＋ Add Item</button>
+    <button id="addItemBtn" class="primary label-btn" title="Add a new item">＋ Add Item</button>
+    <button id="addFrameBtn" class="label-btn" title="Add a labeled, resizable section frame">▣ Frame</button>
   <button id="undoBtn" class="compact" title="Undo (Ctrl/Cmd+Z)" aria-label="Undo">↶</button>
   <button id="redoBtn" class="compact" title="Redo (Ctrl/Cmd+Shift+Z or Ctrl/Cmd+Y)" aria-label="Redo">↷</button>
   <button id="fitBtn" class="label-btn" title="Fit and center the entire diagram">Fit</button>
@@ -585,11 +615,12 @@ color: #111827;
       <svg id="diagram" xmlns="http://www.w3.org/2000/svg" viewBox="-900 -560 1800 1120" preserveAspectRatio="xMidYMid meet" aria-label="Interrelationship digraph workspace">
         <defs id="svgDefs"></defs>
         <rect class="canvas-bg" x="-10000" y="-10000" width="20000" height="20000"></rect>
+        <g id="frameLayer"></g>
         <g id="relationshipLayer"></g>
         <g id="nodeLayer"></g>
       </svg>
       <div id="selectionStatus" class="selection-status"></div>
-      <div class="workspace-hint">Double-click blank space to add an item · Click two items to connect · Drag to move · Right-click to edit · Scroll to zoom · Middle-drag to pan</div>
+      <div class="workspace-hint">Double-click blank space to add an item · Frame button to group items · Drag frame borders / corner handles · Right-click to style · Scroll to zoom</div>
     </div>
 
 <aside id="settingsPanel" class="panel" aria-label="Diagram settings">
@@ -617,6 +648,28 @@ color: #111827;
       <div class="field"><label for="defaultArrowColor">Arrow color</label><input id="defaultArrowColor" type="color" /></div>
       <div class="field"><label for="defaultArrowWidth">Line width</label><input id="defaultArrowWidth" type="number" min="1" max="8" step="0.5" /></div>
       <div class="panel-actions"><button id="applyArrowsBtn">Apply arrow defaults to all existing</button></div>
+    </section>
+
+    <section class="setting-section">
+      <h3>New Frames</h3>
+      <p class="panel-note" style="margin:0 0 10px">Frames are drawn behind items and arrows. The transparent interior stays clickable.</p>
+      <div class="field"><label for="defaultFrameShape">Shape</label><select id="defaultFrameShape"><option value="rectangle">Rectangle</option><option value="square">Square</option></select></div>
+      <div class="field"><label for="defaultFrameWidth">Width</label><input id="defaultFrameWidth" type="number" min="80" max="4000" step="10" /></div>
+      <div class="field"><label for="defaultFrameHeight">Height</label><input id="defaultFrameHeight" type="number" min="80" max="4000" step="10" /></div>
+      <div class="field"><label for="defaultFrameFillColor">Frame fill</label><input id="defaultFrameFillColor" type="color" /></div>
+      <div class="field"><label for="defaultFrameFillOpacity">Fill opacity (%)</label><input id="defaultFrameFillOpacity" type="number" min="0" max="100" step="5" /></div>
+      <div class="field"><label for="defaultFrameBorderColor">Border color</label><input id="defaultFrameBorderColor" type="color" /></div>
+      <div class="field"><label for="defaultFrameBorderWidth">Border thickness</label><input id="defaultFrameBorderWidth" type="number" min="1" max="20" step="0.5" /></div>
+      <div class="field"><label for="defaultFrameBorderStyle">Border style</label><select id="defaultFrameBorderStyle"><option value="solid">Solid</option><option value="dashed">Dashed</option><option value="dotted">Dotted</option></select></div>
+      <div class="field"><label for="defaultFrameCornerRadius">Corner rounding</label><input id="defaultFrameCornerRadius" type="number" min="0" max="80" step="2" /></div>
+      <div class="field"><label for="defaultFrameLabelFontSize">Label size</label><input id="defaultFrameLabelFontSize" type="number" min="10" max="48" step="1" /></div>
+      <div class="field"><label for="defaultFrameLabelColor">Label text color</label><input id="defaultFrameLabelColor" type="color" /></div>
+      <div class="field"><label for="defaultFrameLabelBackgroundColor">Label background</label><input id="defaultFrameLabelBackgroundColor" type="color" /></div>
+      <div class="field"><label for="defaultFrameLabelBackgroundOpacity">Label bg opacity (%)</label><input id="defaultFrameLabelBackgroundOpacity" type="number" min="0" max="100" step="5" /></div>
+      <div class="field"><label for="defaultFrameLabelPadding">Label padding</label><input id="defaultFrameLabelPadding" type="number" min="2" max="32" step="1" /></div>
+      <div class="field"><label for="defaultFrameLabelFontWeight">Label weight</label><select id="defaultFrameLabelFontWeight"><option value="normal">Normal</option><option value="bold">Bold</option></select></div>
+      <div class="field"><label for="defaultFrameLabelPosition">Label position</label><select id="defaultFrameLabelPosition"><option value="left">Top left</option><option value="center">Top center</option><option value="right">Top right</option></select></div>
+      <div class="panel-actions"><button id="applyFramesBtn">Apply frame defaults to all existing</button></div>
     </section>
 
     <section class="setting-section">
@@ -661,6 +714,32 @@ color: #111827;
   <button id="deleteRelationshipBtn" class="menu-btn danger">Delete relationship</button>
 </div>
 
+<div id="frameMenu" class="context-menu" role="menu" aria-label="Frame menu">
+  <div class="context-title">Edit Frame</div>
+  <div class="menu-row"><label for="frameLabelInput">Label (optional)</label><input id="frameLabelInput" type="text" maxlength="160" placeholder="Section name" /></div>
+  <div class="menu-row"><label for="frameShapeInput">Shape</label><select id="frameShapeInput"><option value="rectangle">Rectangle</option><option value="square">Square</option></select></div>
+  <div class="menu-row"><label for="frameWidthInput">Width</label><input id="frameWidthInput" type="number" min="80" max="4000" step="10" /></div>
+  <div class="menu-row"><label for="frameHeightInput">Height</label><input id="frameHeightInput" type="number" min="80" max="4000" step="10" /></div>
+  <div class="context-divider"></div>
+  <div class="menu-row"><label for="frameFillInput">Frame fill</label><input id="frameFillInput" type="color" /></div>
+  <div class="menu-row"><label for="frameOpacityInput">Fill opacity (%)</label><input id="frameOpacityInput" type="number" min="0" max="100" step="5" /></div>
+  <div class="menu-row"><label for="frameBorderInput">Border color</label><input id="frameBorderInput" type="color" /></div>
+  <div class="menu-row"><label for="frameBorderWidthInput">Border thickness</label><input id="frameBorderWidthInput" type="number" min="1" max="20" step="0.5" /></div>
+  <div class="menu-row"><label for="frameBorderStyleInput">Border style</label><select id="frameBorderStyleInput"><option value="solid">Solid</option><option value="dashed">Dashed</option><option value="dotted">Dotted</option></select></div>
+  <div class="menu-row"><label for="frameCornerRadiusInput">Corner rounding</label><input id="frameCornerRadiusInput" type="number" min="0" max="80" step="2" /></div>
+  <div class="context-divider"></div>
+  <div class="menu-row"><label for="frameLabelColorInput">Label text color</label><input id="frameLabelColorInput" type="color" /></div>
+  <div class="menu-row"><label for="frameLabelFontSizeInput">Label font size</label><input id="frameLabelFontSizeInput" type="number" min="10" max="48" step="1" /></div>
+  <div class="menu-row"><label for="frameLabelWeightInput">Label weight</label><select id="frameLabelWeightInput"><option value="normal">Normal</option><option value="bold">Bold</option></select></div>
+  <div class="menu-row"><label for="frameLabelBgInput">Label background</label><input id="frameLabelBgInput" type="color" /></div>
+  <div class="menu-row"><label for="frameLabelBgOpacityInput">Label bg opacity (%)</label><input id="frameLabelBgOpacityInput" type="number" min="0" max="100" step="5" /></div>
+  <div class="menu-row"><label for="frameLabelPaddingInput">Label padding</label><input id="frameLabelPaddingInput" type="number" min="2" max="32" step="1" /></div>
+  <div class="menu-row"><label for="frameLabelPositionInput">Label position</label><select id="frameLabelPositionInput"><option value="left">Top left</option><option value="center">Top center</option><option value="right">Top right</option></select></div>
+  <div class="context-divider"></div>
+  <button id="resetFrameBtn" class="menu-btn">Reset frame formatting to defaults</button>
+  <button id="deleteFrameBtn" class="menu-btn danger">Delete frame (keep all items)</button>
+</div>
+
 <div id="toastStack" class="toast-stack" aria-live="polite" aria-atomic="true"></div>
 
 <script>
@@ -683,7 +762,23 @@ color: #111827;
     arrowWidth: 2,
     relationshipRouting: 'straight',
     bidirectional: false,
-    twoWayStyle: 'double-headed'
+    twoWayStyle: 'double-headed',
+    frameShape: 'rectangle',
+    frameWidth: 500,
+    frameHeight: 340,
+    frameFillColor: '#dbeafe',
+    frameFillOpacity: 12,
+    frameBorderColor: '#64748b',
+    frameBorderWidth: 2.5,
+    frameBorderStyle: 'dashed',
+    frameCornerRadius: 12,
+    frameLabelColor: '#1e3a8a',
+    frameLabelFontSize: 18,
+    frameLabelFontWeight: 'bold',
+    frameLabelBackgroundColor: '#dbeafe',
+    frameLabelBackgroundOpacity: 100,
+    frameLabelPadding: 9,
+    frameLabelPosition: 'left'
   });
   const SHAPES = [
     ['circle', 'Circle'],
@@ -706,6 +801,15 @@ color: #111827;
     ['parallel', 'Two parallel arrows']
   ];
   const TWO_WAY_STYLE_KEYS = new Set(TWO_WAY_STYLES.map(([value]) => value));
+  const FRAME_SHAPE_KEYS = new Set(['rectangle', 'square']);
+  const FRAME_BORDER_STYLES = new Set(['solid', 'dashed', 'dotted']);
+  const FRAME_LABEL_POSITIONS = new Set(['left', 'center', 'right']);
+  const FRAME_STYLE_KEYS = [
+    'shape', 'fillColor', 'fillOpacity', 'borderColor', 'borderWidth',
+    'borderStyle', 'cornerRadius', 'labelColor', 'labelFontSize',
+    'labelFontWeight', 'labelBackgroundColor', 'labelBackgroundOpacity',
+    'labelPadding', 'labelPosition'
+  ];
 
   let state = createInitialState();
   let undoStack = [];
@@ -714,6 +818,7 @@ color: #111827;
   let activeSelection = null; // { type: 'node'|'relationship', id }
   let contextTarget = null;
   let dragCandidate = null;
+  let frameDragCandidate = null;
   let panState = null;
   let spaceDown = false;
   let prePrintViewBox = null;
@@ -724,20 +829,24 @@ color: #111827;
   const $ = (id) => document.getElementById(id);
   const svg = $('diagram');
   const nodeLayer = $('nodeLayer');
+  const frameLayer = $('frameLayer');
   const relationshipLayer = $('relationshipLayer');
   const svgDefs = $('svgDefs');
   const nodeMenu = $('nodeMenu');
   const relationshipMenu = $('relationshipMenu');
+  const frameMenu = $('frameMenu');
 
   function createInitialState() {
     return {
-      version: 1,
+      version: 2,
       title: 'Interrelationship Digraph',
       nodes: [],
       relationships: [],
+      frames: [],
       defaults: { ...BUILTIN_DEFAULTS },
       nextNodeId: 1,
-      nextRelationshipId: 1
+      nextRelationshipId: 1,
+      nextFrameId: 1
     };
   }
 
@@ -863,7 +972,23 @@ color: #111827;
       arrowWidth: clamp(finiteNumber(d.arrowWidth, BUILTIN_DEFAULTS.arrowWidth), 1, 8),
       relationshipRouting: RELATIONSHIP_ROUTING_KEYS.has(d.relationshipRouting) ? d.relationshipRouting : BUILTIN_DEFAULTS.relationshipRouting,
       bidirectional: d.bidirectional === true,
-      twoWayStyle: TWO_WAY_STYLE_KEYS.has(d.twoWayStyle) ? d.twoWayStyle : BUILTIN_DEFAULTS.twoWayStyle
+      twoWayStyle: TWO_WAY_STYLE_KEYS.has(d.twoWayStyle) ? d.twoWayStyle : BUILTIN_DEFAULTS.twoWayStyle,
+      frameShape: FRAME_SHAPE_KEYS.has(d.frameShape) ? d.frameShape : BUILTIN_DEFAULTS.frameShape,
+      frameWidth: clamp(finiteNumber(d.frameWidth, BUILTIN_DEFAULTS.frameWidth), 80, 4000),
+      frameHeight: clamp(finiteNumber(d.frameHeight, BUILTIN_DEFAULTS.frameHeight), 80, 4000),
+      frameFillColor: isHexColor(d.frameFillColor) ? d.frameFillColor : BUILTIN_DEFAULTS.frameFillColor,
+      frameFillOpacity: clamp(finiteNumber(d.frameFillOpacity, BUILTIN_DEFAULTS.frameFillOpacity), 0, 100),
+      frameBorderColor: isHexColor(d.frameBorderColor) ? d.frameBorderColor : BUILTIN_DEFAULTS.frameBorderColor,
+      frameBorderWidth: clamp(finiteNumber(d.frameBorderWidth, BUILTIN_DEFAULTS.frameBorderWidth), 1, 20),
+      frameBorderStyle: FRAME_BORDER_STYLES.has(d.frameBorderStyle) ? d.frameBorderStyle : BUILTIN_DEFAULTS.frameBorderStyle,
+      frameCornerRadius: clamp(finiteNumber(d.frameCornerRadius, BUILTIN_DEFAULTS.frameCornerRadius), 0, 80),
+      frameLabelColor: isHexColor(d.frameLabelColor) ? d.frameLabelColor : BUILTIN_DEFAULTS.frameLabelColor,
+      frameLabelFontSize: clamp(finiteNumber(d.frameLabelFontSize, BUILTIN_DEFAULTS.frameLabelFontSize), 10, 48),
+      frameLabelFontWeight: ['normal','bold'].includes(d.frameLabelFontWeight) ? d.frameLabelFontWeight : BUILTIN_DEFAULTS.frameLabelFontWeight,
+      frameLabelBackgroundColor: isHexColor(d.frameLabelBackgroundColor) ? d.frameLabelBackgroundColor : BUILTIN_DEFAULTS.frameLabelBackgroundColor,
+      frameLabelBackgroundOpacity: clamp(finiteNumber(d.frameLabelBackgroundOpacity, BUILTIN_DEFAULTS.frameLabelBackgroundOpacity), 0, 100),
+      frameLabelPadding: clamp(finiteNumber(d.frameLabelPadding, BUILTIN_DEFAULTS.frameLabelPadding), 2, 32),
+      frameLabelPosition: FRAME_LABEL_POSITIONS.has(d.frameLabelPosition) ? d.frameLabelPosition : BUILTIN_DEFAULTS.frameLabelPosition
     };
   }
 
@@ -917,17 +1042,54 @@ color: #111827;
       });
     }
 
+    // Older v1 diagrams had no frames array. Treat it as empty, not invalid.
+    const frames = [];
+    const frameIds = new Set();
+    for (const raw of (Array.isArray(input.frames) ? input.frames : []).slice(0, 500)) {
+      if (!raw || typeof raw !== 'object') continue;
+      const id = String(raw.id || '').slice(0, 80);
+      if (!id || frameIds.has(id)) continue;
+      frameIds.add(id);
+      const shape = FRAME_SHAPE_KEYS.has(raw.shape) ? raw.shape : defaults.frameShape;
+      const w = clamp(finiteNumber(raw.width, defaults.frameWidth), 80, 4000);
+      const h = shape === 'square' ? w : clamp(finiteNumber(raw.height, defaults.frameHeight), 80, 4000);
+      frames.push({
+        id,
+        label: String(raw.label ?? '').slice(0, 160),
+        x: clamp(finiteNumber(raw.x, 0), -9000, 9000),
+        y: clamp(finiteNumber(raw.y, 0), -9000, 9000),
+        width: w,
+        height: h,
+        shape,
+        fillColor: isHexColor(raw.fillColor) ? raw.fillColor : defaults.frameFillColor,
+        fillOpacity: clamp(finiteNumber(raw.fillOpacity, defaults.frameFillOpacity), 0, 100),
+        borderColor: isHexColor(raw.borderColor) ? raw.borderColor : defaults.frameBorderColor,
+        borderWidth: clamp(finiteNumber(raw.borderWidth, defaults.frameBorderWidth), 1, 20),
+        borderStyle: FRAME_BORDER_STYLES.has(raw.borderStyle) ? raw.borderStyle : defaults.frameBorderStyle,
+        cornerRadius: clamp(finiteNumber(raw.cornerRadius, defaults.frameCornerRadius), 0, 80),
+        labelColor: isHexColor(raw.labelColor) ? raw.labelColor : defaults.frameLabelColor,
+        labelFontSize: clamp(finiteNumber(raw.labelFontSize, defaults.frameLabelFontSize), 10, 48),
+        labelFontWeight: ['normal','bold'].includes(raw.labelFontWeight) ? raw.labelFontWeight : defaults.frameLabelFontWeight,
+        labelBackgroundColor: isHexColor(raw.labelBackgroundColor) ? raw.labelBackgroundColor : defaults.frameLabelBackgroundColor,
+        labelBackgroundOpacity: clamp(finiteNumber(raw.labelBackgroundOpacity, defaults.frameLabelBackgroundOpacity), 0, 100),
+        labelPadding: clamp(finiteNumber(raw.labelPadding, defaults.frameLabelPadding), 2, 32),
+        labelPosition: FRAME_LABEL_POSITIONS.has(raw.labelPosition) ? raw.labelPosition : defaults.frameLabelPosition
+      });
+    }
+    const maxFrameNum = frames.reduce((m, f) => Math.max(m, parseTrailingNumber(f.id)), 0);
     const maxNodeNum = nodes.reduce((m, n) => Math.max(m, parseTrailingNumber(n.id)), 0);
     const maxRelNum = relationships.reduce((m, r) => Math.max(m, parseTrailingNumber(r.id)), 0);
 
     return {
-      version: 1,
+      version: 2,
       title: String(input.title || 'Interrelationship Digraph').slice(0, 180),
       nodes,
       relationships,
+      frames,
       defaults,
       nextNodeId: Math.max(finiteNumber(input.nextNodeId, 1), maxNodeNum + 1),
-      nextRelationshipId: Math.max(finiteNumber(input.nextRelationshipId, 1), maxRelNum + 1)
+      nextRelationshipId: Math.max(finiteNumber(input.nextRelationshipId, 1), maxRelNum + 1),
+      nextFrameId: Math.max(finiteNumber(input.nextFrameId, 1), maxFrameNum + 1)
     };
   }
 
@@ -1506,8 +1668,14 @@ color: #111827;
   }
 
   function getDiagramBounds(includeCurves = true) {
-    if (!state.nodes.length) return { x: -300, y: -200, w: 600, h: 400 };
+    if (!state.nodes.length && !state.frames.length) return { x: -300, y: -200, w: 600, h: 400 };
     let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+    for (const frame of state.frames) {
+      minX = Math.min(minX, frame.x);
+      minY = Math.min(minY, frame.y);
+      maxX = Math.max(maxX, frame.x + frame.width);
+      maxY = Math.max(maxY, frame.y + frame.height);
+    }
     for (const node of state.nodes) {
       const { w, h } = getNodeDimensions(node);
       minX = Math.min(minX, node.x - w/2);
@@ -1539,6 +1707,7 @@ color: #111827;
 
   function renderAll() {
     renderDefs();
+    renderFrames();
     renderRelationships();
     renderNodes();
     renderUiState();
@@ -1553,6 +1722,111 @@ color: #111827;
         <path d="M 0 0 L ${size} ${size/2} L 0 ${size} z" fill="${rel.color}"></path>
       </marker>`;
     }).join('');
+  }
+
+  function frameDashArray(frame) {
+    if (frame.borderStyle === 'dashed') return `${frame.borderWidth * 5} ${frame.borderWidth * 3}`;
+    if (frame.borderStyle === 'dotted') return `${frame.borderWidth * 0.5} ${frame.borderWidth * 2.5}`;
+    return null;
+  }
+
+  function renderFrames() {
+    frameLayer.innerHTML = '';
+    for (const frame of state.frames) {
+      const selected = activeSelection?.type === 'frame' && activeSelection.id === frame.id;
+      const group = svgEl('g', {
+        class: `frame${selected ? ' selected' : ''}${frameDragCandidate?.frameId === frame.id && frameDragCandidate.moved ? ' dragging' : ''}`,
+        'data-frame-id': frame.id,
+        role: 'group',
+        'aria-label': `Frame: ${frame.label || 'Untitled'}`
+      });
+      const dimensions = {
+        x: frame.x, y: frame.y, width: frame.width, height: frame.height,
+        rx: Math.min(frame.cornerRadius, frame.width / 2, frame.height / 2)
+      };
+      group.appendChild(svgEl('rect', {
+        ...dimensions, class: 'frame-fill', fill: frame.fillColor,
+        'fill-opacity': frame.fillOpacity / 100
+      }));
+      group.appendChild(svgEl('rect', {
+        ...dimensions, class: 'frame-outline',
+        stroke: frame.borderColor, 'stroke-width': frame.borderWidth,
+        'stroke-dasharray': frameDashArray(frame),
+        'stroke-linecap': frame.borderStyle === 'dotted' ? 'round' : 'butt'
+      }));
+      const name = svgEl('title');
+      name.textContent = frame.label || 'Untitled frame';
+      group.appendChild(name);
+      group.appendChild(svgEl('rect', {
+        ...dimensions, class: 'frame-hit',
+        'stroke-width': Math.max(18, frame.borderWidth + 13)
+      }));
+
+      if (frame.label.trim()) {
+        const fs = frame.labelFontSize;
+        const padding = frame.labelPadding;
+        const labelMaxW = Math.max(24, frame.width - 20 - padding * 2);
+        const approx = fs * (frame.labelFontWeight === 'bold' ? .63 : .57);
+        const maxChars = Math.max(1, Math.floor(labelMaxW / Math.max(1, approx)));
+        const displayText = frame.label.length > maxChars
+          ? `${frame.label.slice(0, Math.max(1, maxChars - 1))}…` : frame.label;
+        const labelHeight = fs * 1.25 + padding * 2;
+        const labelWidth = Math.min(frame.width - 12, displayText.length * approx + padding * 2);
+        let left = frame.x + 10;
+        if (frame.labelPosition === 'center') left = frame.x + (frame.width - labelWidth) / 2;
+        if (frame.labelPosition === 'right') left = frame.x + frame.width - labelWidth - 10;
+        const top = frame.y + 9;
+        group.appendChild(svgEl('rect', {
+          class: 'frame-label-background', x: left, y: top,
+          width: labelWidth, height: labelHeight,
+          rx: Math.min(6, labelHeight / 3),
+          fill: frame.labelBackgroundColor,
+          'fill-opacity': frame.labelBackgroundOpacity / 100
+        }));
+        const label = svgEl('text', {
+          class: 'frame-label-text', x: left + padding,
+          y: top + padding + fs * .99,
+          'font-size': fs, 'font-weight': frame.labelFontWeight,
+          fill: frame.labelColor
+        });
+        label.textContent = displayText;
+        group.appendChild(label);
+        group.appendChild(svgEl('rect', {
+          class: 'frame-label-hit', x: left, y: top,
+          width: labelWidth, height: labelHeight,
+          rx: Math.min(6, labelHeight / 3)
+        }));
+      }
+
+      if (selected) {
+        const handles = [
+          ['nw', frame.x, frame.y],
+          ['ne', frame.x + frame.width, frame.y],
+          ['sw', frame.x, frame.y + frame.height],
+          ['se', frame.x + frame.width, frame.y + frame.height]
+        ];
+        for (const [kind, x, y] of handles) {
+          group.appendChild(svgEl('rect', {
+            class: 'frame-resize-handle',
+            'data-frame-handle': kind,
+            x: x - 6, y: y - 6, width: 12, height: 12, rx: 2
+          }));
+        }
+      }
+      group.addEventListener('pointerdown', framePointerDown);
+      group.addEventListener('click', (e) => e.stopPropagation());
+      group.addEventListener('dblclick', (e) => e.stopPropagation());
+      group.addEventListener('contextmenu', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        sourceSelectionId = null;
+        activeSelection = { type: 'frame', id: frame.id };
+        contextTarget = { type: 'frame', id: frame.id };
+        renderAll();
+        openFrameMenu(e.clientX, e.clientY, frame.id);
+      });
+      frameLayer.appendChild(group);
+    }
   }
 
   function renderRelationships() {
@@ -1807,6 +2081,73 @@ color: #111827;
     ensureDiagramVisible();
   }
 
+  function frameDefaultsForNewFrame() {
+    const d = state.defaults;
+    return {
+      shape: d.frameShape,
+      width: d.frameWidth,
+      height: d.frameShape === 'square' ? d.frameWidth : d.frameHeight,
+      fillColor: d.frameFillColor,
+      fillOpacity: d.frameFillOpacity,
+      borderColor: d.frameBorderColor,
+      borderWidth: d.frameBorderWidth,
+      borderStyle: d.frameBorderStyle,
+      cornerRadius: d.frameCornerRadius,
+      labelColor: d.frameLabelColor,
+      labelFontSize: d.frameLabelFontSize,
+      labelFontWeight: d.frameLabelFontWeight,
+      labelBackgroundColor: d.frameLabelBackgroundColor,
+      labelBackgroundOpacity: d.frameLabelBackgroundOpacity,
+      labelPadding: d.frameLabelPadding,
+      labelPosition: d.frameLabelPosition
+    };
+  }
+
+  function addFrame() {
+    closeContextMenus();
+    const input = window.prompt('Frame label (optional; you can edit this later):', 'Section');
+    if (input === null) return;
+    const styling = frameDefaultsForNewFrame();
+    let centerX = viewport.x + viewport.w / 2;
+    let centerY = viewport.y + viewport.h / 2;
+    const node = activeSelection?.type === 'node' ? getNode(activeSelection.id) : null;
+    if (node) {
+      centerX = node.x;
+      centerY = node.y;
+      const d = getNodeDimensions(node);
+      styling.width = Math.max(styling.width, d.w + 140);
+      styling.height = Math.max(styling.height, d.h + 140);
+      if (styling.shape === 'square') styling.width = styling.height = Math.max(styling.width, styling.height);
+    } else if (state.frames.length) {
+      const offset = Math.min(5, state.frames.length % 6) * 32;
+      centerX += offset;
+      centerY += offset;
+    }
+    const newId = `f${state.nextFrameId}`;
+    commit(() => {
+      state.frames.push({
+        id: `f${state.nextFrameId++}`,
+        label: input.trim().slice(0, 160),
+        x: clamp(centerX - styling.width / 2, -9000, 9000),
+        y: clamp(centerY - styling.height / 2, -9000, 9000),
+        ...styling
+      });
+    });
+    sourceSelectionId = null;
+    activeSelection = { type: 'frame', id: newId };
+    renderAll();
+    ensureDiagramVisible();
+    toast('Frame added. Drag its border or label to move; drag a corner to resize.');
+  }
+
+  function deleteFrame(frameId) {
+    if (!getFrame(frameId)) return;
+    commit(() => { state.frames = state.frames.filter(f => f.id !== frameId); });
+    clearTransientSelection();
+    closeContextMenus();
+    toast('Frame deleted. Its items and relationships were kept.');
+  }
+
   function handleNodeClick(nodeId) {
     closeContextMenus();
     const node = getNode(nodeId);
@@ -1938,20 +2279,22 @@ color: #111827;
   }
 
   function clearDiagram() {
-    if (!state.nodes.length && !state.relationships.length) return;
-    if (!window.confirm('Clear the entire diagram? This removes all items and relationships.')) return;
+    if (!state.nodes.length && !state.relationships.length && !state.frames.length) return;
+    if (!window.confirm('Clear the entire diagram? This removes all items, relationships, and frames.')) return;
     commit(() => {
       state.nodes = [];
       state.relationships = [];
+      state.frames = [];
       state.nextNodeId = 1;
       state.nextRelationshipId = 1;
+      state.nextFrameId = 1;
     });
     clearTransientSelection();
     fitDiagram();
   }
 
   function newBlankDiagram() {
-    if ((state.nodes.length || state.relationships.length) && !window.confirm('Start a new blank diagram? This resets the title, diagram content, and formatting defaults.')) return;
+    if ((state.nodes.length || state.relationships.length || state.frames.length) && !window.confirm('Start a new blank diagram? This resets the title, diagram content, and formatting defaults.')) return;
     const before = snapshot();
     state = createInitialState();
     undoStack.push(before);
@@ -1979,6 +2322,7 @@ color: #111827;
 
   function getNode(id) { return state.nodes.find(n => n.id === id); }
   function getRelationship(id) { return state.relationships.find(r => r.id === id); }
+  function getFrame(id) { return state.frames.find(f => f.id === id); }
 
   // ---------------------------------------------------------------------------
   // Dragging, panning, zooming, selection
@@ -2004,7 +2348,64 @@ color: #111827;
     };
   }
 
+  function framePointerDown(e) {
+    if (e.button !== 0 || spaceDown) return;
+    e.preventDefault();
+    e.stopPropagation();
+    closeContextMenus();
+    const frameId = e.currentTarget.getAttribute('data-frame-id');
+    const frame = getFrame(frameId);
+    if (!frame) return;
+    const p = clientToSvg(e.clientX, e.clientY);
+    sourceSelectionId = null;
+    activeSelection = { type: 'frame', id: frameId };
+    frameDragCandidate = {
+      frameId,
+      handle: e.target.getAttribute('data-frame-handle') || null,
+      startX: p.x,
+      startY: p.y,
+      startClientX: e.clientX,
+      startClientY: e.clientY,
+      original: { x: frame.x, y: frame.y, width: frame.width, height: frame.height },
+      before: snapshot(),
+      moved: false
+    };
+  }
+
   document.addEventListener('pointermove', (e) => {
+    if (frameDragCandidate) {
+      const candidate = frameDragCandidate;
+      const dist = Math.hypot(e.clientX - candidate.startClientX, e.clientY - candidate.startClientY);
+      if (!candidate.moved && dist > 4) candidate.moved = true;
+      if (candidate.moved) {
+        const frame = getFrame(candidate.frameId);
+        if (frame) {
+          const point = clientToSvg(e.clientX, e.clientY);
+          const dx = point.x - candidate.startX;
+          const dy = point.y - candidate.startY;
+          const old = candidate.original;
+          if (!candidate.handle) {
+            frame.x = clamp(old.x + dx, -9000, 9000);
+            frame.y = clamp(old.y + dy, -9000, 9000);
+          } else {
+            const h = candidate.handle;
+            const nextW = clamp(old.width + (h.endsWith('e') ? dx : -dx), 80, 4000);
+            const nextH = clamp(old.height + (h.startsWith('s') ? dy : -dy), 80, 4000);
+            if (frame.shape === 'square') {
+              const size = Math.max(nextW, nextH);
+              frame.width = size;
+              frame.height = size;
+            } else {
+              frame.width = nextW;
+              frame.height = nextH;
+            }
+            frame.x = clamp(h.endsWith('w') ? old.x + old.width - frame.width : old.x, -9000, 9000);
+            frame.y = clamp(h.startsWith('n') ? old.y + old.height - frame.height : old.y, -9000, 9000);
+          }
+          renderFrames();
+        }
+      }
+    }
     if (dragCandidate) {
       const dist = Math.hypot(e.clientX - dragCandidate.startClientX, e.clientY - dragCandidate.startClientY);
       if (!dragCandidate.moved && dist > 5) {
@@ -2032,6 +2433,17 @@ color: #111827;
   });
 
   document.addEventListener('pointerup', () => {
+    if (frameDragCandidate) {
+      const candidate = frameDragCandidate;
+      frameDragCandidate = null;
+      if (candidate.moved) {
+        undoStack.push(candidate.before);
+        if (undoStack.length > 100) undoStack.shift();
+        redoStack = [];
+        saveState();
+      }
+      renderAll();
+    }
     if (dragCandidate) {
       const candidate = dragCandidate;
       dragCandidate = null;
@@ -2171,6 +2583,25 @@ color: #111827;
     showMenu(nodeMenu, x, y);
   }
 
+  function openFrameMenu(x, y, frameId) {
+    const frame = getFrame(frameId);
+    if (!frame) return;
+    const controlToKey = {
+      frameLabelInput: 'label',
+      frameShapeInput: 'shape', frameWidthInput: 'width', frameHeightInput: 'height',
+      frameFillInput: 'fillColor', frameOpacityInput: 'fillOpacity',
+      frameBorderInput: 'borderColor', frameBorderWidthInput: 'borderWidth',
+      frameBorderStyleInput: 'borderStyle', frameCornerRadiusInput: 'cornerRadius',
+      frameLabelColorInput: 'labelColor', frameLabelFontSizeInput: 'labelFontSize',
+      frameLabelWeightInput: 'labelFontWeight', frameLabelBgInput: 'labelBackgroundColor',
+      frameLabelBgOpacityInput: 'labelBackgroundOpacity',
+      frameLabelPaddingInput: 'labelPadding', frameLabelPositionInput: 'labelPosition'
+    };
+    for (const [id, key] of Object.entries(controlToKey)) $(id).value = frame[key];
+    $('frameHeightInput').disabled = frame.shape === 'square';
+    showMenu(frameMenu, x, y);
+  }
+
   function openRelationshipMenu(x, y, relId) {
     const rel = getRelationship(relId);
     if (!rel) return;
@@ -2203,10 +2634,11 @@ color: #111827;
   function closeContextMenus() {
     nodeMenu.classList.remove('open');
     relationshipMenu.classList.remove('open');
+    frameMenu.classList.remove('open');
   }
 
   document.addEventListener('pointerdown', (e) => {
-    if (!nodeMenu.contains(e.target) && !relationshipMenu.contains(e.target)) closeContextMenus();
+    if (!nodeMenu.contains(e.target) && !relationshipMenu.contains(e.target) && !frameMenu.contains(e.target)) closeContextMenus();
   }, true);
 
   window.addEventListener('resize', closeContextMenus);
@@ -2304,12 +2736,31 @@ color: #111827;
     $('defaultRelationshipRouting').value = state.defaults.relationshipRouting;
     $('defaultArrowColor').value = state.defaults.arrowColor;
     $('defaultArrowWidth').value = state.defaults.arrowWidth;
+    const frameDefaultBindings = {
+      defaultFrameShape: 'frameShape', defaultFrameWidth: 'frameWidth',
+      defaultFrameHeight: 'frameHeight', defaultFrameFillColor: 'frameFillColor',
+      defaultFrameFillOpacity: 'frameFillOpacity', defaultFrameBorderColor: 'frameBorderColor',
+      defaultFrameBorderWidth: 'frameBorderWidth', defaultFrameBorderStyle: 'frameBorderStyle',
+      defaultFrameCornerRadius: 'frameCornerRadius', defaultFrameLabelColor: 'frameLabelColor',
+      defaultFrameLabelFontSize: 'frameLabelFontSize', defaultFrameLabelFontWeight: 'frameLabelFontWeight',
+      defaultFrameLabelBackgroundColor: 'frameLabelBackgroundColor',
+      defaultFrameLabelBackgroundOpacity: 'frameLabelBackgroundOpacity',
+      defaultFrameLabelPadding: 'frameLabelPadding', defaultFrameLabelPosition: 'frameLabelPosition'
+    };
+    for (const [id, key] of Object.entries(frameDefaultBindings)) $(id).value = state.defaults[key];
+    $('defaultFrameHeight').disabled = state.defaults.frameShape === 'square';
   }
 
   function updateDefault(key, value) {
     const next = key === 'fontSize' ? clamp(finiteNumber(value, state.defaults.fontSize), 10, 30)
       : key === 'countFontSize' ? clamp(finiteNumber(value, state.defaults.countFontSize), 8, 24)
       : key === 'arrowWidth' ? clamp(finiteNumber(value, state.defaults.arrowWidth), 1, 8)
+      : ['frameWidth', 'frameHeight'].includes(key) ? clamp(finiteNumber(value, state.defaults[key]), 80, 4000)
+      : ['frameFillOpacity', 'frameLabelBackgroundOpacity'].includes(key) ? clamp(finiteNumber(value, state.defaults[key]), 0, 100)
+      : key === 'frameBorderWidth' ? clamp(finiteNumber(value, state.defaults[key]), 1, 20)
+      : key === 'frameCornerRadius' ? clamp(finiteNumber(value, state.defaults[key]), 0, 80)
+      : key === 'frameLabelFontSize' ? clamp(finiteNumber(value, state.defaults[key]), 10, 48)
+      : key === 'frameLabelPadding' ? clamp(finiteNumber(value, state.defaults[key]), 2, 32)
       : value;
     if (state.defaults[key] === next) return;
     commit(() => { state.defaults[key] = next; });
@@ -2321,7 +2772,7 @@ color: #111827;
 
   function renderUiState() {
     $('diagramTitle').value = state.title;
-    $('diagramStats').textContent = `${state.nodes.length} item${state.nodes.length === 1 ? '' : 's'} · ${state.relationships.length} relationship${state.relationships.length === 1 ? '' : 's'}`;
+    $('diagramStats').textContent = `${state.nodes.length} item${state.nodes.length === 1 ? '' : 's'} · ${state.relationships.length} relationship${state.relationships.length === 1 ? '' : 's'} · ${state.frames.length} frame${state.frames.length === 1 ? '' : 's'}`;
     $('undoBtn').disabled = undoStack.length === 0;
     $('redoBtn').disabled = redoStack.length === 0;
 
@@ -2340,6 +2791,10 @@ color: #111827;
       const node = getNode(activeSelection.id);
       status.textContent = node ? `Item selected: ${node.label}` : '';
       status.classList.add('visible');
+    } else if (activeSelection?.type === 'frame') {
+      const frame = getFrame(activeSelection.id);
+      status.textContent = frame ? `Frame selected: ${frame.label || 'Untitled'} — drag border to move, corners to resize` : '';
+      status.classList.toggle('visible', !!frame);
     } else {
       status.classList.remove('visible');
       status.textContent = '';
@@ -2361,6 +2816,7 @@ color: #111827;
   // ---------------------------------------------------------------------------
 
   $('addItemBtn').addEventListener('click', () => addNode());
+  $('addFrameBtn').addEventListener('click', addFrame);
   $('undoBtn').addEventListener('click', undo);
   $('redoBtn').addEventListener('click', redo);
   $('fitBtn').addEventListener('click', fitDiagram);
@@ -2474,6 +2930,83 @@ color: #111827;
     openRelationshipMenu(rect.left, rect.top, targetId);
   }
 
+  const frameInputs = {
+    frameLabelInput: 'label',
+    frameShapeInput: 'shape', frameWidthInput: 'width', frameHeightInput: 'height',
+    frameFillInput: 'fillColor', frameOpacityInput: 'fillOpacity',
+    frameBorderInput: 'borderColor', frameBorderWidthInput: 'borderWidth',
+    frameBorderStyleInput: 'borderStyle', frameCornerRadiusInput: 'cornerRadius',
+    frameLabelColorInput: 'labelColor', frameLabelFontSizeInput: 'labelFontSize',
+    frameLabelWeightInput: 'labelFontWeight', frameLabelBgInput: 'labelBackgroundColor',
+    frameLabelBgOpacityInput: 'labelBackgroundOpacity',
+    frameLabelPaddingInput: 'labelPadding', frameLabelPositionInput: 'labelPosition'
+  };
+  for (const [id, key] of Object.entries(frameInputs)) {
+    $(id).addEventListener('change', (e) => updateContextFrame(key, e.target.value));
+  }
+  function updateContextFrame(key, input) {
+    if (contextTarget?.type !== 'frame') return;
+    const frame = getFrame(contextTarget.id);
+    if (!frame) return;
+    let value = input;
+    if (key === 'label') value = String(input).trim().slice(0, 160);
+    if (['width', 'height'].includes(key)) value = clamp(finiteNumber(input, frame[key]), 80, 4000);
+    if (['fillOpacity', 'labelBackgroundOpacity'].includes(key)) value = clamp(finiteNumber(input, frame[key]), 0, 100);
+    if (key === 'borderWidth') value = clamp(finiteNumber(input, frame[key]), 1, 20);
+    if (key === 'cornerRadius') value = clamp(finiteNumber(input, frame[key]), 0, 80);
+    if (key === 'labelFontSize') value = clamp(finiteNumber(input, frame[key]), 10, 48);
+    if (key === 'labelPadding') value = clamp(finiteNumber(input, frame[key]), 2, 32);
+    if (key === 'shape' && !FRAME_SHAPE_KEYS.has(value)) return;
+    if (key === 'borderStyle' && !FRAME_BORDER_STYLES.has(value)) return;
+    if (key === 'labelPosition' && !FRAME_LABEL_POSITIONS.has(value)) return;
+    if (frame[key] === value) return;
+    const frameId = frame.id;
+    const menuX = frameMenu.getBoundingClientRect().left;
+    const menuY = frameMenu.getBoundingClientRect().top;
+    const oldScroll = frameMenu.scrollTop;
+    commit(() => {
+      const current = getFrame(frameId);
+      if (!current) return;
+      current[key] = value;
+      if (key === 'shape' && value === 'square') current.width = current.height = Math.max(current.width, current.height);
+      if ((key === 'width' || key === 'height') && current.shape === 'square') current.width = current.height = value;
+    });
+    contextTarget = { type: 'frame', id: frameId };
+    activeSelection = { type: 'frame', id: frameId };
+    openFrameMenu(menuX, menuY, frameId);
+    frameMenu.scrollTop = oldScroll;
+  }
+  $('resetFrameBtn').addEventListener('click', () => {
+    if (contextTarget?.type !== 'frame') return;
+    const id = contextTarget.id;
+    commit(() => {
+      const frame = getFrame(id);
+      if (!frame) return;
+      const styling = frameDefaultsForNewFrame();
+      for (const key of FRAME_STYLE_KEYS) frame[key] = styling[key];
+      if (frame.shape === 'square') frame.width = frame.height = Math.max(frame.width, frame.height);
+    });
+    closeContextMenus();
+  });
+  $('deleteFrameBtn').addEventListener('click', () => {
+    if (contextTarget?.type === 'frame') deleteFrame(contextTarget.id);
+  });
+
+  const frameDefaultInputs = {
+    defaultFrameShape: 'frameShape', defaultFrameWidth: 'frameWidth',
+    defaultFrameHeight: 'frameHeight', defaultFrameFillColor: 'frameFillColor',
+    defaultFrameFillOpacity: 'frameFillOpacity', defaultFrameBorderColor: 'frameBorderColor',
+    defaultFrameBorderWidth: 'frameBorderWidth', defaultFrameBorderStyle: 'frameBorderStyle',
+    defaultFrameCornerRadius: 'frameCornerRadius', defaultFrameLabelColor: 'frameLabelColor',
+    defaultFrameLabelFontSize: 'frameLabelFontSize', defaultFrameLabelFontWeight: 'frameLabelFontWeight',
+    defaultFrameLabelBackgroundColor: 'frameLabelBackgroundColor',
+    defaultFrameLabelBackgroundOpacity: 'frameLabelBackgroundOpacity',
+    defaultFrameLabelPadding: 'frameLabelPadding', defaultFrameLabelPosition: 'frameLabelPosition'
+  };
+  for (const [id, key] of Object.entries(frameDefaultInputs)) {
+    $(id).addEventListener('change', (e) => updateDefault(key, e.target.value));
+  }
+
   $('defaultNodeShape').addEventListener('change', (e) => updateDefault('shape', e.target.value));
   $('defaultNodeFill').addEventListener('change', (e) => updateDefault('fillColor', e.target.value));
   $('defaultTextColor').addEventListener('change', (e) => updateDefault('textColor', e.target.value));
@@ -2510,6 +3043,18 @@ color: #111827;
       });
     });
     toast('Arrow defaults applied to all existing relationships.');
+  });
+
+  $('applyFramesBtn').addEventListener('click', () => {
+    if (!state.frames.length) return toast('There are no existing frames to update.');
+    const styling = frameDefaultsForNewFrame();
+    commit(() => {
+      for (const frame of state.frames) {
+        for (const key of FRAME_STYLE_KEYS) frame[key] = styling[key];
+        if (frame.shape === 'square') frame.width = frame.height = Math.max(frame.width, frame.height);
+      }
+    });
+    toast('Frame styles updated; existing labels, sizes, and positions were preserved where possible.');
   });
 
   $('resetDefaultsBtn').addEventListener('click', () => {
@@ -2553,13 +3098,14 @@ color: #111827;
       e.preventDefault();
       if (activeSelection.type === 'node') deleteNode(activeSelection.id, true);
       else if (activeSelection.type === 'relationship') deleteRelationship(activeSelection.id);
+      else if (activeSelection.type === 'frame') deleteFrame(activeSelection.id);
     }
   });
 
   document.addEventListener('keyup', (e) => {
     if (e.code === 'Space') spaceDown = false;
   });
-  window.addEventListener('blur', () => { spaceDown = false; panState = null; });
+  window.addEventListener('blur', () => { spaceDown = false; panState = null; frameDragCandidate = null; });
 
   // ---------------------------------------------------------------------------
   // Initialization
@@ -2575,7 +3121,7 @@ color: #111827;
   applyTheme(currentTheme, false);
   const restored = loadState();
   renderAll();
-  if (restored && state.nodes.length) fitDiagram();
+  if (restored && (state.nodes.length || state.frames.length)) fitDiagram();
   if (restored) toast('Restored your autosaved diagram.');
 })();
 </script>
