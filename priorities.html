@@ -71,11 +71,12 @@ button{background:#2a4869;color:var(--text);border:1px solid #526d8b;border-radi
         <select id="sort"><option value="date">Earliest shortage by cutoff</option><option value="gap">Largest shortage by cutoff</option><option value="manual">My run order</option><option value="part">Part number</option></select>
       </label>
       <button id="updateOrder" class="primary" disabled>↻ Update Run Order</button>
+      <button id="undoCompletion" disabled title="Undo the last completed lot (Ctrl+Z or Cmd+Z)" aria-keyshortcuts="Control+Z Meta+Z">↶ Undo completed lot</button>
       <label class="checkbox"><input id="showAll" type="checkbox" checked> Show covered parts</label>
       <button id="csv">Export CSV</button>
     </div>
   </div>
-  <p class="smalltext"><strong>Recommended lots</strong> covers shipments through your chosen date only. Use <strong>Set planned lots to cover cutoff</strong> to fill in a recommended plan, then change any number with +/− or by typing. The green number beside the lots is <strong>the equivalent number of parts</strong>. Click <strong>Complete 1 lot</strong> each time a full lot is finished: remaining lots decrease and available good inventory increases. <strong>The rows stay in exactly the same order</strong> while you complete lots, even when their priority changes. Click <strong>Update Run Order</strong> when you want to re-rank them.</p>
+  <p class="smalltext"></p>
   <div id="orderStatus" class="order-status" role="status" aria-live="polite">Import a report to build your run order.</div>
   <div class="tablewrap"><table>
     <thead><tr>
@@ -97,7 +98,8 @@ button{background:#2a4869;color:var(--text);border:1px solid #526d8b;border-radi
 <script>
 (()=>{'use strict';
 const $ = id => document.getElementById(id);
-const STORAGE = 'runOrderPlanner_v1'; // Reuse older plan storage so v2 data can be loaded.
+const STORAGE = 'runOrderPlanner_v1'; // Keep existing saved plans compatible.
+const UNDO_LIMIT = 1000; // Keep the latest 1,000 completion actions, including after reload.
 const dateToday = () => {
   const d = new Date();
   return [d.getFullYear(),String(d.getMonth()+1).padStart(2,'0'),String(d.getDate()).padStart(2,'0')].join('-');
@@ -111,7 +113,7 @@ const niceDate = d => d ? d.slice(5,7)+'/'+d.slice(8,10)+'/'+d.slice(2,4) : 'Cov
 // explicitly updates the order or uses the manual up/down controls.
 const fresh = () => ({
   parts:[], dates:[], manual:[], displayOrder:[], displayScope:[],
-  sortMode:'date', orderDirty:false,
+  sortMode:'date', orderDirty:false, undoHistory:[],
   defaultLot:144, asOf:dateToday(), throughDate:null
 });
 let state = fresh();
@@ -195,6 +197,17 @@ function validateState(saved){
   d.manual=Array.isArray(saved.manual)?saved.manual.filter(n=>d.parts.some(p=>p.name===n)):[];
   d.manual.push(...d.parts.map(p=>p.name).filter(n=>!d.manual.includes(n)));
   const names=new Set(d.parts.map(p=>p.name));
+  // Older saved plans have no undo history and continue loading normally.
+  d.undoHistory=Array.isArray(saved.undoHistory)
+    ? saved.undoHistory.filter(x=>x&&names.has(x.name)&&Number.isSafeInteger(x.units)&&x.units>0)
+      .slice(-UNDO_LIMIT).map(x=>({name:x.name,units:x.units})) : [];
+  // Reject a damaged/stale history rather than subtracting inventory incorrectly.
+  const doneCount=new Map(),doneUnits=new Map();
+  for(const x of d.undoHistory){
+    doneCount.set(x.name,(doneCount.get(x.name)||0)+1);
+    doneUnits.set(x.name,(doneUnits.get(x.name)||0)+x.units);
+  }
+  if(d.parts.some(p=>p.completed<(doneCount.get(p.name)||0)||p.inventory<(doneUnits.get(p.name)||0)))d.undoHistory=[];
   d.displayOrder=Array.isArray(saved.displayOrder)
     ? [...new Set(saved.displayOrder.filter(n=>names.has(n)))] : [];
   d.displayScope=Array.isArray(saved.displayScope)
@@ -288,6 +301,8 @@ function render(){
   $('throughDate').disabled=!state.dates.length;
   $('auto').disabled=!state.parts.length;
   $('updateOrder').disabled=!state.parts.length;
+  $('undoCompletion').disabled=!state.undoHistory.length;
+  $('undoCompletion').textContent='↶ Undo completed lot'+(state.undoHistory.length?' ('+fmt(state.undoHistory.length)+')':'');
   for(const id of ['first2','first5','allDates'])$(id).disabled=!state.dates.length;
   $('throughDate').innerHTML=state.dates.length
     ? state.dates.map((d,i)=>`<option value="${d}">${niceDate(d)} (${i+1} of ${state.dates.length})</option>`).join('')
@@ -361,6 +376,41 @@ function render(){
 }
 function touch(){state.orderDirty=Boolean(state.parts.length);render();persist()}
 
+// A completion changes three values. Save the actual lot size used at the time,
+// so undo subtracts precisely the quantity that completion added to inventory.
+function completeOneLot(p){
+  if(p.planned<1)return;
+  const units=lot(p);
+  state.undoHistory.push({name:p.name,units});
+  if(state.undoHistory.length>UNDO_LIMIT)state.undoHistory.shift();
+  p.planned--;
+  p.completed++;
+  p.inventory+=units;
+  touch();
+}
+
+function undoLastCompletion(){
+  if(!state.undoHistory.length)return;
+  const action=state.undoHistory[state.undoHistory.length-1];
+  const p=state.parts.find(part=>part.name===action.name);
+  // Never allow corrupted or incompatible history to create negative inventory.
+  if(!p||p.completed<1||p.inventory<action.units){
+    state.undoHistory=[];
+    render();persist('Cannot safely undo: completion history no longer matches inventory. Undo history was cleared.');
+    return;
+  }
+  state.undoHistory.pop();
+  p.planned++;
+  p.completed--;
+  p.inventory-=action.units;
+  touch();
+  setMessage('Undid 1 completed lot of '+p.name+' ('+fmt(action.units)+' parts). '+state.undoHistory.length+' more completion(s) can be undone.');
+}
+
+// Direct changes to inventory / lot sizes / planned lots make older completion
+// history ambiguous. Other actions (sort, cutoff, update order) do NOT erase it.
+function clearCompletionUndo(){state.undoHistory=[]}
+
 $('import').addEventListener('click',()=>{
   try{
     const parsed=parseReport($('paste').value);
@@ -379,10 +429,15 @@ $('allDates').addEventListener('click',()=>pickFirst(state.dates.length));
 $('auto').addEventListener('click',()=>{
   if(!state.parts.length)return;
   if(!confirm(`Replace all REMAINING planned lots with the minimum full lots needed to cover shipments through ${niceDate(chosenDate())}?\n\nCompleted lots and available inventory stay unchanged. Dates after the cutoff are not included.`))return;
+  clearCompletionUndo();
   for(const p of state.parts)p.planned=calc(p).required;
   touch();setMessage('Planned lots updated to cover shipments through '+niceDate(chosenDate())+'.');
 });
-$('defaultLot').addEventListener('change',()=>{state.defaultLot=Math.max(1,intValue($('defaultLot').value)||144);$('defaultLot').value=state.defaultLot;touch()});
+$('defaultLot').addEventListener('change',()=>{
+  const newSize=Math.max(1,intValue($('defaultLot').value)||144);
+  if(newSize!==state.defaultLot)clearCompletionUndo();
+  state.defaultLot=newSize;$('defaultLot').value=state.defaultLot;touch();
+});
 $('asOf').addEventListener('change',()=>{state.asOf=$('asOf').value;persist('Report year reference updated. Re-import if you need to re-interpret date column years.');});
 $('sort').addEventListener('change',e=>{
   state.sortMode=e.target.value;
@@ -394,6 +449,16 @@ $('updateOrder').addEventListener('click',()=>{
   updateRunOrder();render();persist('Run order updated to current priorities. Rows will now remain fixed until you update it again.');
 });
 $('showAll').addEventListener('change',render);
+$('undoCompletion').addEventListener('click',undoLastCompletion);
+// Leave Ctrl+Z inside editable fields alone so ordinary typing undo still works.
+document.addEventListener('keydown',ev=>{
+  if(String(ev.key).toLowerCase()!=='z'||!(ev.ctrlKey||ev.metaKey)||ev.altKey||ev.shiftKey||ev.repeat)return;
+  const target=ev.target;
+  if(target instanceof Element&&target.closest('input, textarea, select, [contenteditable=""], [contenteditable="true"], [role="textbox"]'))return;
+  if(!state.undoHistory.length)return;
+  ev.preventDefault();
+  undoLastCompletion();
+});
 $('rows').addEventListener('input',ev=>{
   const t=ev.target;
   if(t.dataset.field!=='lot'&&t.dataset.field!=='planned')return;
@@ -407,21 +472,24 @@ $('rows').addEventListener('change',ev=>{
   if(!['planned','lot','inventory'].includes(t.dataset.field))return;
   const p=state.parts[Number(t.dataset.i)];if(!p)return;
   const n=intValue(t.value);
-  if(t.dataset.field==='planned')p.planned=nonnegative(n);
-  if(t.dataset.field==='lot')p.lot=Math.max(1,n||state.defaultLot);
-  if(t.dataset.field==='inventory')p.inventory=nonnegative(n);
+  const field=t.dataset.field;
+  const next=field==='lot'?Math.max(1,n||state.defaultLot):nonnegative(n);
+  const previous=field==='lot'?lot(p):p[field];
+  if(next!==previous)clearCompletionUndo();
+  p[field]=next;
   touch();
 });
 $('rows').addEventListener('click',ev=>{
   const t=ev.target.closest('button');if(!t)return;
   const i=Number(t.dataset.i),p=state.parts[i];if(!p)return;
   switch(t.dataset.action){
-    case 'plus':p.planned++;break;
-    case 'minus':p.planned=Math.max(0,p.planned-1);break;
-    case 'complete':
+    case 'plus':clearCompletionUndo();p.planned++;break;
+    case 'minus':
       if(p.planned<1)return;
-      p.planned--;p.completed++;p.inventory+=lot(p);
-      break;
+      clearCompletionUndo();p.planned--;break;
+    case 'complete':
+      completeOneLot(p);
+      return;
     case 'up':case 'down':
       moveManually(p.name,t.dataset.action==='up'?-1:1);
       render();persist();
@@ -486,5 +554,9 @@ try{
 | TN999999-99999L | J739 | | | 12 | 0 | 0 | 0 | 0 | 2 | 4 | 2 | 2 |
 | TN999999-99999M | J739 | | | 2340 | 0 | 0 | 0 | 0 | 0 | 3996 (-1656) | 0 (-1656) | 0 (-1656) |
 </template>
+  </script>
+
+  <script src="tools-menu.js"></script>
+
 </body>
 </html>
