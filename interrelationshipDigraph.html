@@ -620,7 +620,7 @@ color: #111827;
         <g id="nodeLayer"></g>
       </svg>
       <div id="selectionStatus" class="selection-status"></div>
-      <div class="workspace-hint">Double-click blank space to add an item · Frame button to group items · Drag frame borders / corner handles · Right-click to style · Scroll to zoom</div>
+      <div class="workspace-hint">Double-click blank space to add an item · Drag a frame border/label to move its contents · Resize using corner handles (items stay put) · Right-click to style · Scroll to zoom</div>
     </div>
 
 <aside id="settingsPanel" class="panel" aria-label="Diagram settings">
@@ -652,7 +652,7 @@ color: #111827;
 
     <section class="setting-section">
       <h3>New Frames</h3>
-      <p class="panel-note" style="margin:0 0 10px">Frames are drawn behind items and arrows. The transparent interior stays clickable.</p>
+      <p class="panel-note" style="margin:0 0 10px">Frames are behind items and arrows. Moving a frame carries its contained items (and nested frames); resizing leaves them where they are. Item-to-frame membership is included in exported JSON.</p>
       <div class="field"><label for="defaultFrameShape">Shape</label><select id="defaultFrameShape"><option value="rectangle">Rectangle</option><option value="square">Square</option></select></div>
       <div class="field"><label for="defaultFrameWidth">Width</label><input id="defaultFrameWidth" type="number" min="80" max="4000" step="10" /></div>
       <div class="field"><label for="defaultFrameHeight">Height</label><input id="defaultFrameHeight" type="number" min="80" max="4000" step="10" /></div>
@@ -815,7 +815,7 @@ color: #111827;
   let undoStack = [];
   let redoStack = [];
   let sourceSelectionId = null;
-  let activeSelection = null; // { type: 'node'|'relationship', id }
+  let activeSelection = null; // { type: 'node'|'relationship'|'frame', id }
   let contextTarget = null;
   let dragCandidate = null;
   let frameDragCandidate = null;
@@ -838,7 +838,7 @@ color: #111827;
 
   function createInitialState() {
     return {
-      version: 2,
+      version: 3,
       title: 'Interrelationship Digraph',
       nodes: [],
       relationships: [],
@@ -1014,7 +1014,12 @@ color: #111827;
         fillColor: isHexColor(raw.fillColor) ? raw.fillColor : defaults.fillColor,
         textColor: isHexColor(raw.textColor) ? raw.textColor : defaults.textColor,
         fontSize: clamp(finiteNumber(raw.fontSize, defaults.fontSize), 10, 30),
-        countFontSize: clamp(finiteNumber(raw.countFontSize, defaults.countFontSize), 8, 24)
+        countFontSize: clamp(finiteNumber(raw.countFontSize, defaults.countFontSize), 8, 24),
+        // v3 saves the parent frame explicitly. A missing property signals a
+        // legacy v1/v2 file, whose membership is reconstructed by location.
+        frameId: Object.prototype.hasOwnProperty.call(raw, 'frameId')
+          ? (typeof raw.frameId === 'string' ? raw.frameId.slice(0, 80) : null)
+          : undefined
       });
     }
 
@@ -1076,12 +1081,20 @@ color: #111827;
         labelPosition: FRAME_LABEL_POSITIONS.has(raw.labelPosition) ? raw.labelPosition : defaults.frameLabelPosition
       });
     }
+    // Keep valid v3 membership (including explicit null), but automatically
+    // recover grouping for older exported JSON and missing/invalid frame IDs.
+    for (const node of nodes) {
+      if (node.frameId === undefined || (node.frameId && !frameIds.has(node.frameId))) {
+        node.frameId = topContainingFrameId(node, frames);
+      }
+    }
+
     const maxFrameNum = frames.reduce((m, f) => Math.max(m, parseTrailingNumber(f.id)), 0);
     const maxNodeNum = nodes.reduce((m, n) => Math.max(m, parseTrailingNumber(n.id)), 0);
     const maxRelNum = relationships.reduce((m, r) => Math.max(m, parseTrailingNumber(r.id)), 0);
 
     return {
-      version: 2,
+      version: 3,
       title: String(input.title || 'Interrelationship Digraph').slice(0, 180),
       nodes,
       relationships,
@@ -1096,6 +1109,34 @@ color: #111827;
   function parseTrailingNumber(id) {
     const match = String(id).match(/(\d+)$/);
     return match ? Number(match[1]) : 0;
+  }
+
+  // Frame membership is determined by an item's center. For overlapping
+  // frames, the last (frontmost) frame wins. Frame membership is stored on
+  // each node as frameId and included in JSON exports.
+  function frameContainsNode(frame, node) {
+    return node.x >= frame.x && node.x <= frame.x + frame.width &&
+           node.y >= frame.y && node.y <= frame.y + frame.height;
+  }
+
+  function topContainingFrameId(node, frames = state.frames) {
+    for (let i = frames.length - 1; i >= 0; i--) {
+      if (frameContainsNode(frames[i], node)) return frames[i].id;
+    }
+    return null;
+  }
+
+  function syncNodeFrameMemberships() {
+    for (const node of state.nodes) node.frameId = topContainingFrameId(node);
+  }
+
+  // A completely enclosed smaller frame travels with its outer frame, too.
+  function frameContainsFrame(outer, inner) {
+    return inner.id !== outer.id &&
+      (inner.width < outer.width - 1 || inner.height < outer.height - 1) &&
+      inner.x >= outer.x && inner.y >= outer.y &&
+      inner.x + inner.width <= outer.x + outer.width &&
+      inner.y + inner.height <= outer.y + outer.height;
   }
 
   // ---------------------------------------------------------------------------
@@ -2071,6 +2112,7 @@ color: #111827;
         label: clean.slice(0, 300),
         x: position.x,
         y: position.y,
+        frameId: topContainingFrameId(position),
         shape: state.defaults.shape,
         fillColor: state.defaults.fillColor,
         textColor: state.defaults.textColor,
@@ -2132,17 +2174,23 @@ color: #111827;
         y: clamp(centerY - styling.height / 2, -9000, 9000),
         ...styling
       });
+      // An existing item enclosed by this new frame becomes part of it.
+      syncNodeFrameMemberships();
     });
     sourceSelectionId = null;
     activeSelection = { type: 'frame', id: newId };
     renderAll();
     ensureDiagramVisible();
-    toast('Frame added. Drag its border or label to move; drag a corner to resize.');
+    toast('Frame added. Moving it carries its items; resizing does not move them.');
   }
 
   function deleteFrame(frameId) {
     if (!getFrame(frameId)) return;
-    commit(() => { state.frames = state.frames.filter(f => f.id !== frameId); });
+    commit(() => {
+      state.frames = state.frames.filter(f => f.id !== frameId);
+      // The items remain in place, but their former frame no longer exists.
+      syncNodeFrameMemberships();
+    });
     clearTransientSelection();
     closeContextMenus();
     toast('Frame deleted. Its items and relationships were kept.');
@@ -2359,14 +2407,29 @@ color: #111827;
     const p = clientToSvg(e.clientX, e.clientY);
     sourceSelectionId = null;
     activeSelection = { type: 'frame', id: frameId };
+    const handle = e.target.getAttribute('data-frame-handle') || null;
+    // Capture the positions ONCE at drag start. Using original coordinates
+    // prevents jitter and guarantees every member receives the same delta.
+    // A resize only changes frame geometry, never its children's positions.
+    const movingFrames = !handle
+      ? state.frames.filter(other => frameContainsFrame(frame, other))
+          .map(other => ({ id: other.id, x: other.x, y: other.y }))
+      : [];
+    const movingFrameIds = new Set([frameId, ...movingFrames.map(f => f.id)]);
+    const movingNodes = !handle
+      ? state.nodes.filter(node => movingFrameIds.has(node.frameId) || frameContainsNode(frame, node))
+          .map(node => ({ id: node.id, x: node.x, y: node.y }))
+      : [];
     frameDragCandidate = {
       frameId,
-      handle: e.target.getAttribute('data-frame-handle') || null,
+      handle,
       startX: p.x,
       startY: p.y,
       startClientX: e.clientX,
       startClientY: e.clientY,
       original: { x: frame.x, y: frame.y, width: frame.width, height: frame.height },
+      movingFrames,
+      movingNodes,
       before: snapshot(),
       moved: false
     };
@@ -2381,12 +2444,37 @@ color: #111827;
         const frame = getFrame(candidate.frameId);
         if (frame) {
           const point = clientToSvg(e.clientX, e.clientY);
-          const dx = point.x - candidate.startX;
-          const dy = point.y - candidate.startY;
+          let dx = point.x - candidate.startX;
+          let dy = point.y - candidate.startY;
           const old = candidate.original;
           if (!candidate.handle) {
-            frame.x = clamp(old.x + dx, -9000, 9000);
-            frame.y = clamp(old.y + dy, -9000, 9000);
+            const positions = [old, ...candidate.movingFrames, ...candidate.movingNodes];
+            // Clamp the entire group to the editable coordinate range instead
+            // of clamping each item independently (which would distort it).
+            dx = clamp(dx,
+              Math.max(...positions.map(p => -9000 - p.x)),
+              Math.min(...positions.map(p => 9000 - p.x)));
+            dy = clamp(dy,
+              Math.max(...positions.map(p => -9000 - p.y)),
+              Math.min(...positions.map(p => 9000 - p.y)));
+            frame.x = old.x + dx;
+            frame.y = old.y + dy;
+            for (const original of candidate.movingFrames) {
+              const childFrame = getFrame(original.id);
+              if (childFrame) {
+                childFrame.x = original.x + dx;
+                childFrame.y = original.y + dy;
+              }
+            }
+            for (const original of candidate.movingNodes) {
+              const node = getNode(original.id);
+              if (node) {
+                node.x = original.x + dx;
+                node.y = original.y + dy;
+              }
+            }
+            // Connected relationship paths also follow their moving nodes.
+            updateVisualPositions();
           } else {
             const h = candidate.handle;
             const nextW = clamp(old.width + (h.endsWith('e') ? dx : -dx), 80, 4000);
@@ -2437,6 +2525,9 @@ color: #111827;
       const candidate = frameDragCandidate;
       frameDragCandidate = null;
       if (candidate.moved) {
+        // Resizing changes membership, but deliberately leaves item locations
+        // unchanged. Moving the frame keeps its contents at their new spots.
+        syncNodeFrameMemberships();
         undoStack.push(candidate.before);
         if (undoStack.length > 100) undoStack.shift();
         redoStack = [];
@@ -2448,6 +2539,8 @@ color: #111827;
       const candidate = dragCandidate;
       dragCandidate = null;
       if (candidate.moved) {
+        const node = getNode(candidate.nodeId);
+        if (node) node.frameId = topContainingFrameId(node);
         undoStack.push(candidate.before);
         if (undoStack.length > 100) undoStack.shift();
         redoStack = [];
@@ -2793,7 +2886,7 @@ color: #111827;
       status.classList.add('visible');
     } else if (activeSelection?.type === 'frame') {
       const frame = getFrame(activeSelection.id);
-      status.textContent = frame ? `Frame selected: ${frame.label || 'Untitled'} — drag border to move, corners to resize` : '';
+      status.textContent = frame ? `Frame selected: ${frame.label || 'Untitled'} — moving carries items; resizing leaves them in place` : '';
       status.classList.toggle('visible', !!frame);
     } else {
       status.classList.remove('visible');
@@ -2970,6 +3063,7 @@ color: #111827;
       current[key] = value;
       if (key === 'shape' && value === 'square') current.width = current.height = Math.max(current.width, current.height);
       if ((key === 'width' || key === 'height') && current.shape === 'square') current.width = current.height = value;
+      if (key === 'width' || key === 'height' || key === 'shape') syncNodeFrameMemberships();
     });
     contextTarget = { type: 'frame', id: frameId };
     activeSelection = { type: 'frame', id: frameId };
@@ -2985,6 +3079,7 @@ color: #111827;
       const styling = frameDefaultsForNewFrame();
       for (const key of FRAME_STYLE_KEYS) frame[key] = styling[key];
       if (frame.shape === 'square') frame.width = frame.height = Math.max(frame.width, frame.height);
+      syncNodeFrameMemberships();
     });
     closeContextMenus();
   });
@@ -3053,6 +3148,7 @@ color: #111827;
         for (const key of FRAME_STYLE_KEYS) frame[key] = styling[key];
         if (frame.shape === 'square') frame.width = frame.height = Math.max(frame.width, frame.height);
       }
+      syncNodeFrameMemberships();
     });
     toast('Frame styles updated; existing labels, sizes, and positions were preserved where possible.');
   });
